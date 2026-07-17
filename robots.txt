@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: <HOST_URL>sitemap.xml
+Sitemap: https://ffxiv-tw-sightseeing.pages.dev/sitemap.xml

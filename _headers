@@ -1,5 +1,5 @@
 # Cloudflare Pages headers — 安全強化 + cache 控制（新工具 starter 範本）
-# 複製到新 repo 根目錄。把 <TODO-WORKER-URL> 換成本工具自己的 worker（沒有後端就刪掉該段）。
+# 複製到新 repo 根目錄。本工具無自家後端 worker（僅用 portal settings API，已在 connect-src）。
 # CSP 已放行 portal CDN 全 src（fat-cat / header / settings 等資產）+ CF Web Analytics。
 # https://developers.cloudflare.com/pages/configuration/headers/
 
@@ -9,7 +9,7 @@
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=()
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://ffxiv-tw-tools-portal.pages.dev https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://ffxiv-tw-tools-portal.pages.dev; img-src 'self' data: https://ffxiv-tw-tools-portal.pages.dev; connect-src 'self' https://ffxiv-tw-tools-settings-api.ffxiv-tw-tools.workers.dev https://cloudflareinsights.com <TODO-WORKER-URL>; media-src 'self' https://ffxiv-tw-tools-portal.pages.dev; font-src 'self' https://ffxiv-tw-tools-portal.pages.dev data:; frame-ancestors 'none'; base-uri 'self'; form-action 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://ffxiv-tw-tools-portal.pages.dev https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://ffxiv-tw-tools-portal.pages.dev; img-src 'self' data: https://ffxiv-tw-tools-portal.pages.dev https://xivapi.com; connect-src 'self' https://ffxiv-tw-tools-settings-api.ffxiv-tw-tools.workers.dev https://cloudflareinsights.com; media-src 'self' https://ffxiv-tw-tools-portal.pages.dev; font-src 'self' https://ffxiv-tw-tools-portal.pages.dev data:; frame-ancestors 'none'; base-uri 'self'; form-action 'none'
 
 # 工具自家 JS / CSS — max-age=0 + must-revalidate → push 完 F5 即時更新（免 Ctrl+Shift+R）
 /*.js
