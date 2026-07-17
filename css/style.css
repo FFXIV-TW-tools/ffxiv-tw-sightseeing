@@ -45,11 +45,18 @@
 .ss-stats { margin-block: var(--space-3, 12px) var(--space-2, 8px); color: var(--ss-muted); }
 .ss-stats b { color: var(--ss-accent); font-weight: var(--fw-bold, 700); }
 
-/* ── 下一個可進行 提示（top 3，含版本）── */
-.ss-next-hint { margin-block: var(--space-3, 12px) var(--space-4, 16px); padding: var(--space-2, 8px) var(--space-3, 12px); border: thin solid var(--ss-accent); border-radius: var(--radius-sm, 6px); background: linear-gradient(90deg, var(--ss-accent-soft), transparent 82%); }
+/* ── 可進行提示（現在可執行綠 / 下一個可執行黃 兩組，配色對齊卡片框）── */
+.ss-next-hint { margin-block: var(--space-3, 12px) var(--space-4, 16px); display: flex; flex-direction: column; gap: var(--space-3, 12px); }
 .ss-next-hint[hidden] { display: none; }
-.ss-nh-key { display: inline-flex; align-items: center; gap: 6px; padding-inline: var(--space-1, 4px); color: var(--ss-accent); font-family: var(--font-mono, monospace); font-size: var(--fs-xs, 11px); letter-spacing: .12em; }
-.ss-nh-key::before { content: "\23ED"; }
+/* 每組＝獨立色框漸層面板：上綠（現在可執行）下橘（下一個可執行），對齊卡片框色 */
+.ss-nh-group { padding: var(--space-2, 8px) var(--space-3, 12px); border: thin solid; border-radius: var(--radius-sm, 6px); }
+.ss-nh-group--now { border-color: var(--ss-success); background: linear-gradient(90deg, color-mix(in srgb, var(--ss-success) 18%, transparent), transparent 82%); }
+.ss-nh-group--next { border-color: var(--ss-warn); background: linear-gradient(90deg, var(--ss-warn-soft), transparent 82%); }
+.ss-nh-key { display: inline-flex; align-items: center; gap: 6px; padding-inline: var(--space-1, 4px); font-family: var(--font-mono, monospace); font-size: var(--fs-xs, 11px); font-weight: var(--fw-bold, 700); letter-spacing: .12em; }
+.ss-nh-group--now .ss-nh-key { color: var(--ss-success); }
+.ss-nh-group--now .ss-nh-key::before { content: "\25B6"; }
+.ss-nh-group--next .ss-nh-key { color: var(--ss-warn); }
+.ss-nh-group--next .ss-nh-key::before { content: "\23ED"; }
 .ss-nh-list { display: flex; flex-direction: column; margin-top: 4px; }
 .ss-nh-item { display: flex; align-items: center; flex-wrap: wrap; gap: 3px var(--space-3, 12px); width: 100%; padding: 4px var(--space-2, 8px); border: 0; border-radius: var(--radius-sm, 6px); background: transparent; color: var(--ss-text); font: inherit; font-size: var(--fs-small, 12px); text-align: start; cursor: pointer; transition: background var(--transition-fast, .15s ease); }
 .ss-nh-item:hover, .ss-nh-item:focus-visible { background: var(--ss-accent-soft); outline: none; }
@@ -57,7 +64,13 @@
 .ss-nh-ord { flex: 0 0 auto; font-family: var(--font-mono, monospace); color: var(--ss-muted); }
 .ss-nh-name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: var(--fw-semibold, 600); }
 .ss-nh-zone { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ss-muted); }
-.ss-nh-wait { flex: 0 0 auto; margin-inline-start: auto; padding: 2px 8px; border-radius: var(--radius-sm, 6px); background: var(--ss-surface); color: var(--ss-accent); font-family: var(--font-mono, monospace); font-weight: var(--fw-bold, 700); }
+.ss-nh-wait { flex: 0 0 auto; margin-inline-start: auto; padding: 2px 8px; border-radius: var(--radius-sm, 6px); background: var(--ss-surface-2); color: var(--ss-accent); font-family: var(--font-mono, monospace); font-weight: var(--fw-bold, 700); }
+/* 兩組配色：現在＝綠、下一個＝黃（對齊卡片框）*/
+.ss-nh-group--now .ss-nh-ver, .ss-nh-group--now .ss-nh-wait { color: var(--ss-success); }
+.ss-nh-group--now .ss-nh-wait--now { background: color-mix(in srgb, var(--ss-success) 16%, transparent); }
+.ss-nh-group--now .ss-nh-item:hover, .ss-nh-group--now .ss-nh-item:focus-visible { background: color-mix(in srgb, var(--ss-success) 14%, transparent); }
+.ss-nh-group--next .ss-nh-ver, .ss-nh-group--next .ss-nh-wait { color: var(--ss-warn); }
+.ss-nh-group--next .ss-nh-item:hover, .ss-nh-group--next .ss-nh-item:focus-visible { background: var(--ss-warn-soft); }
 
 /* ── 卡片格 ── */
 .ss-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(26rem, 1fr)); gap: var(--space-4, 16px); padding-block: var(--space-2, 8px) var(--space-8, 40px); }

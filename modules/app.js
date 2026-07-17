@@ -90,28 +90,39 @@ function uiElements() {
   return { grid: $('#log-grid'), tabs: $('#exp-tabs'), search: $('#search-input'), zone: $('#zone-filter'), hide: $('#hide-completed'), only: $('#only-available'), sort: $('#sort-by-time'), et: $('#et-clock'), local: $('#local-time'), countdown: $('#weather-countdown'), visible: $('#visible-count'), total: $('#total-count'), completed: $('#completed-count'), completedTotal: $('#completed-total'), percent: $('#completed-percent'), active: $('#active-count') };
 }
 function badges() { EXPS.forEach(exp => { const el = $('#badge-' + exp); if (el) el.textContent = String(Array.isArray(DATA[exp]) ? DATA[exp].length : 0); }); const all = $('#badge-all'); if (all) all.textContent = String(ALL.length); }
+function nhItem(item, trailHTML) {
+  const entry = item.entry, exp = expOf(entry);
+  return '<button type="button" class="ss-nh-item" data-target="' + esc(item.id) + '">' +
+    '<span class="ss-nh-ver">' + esc(VER[exp] || '') + ' ' + esc(EXP_NAMES[exp] || '') + '</span>' +
+    '<span class="ss-nh-ord">#' + esc(pad(entry.no)) + '</span>' +
+    '<span class="ss-nh-name">' + esc(itemName(entry)) + '</span>' +
+    '<span class="ss-nh-zone">' + esc((item.zone || {}).tc || '') + '</span>' +
+    (trailHTML || '') +
+  '</button>';
+}
+function nhGroup(cls, label, itemsHTML) {
+  return '<div class="ss-nh-group ' + cls + '"><span class="ss-nh-key">' + label + '</span><div class="ss-nh-list">' + itemsHTML + '</div></div>';
+}
 function updateNextHint(ui) {
   const hint = $('#next-hint');
   if (!hint) return;
-  const cands = [];
+  // 現在可執行＝有時間/天氣限制（2.0 為主）且此刻正好在窗口內的；下一個可執行＝即將到來的
+  const now = [], next = [];
   state.visible.forEach(item => {
-    const ms = item.availability && item.availability.nextMs;
-    if (Number.isFinite(ms) && ms > 0) cands.push({ item: item, ms: ms });
+    const a = item.availability;
+    if (!a) return;
+    if (a.available && (a.time.gated || a.weather.gated)) now.push(item);
+    else if (Number.isFinite(a.nextMs) && a.nextMs > 0) next.push({ item: item, ms: a.nextMs });
   });
-  if (!cands.length) { hint.hidden = true; hint.innerHTML = ''; return; }
-  cands.sort((a, b) => a.ms - b.ms);
+  next.sort((a, b) => a.ms - b.ms);
+  if (!now.length && !next.length) { hint.hidden = true; hint.innerHTML = ''; return; }
   hint.hidden = false;
-  hint.innerHTML = '<span class="ss-nh-key">下一個可進行</span>' +
-    '<div class="ss-nh-list">' + cands.slice(0, 3).map(c => {
-      const entry = c.item.entry, exp = expOf(entry);
-      return '<button type="button" class="ss-nh-item" data-target="' + esc(c.item.id) + '">' +
-        '<span class="ss-nh-ver">' + esc(VER[exp] || '') + ' ' + esc(EXP_NAMES[exp] || '') + '</span>' +
-        '<span class="ss-nh-ord">#' + esc(pad(entry.no)) + '</span>' +
-        '<span class="ss-nh-name">' + esc(itemName(entry)) + '</span>' +
-        '<span class="ss-nh-zone">' + esc((c.item.zone || {}).tc || '') + '</span>' +
-        '<span class="ss-nh-wait">' + esc(wait(c.ms)) + '</span>' +
-      '</button>';
-    }).join('') + '</div>';
+  let html = '';
+  if (now.length) html += nhGroup('ss-nh-group--now', '現在可執行',
+    now.slice(0, 3).map(item => nhItem(item, '<span class="ss-nh-wait ss-nh-wait--now">進行中</span>')).join(''));
+  if (next.length) html += nhGroup('ss-nh-group--next', '下一個可執行',
+    next.slice(0, 3).map(c => nhItem(c.item, '<span class="ss-nh-wait">' + esc(wait(c.ms)) + '</span>')).join(''));
+  hint.innerHTML = html;
 }
 function updateZones(ui) {
   if (!ui.zone) return;
