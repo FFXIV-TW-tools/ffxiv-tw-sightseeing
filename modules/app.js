@@ -32,7 +32,8 @@ const timeValue = value => { if (value == null || value === '') return null; con
 const hasTime = entry => timeValue(entry.timeStart) !== null && timeValue(entry.timeEnd) !== null;
 const targets = entry => Array.isArray(entry.weathers) ? entry.weathers.filter(Boolean) : [];
 const hasWeather = entry => targets(entry).length > 0;
-const formatMMSS = ms => { if (!Number.isFinite(Number(ms)) || Number(ms) < 0) return '--:--'; const s = Math.floor(Number(ms) / 1000); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); };
+// ⚠ 同 wait()：不可用 Number(ms) 收斂（Number(null)===0 會讓未知印成 00:00）。鐵則 7。
+const formatMMSS = ms => { if (!Number.isFinite(ms) || ms < 0) return '--:--'; const s = Math.floor(ms / 1000); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); };
 // ⚠ 不可寫成 Number.isFinite(Number(ms))：Number(null)===0（不是 NaN）會逃過守門、被印成「現在」——
 // 而 null 的語義是「未知／找不到」。2026-07-17 南林區雷雨誤顯示「下一次 現在」的根因。
 const wait = ms => !Number.isFinite(ms) ? '計算中' : ms <= 0 ? '現在' : typeof ET.formatWaitTime === 'function' ? ET.formatWaitTime(ms) : formatMMSS(ms);
@@ -348,4 +349,4 @@ function init() {
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true }); else init();
 
 // 純函式對外導出，供 tools/validate-availability.mjs 迴歸測試（瀏覽器端不使用，無執行期影響）
-export { wait, availability, timeValue };
+export { wait, availability, timeValue, formatMMSS };

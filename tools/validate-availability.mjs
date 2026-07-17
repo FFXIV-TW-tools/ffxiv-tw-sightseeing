@@ -1,11 +1,12 @@
-// validate-availability.mjs — 守 2026-07-17 修的四個「可進行時間」bug。用法：node tools/validate-availability.mjs
+// validate-availability.mjs — 守 2026-07-17 修的五個「可進行時間」bug。用法：node tools/validate-availability.mjs
 //
 // 徵狀（南林區「巴斯卡隆酒家」#044）：天氣列顯示「打雷 · 下一次 現在（需 雷雨）」、
-// 狀態「目前不可進行」、卻沒有「下次可進行」那行。根因四個，各自獨立：
+// 狀態「目前不可進行」、卻沒有「下次可進行」那行。根因各自獨立：
 //   1. findNextWeather 掃描窗只有 100 週期（≈38.9 小時）→ 實測最大間隔 185（天氣）／447（天氣∩時間）→ 回 null
 //   2. wait() 用 Number(ms) 收斂 → Number(null)===0 → 「未知」被印成「現在」
 //   3. availability() 的 `next ? next.msUntil : 0` 把「找不到」當 0（＝不用等）→ nextMs=0 → 下游隱藏整行
 //   4. nextMs 用 Math.max(時間等待, 天氣等待) → 不保證兩閘同時成立（實測 80/80 條目、67.5% 給錯時間）
+//   5. getTimeUntilRange 用閉區間 `<= endTime` → 窗尾多開 1 ET 分鐘（≈2.9 秒現實）；codex 對抗審抓到
 import fs from 'fs';
 
 // 最小 DOM stub：app.js 匯入時會跑 init()，querySelector 回 null 即在 `if (!ui.grid) return` 早退
@@ -16,7 +17,7 @@ globalThis.document = { readyState: 'complete', querySelector: () => null, query
 new Function('window', fs.readFileSync('data/sightseeing-data.js', 'utf8'))(globalThis);
 new Function('window', fs.readFileSync('data/zones.js', 'utf8'))(globalThis);
 
-const { wait, availability, timeValue: TV } = await import('../modules/app.js');
+const { wait, availability, timeValue: TV, formatMMSS } = await import('../modules/app.js');
 const W = globalThis.Weather;
 const ET = globalThis.EorzeaTime;
 const ZONES = globalThis.SIGHTSEEING_ZONES;
@@ -24,6 +25,37 @@ const DATA = globalThis.SIGHTSEEING_DATA;
 
 const errs = [];
 const check = (cond, msg) => { if (!cond) errs.push(msg); };
+
+// ── Bug 5：時間窗是半開 [start, end)，窗尾整分不得算進窗內 ─────────────────
+// 遊戲窗「05–08」＝05:00–07:59，08:00 即關窗。原本用 `<= endTime` 多開 1 ET 分鐘（≈2.9 秒現實）。
+{
+  // ET 第 day 天的 hh:mm 對應的現實 timestamp（1 ET 日＝4200 秒現實、1 ET 分＝4200/1440 秒）
+  const etAt = (day, h, m) => Math.round(day * 4200000 + (h * 60 + m) * (4200000 / 1440));
+  const D = 1000;
+  const cases = [
+    [500, 800, 8, 0, false, '窗 05–08 在 ET 08:00 應已關窗'],
+    [500, 800, 7, 59, true, '窗 05–08 在 ET 07:59 應仍開著'],
+    [500, 800, 5, 0, true, '窗 05–08 在 ET 05:00 應開窗（窗首含）'],
+    [1800, 500, 5, 0, false, '跨午夜窗 18–5 在 ET 05:00 應已關窗'],
+    [1800, 500, 4, 59, true, '跨午夜窗 18–5 在 ET 04:59 應仍開著'],
+    [1800, 500, 18, 0, true, '跨午夜窗 18–5 在 ET 18:00 應開窗（窗首含）'],
+  ];
+  for (const [s, e, h, m, want, msg] of cases) {
+    const got = ET.getTimeUntilRange(s, e, etAt(D, h, m)).inRange;
+    check(got === want, `${msg}，得到 inRange=${got}`);
+  }
+  // 關窗當下必須算得出「下一次開窗」的正數等待（半開改動不可讓等待歸零）
+  const w = ET.getTimeUntilRange(500, 800, etAt(D, 8, 0));
+  check(w.waitMs > 0, `窗 05–08 在 ET 08:00 應算出正數等待（下次 05:00），得到 ${w.waitMs}`);
+}
+
+// ── formatWaitTime / formatMMSS：同一類 Number/isNaN 收斂坑 + 長等待可讀性 ──
+check(ET.formatWaitTime('') !== '現在', `formatWaitTime('') 不得為「現在」（isNaN('')===false 的坑），得到「${ET.formatWaitTime('')}」`);
+check(ET.formatWaitTime(null) === '計算中...', `formatWaitTime(null) 應為「計算中...」，得到「${ET.formatWaitTime(null)}」`);
+check(ET.formatWaitTime(5 * 86400000) === '5 天', `formatWaitTime(5天) 應為「5 天」，得到「${ET.formatWaitTime(5 * 86400000)}」`);
+check(ET.formatWaitTime(86400000 + 3 * 3600000) === '1 天 3 小時', `formatWaitTime(1天3時) 應為「1 天 3 小時」，得到「${ET.formatWaitTime(86400000 + 3 * 3600000)}」`);
+check(!ET.formatWaitTime(7 * 86400000).includes('24'), '長等待不得再顯示「> 24 小時」（分不出 25 小時與 7 天）');
+check(formatMMSS(null) === '--:--', `formatMMSS(null) 應為「--:--」（不得因 Number(null)===0 印成 00:00），得到「${formatMMSS(null)}」`);
 
 // ── Bug 2：wait() 不得把「未知」講成「現在」 ────────────────────────────────
 // Number(null)===0、Number('')===0、Number(false)===0 —— 全都會逃過 Number.isFinite(Number(x)) 守門
@@ -158,8 +190,9 @@ for (const [key, c] of iCombos) {
 }
 
 if (errs.length) { console.error('✗ 可進行時間驗證未過：'); errs.forEach(e => console.error('  ' + e)); process.exit(1); }
-console.log(`✓ 可進行時間四 bug 迴歸守住`);
-console.log(`  · wait() 未知值不再顯示「現在」；天氣掃不到時 nextMs=null 不是 0`);
+console.log(`✓ 可進行時間五 bug 迴歸守住`);
+console.log(`  · wait()/formatWaitTime/formatMMSS 未知值不再顯示「現在」；天氣掃不到時 nextMs=null 不是 0`);
+console.log(`  · 時間窗半開 [start, end)：窗尾整分已關窗（05–08 於 08:00、18–5 於 05:00）`);
 console.log(`  · 掃描窗 ${SCAN} 對兩種需求都夠：天氣單獨最大間隔 ${worst.gap}（${(SCAN / (worst.gap || 1)).toFixed(1)}×，${worst.key}）`);
 console.log(`    　　　　　　　　　　　　　天氣∩時間最大間隔 ${iWorst.gap}（${(SCAN / (iWorst.gap || 1)).toFixed(1)}×，${iWorst.key}）`);
 console.log(`  · 活體：${combos.size} 個 (天氣區×天氣) 組合此刻皆算得出下一次天氣（null ${live} 筆）`);

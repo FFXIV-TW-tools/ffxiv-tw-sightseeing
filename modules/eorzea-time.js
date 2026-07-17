@@ -115,6 +115,7 @@ const EorzeaTime = (function() {
 
     /**
      * 檢查指定的艾歐澤亞時間是否在指定範圍內
+     * 區間為**半開** [start, end)：遊戲窗「05–08」代表 05:00–07:59，08:00 即關窗。
      * @param {number} currentHour - 當前艾歐澤亞小時 (0-23)
      * @param {number} startTime - 開始時間 (格式: 800 表示 8:00)
      * @param {number} endTime - 結束時間 (格式: 1200 表示 12:00)
@@ -130,14 +131,17 @@ const EorzeaTime = (function() {
         // 處理跨越午夜的情況
         if (startTime > endTime) {
             // 例如 18:00 - 05:00
-            return currentTimeValue >= startTime || currentTimeValue <= endTime;
+            return currentTimeValue >= startTime || currentTimeValue < endTime;
         } else {
-            return currentTimeValue >= startTime && currentTimeValue <= endTime;
+            return currentTimeValue >= startTime && currentTimeValue < endTime;
         }
     }
 
     /**
      * 計算從當前時間到指定時間範圍的等待時間
+     * 區間為**半開** [start, end)：遊戲窗「05–08」代表 05:00–07:59，08:00 即關窗。
+     * ⚠ 2026-07-17 修：原本用 `<= endTime`（閉區間），窗尾整整多開 1 ET 分鐘（≈2.9 秒現實），
+     *   會讓 82 個有時間條件的條目在窗已關時仍短暫顯示「現在可進行」。codex 對抗審抓到。
      * @param {number} startTime - 開始時間 (格式: 800)
      * @param {number} endTime - 結束時間 (格式: 1200)
      * @param {number} timestamp - 當前 Unix timestamp
@@ -147,12 +151,12 @@ const EorzeaTime = (function() {
         const time = getCurrentEorzeaTime(timestamp);
         const currentTimeValue = time.hours * 100 + time.minutes;
 
-        // 檢查是否在範圍內
+        // 檢查是否在範圍內（半開區間，見上方註解）
         let inRange = false;
         if (startTime > endTime) {
-            inRange = currentTimeValue >= startTime || currentTimeValue <= endTime;
+            inRange = currentTimeValue >= startTime || currentTimeValue < endTime;
         } else {
-            inRange = currentTimeValue >= startTime && currentTimeValue <= endTime;
+            inRange = currentTimeValue >= startTime && currentTimeValue < endTime;
         }
 
         if (inRange) {
@@ -193,16 +197,21 @@ const EorzeaTime = (function() {
      * @returns {string} 格式化字串
      */
     function formatWaitTime(ms) {
-        // 安全檢查
-        if (ms === null || ms === undefined || isNaN(ms)) {
+        // 安全檢查。⚠ 不可用 isNaN(ms)：它會收斂，isNaN('')===false → '' 會掉進下面的 ms<=0 印成「現在」。
+        // Number.isFinite 不收斂，null/undefined/''/[] 一律當未知。
+        if (!Number.isFinite(ms)) {
             return '計算中...';
         }
 
         if (ms <= 0) return '現在';
 
-        // 如果超過 24 小時，顯示特殊文字
-        if (ms > 24 * 60 * 60 * 1000) {
-            return '> 24 小時';
+        // 超過一天改用「N 天」：天氣∩時間交集的等待動輒數天（#044 最長 7.2 天），
+        // 舊的「> 24 小時」分不出 25 小時和 7 天，對玩家沒有決策價值。
+        const DAY_MS = 24 * 60 * 60 * 1000;
+        if (ms >= DAY_MS) {
+            const days = Math.floor(ms / DAY_MS);
+            const restHours = Math.floor((ms % DAY_MS) / (60 * 60 * 1000));
+            return restHours > 0 ? `${days} 天 ${restHours} 小時` : `${days} 天`;
         }
 
         const totalSeconds = Math.floor(ms / 1000);
