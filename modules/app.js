@@ -204,7 +204,14 @@ function tick(ui, now) {
   if (ui.et && typeof ET.getCurrentEorzeaTime === 'function' && typeof ET.formatTime === 'function') { try { ui.et.textContent = ET.formatTime(ET.getCurrentEorzeaTime(now)); } catch { ui.et.textContent = '--:--'; } }
   if (ui.local) { const d = new Date(now); ui.local.textContent = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
   if (ui.countdown && typeof ET.getTimeUntilNextWeather === 'function') { try { ui.countdown.textContent = formatMMSS(ET.getTimeUntilNextWeather(now).ms); } catch { ui.countdown.textContent = '--:--'; } }
-  $$('.ss-card', ui.grid).forEach(element => updateCard(element, state.visible.get(element.dataset.id), now));
+  // 效能：每秒只刷「有 gating（時間/天氣）」的卡；無條件的卡狀態靜態（隨時可進行），免逐秒重算
+  $$('.ss-card', ui.grid).forEach(element => {
+    const item = state.visible.get(element.dataset.id);
+    if (!item) return;
+    const a = item.availability;
+    if (a && !a.time.gated && !a.weather.gated) return;
+    updateCard(element, item, now);
+  });
   stats(ui, Array.from(state.visible.values()));
   updateNextHint(ui);
 }

@@ -1,5 +1,5 @@
 /**
- * zones.js — 探索筆記 zone metadata（AUTO-GEN by tmp/build_zones.py，勿手改）
+ * zones.js — 探索筆記 zone metadata（AUTO-GEN by tools/build_zones.py，勿手改）
  * tc=繁中服正名(tc_PlaceName) · image/sf=xivapi 底圖(maps.json) · weatherZone=cycleapple weather.js key
  */
 window.SIGHTSEEING_ZONES = {

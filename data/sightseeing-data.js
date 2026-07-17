@@ -1,5 +1,5 @@
 /**
- * sightseeing-data.js — 探索筆記全 340 筆（AUTO-GEN by tmp/build_data.py，勿手改）
+ * sightseeing-data.js — 探索筆記全 340 筆（AUTO-GEN by tools/build_data.py，勿手改）
  * 名稱/時間/emote＝遊戲原生 Adventure sheet（官方繁中）· 座標＝cycleapple(ARR)/babelin(HW–DT)
  */
 window.SIGHTSEEING_DATA = {

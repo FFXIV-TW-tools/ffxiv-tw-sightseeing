@@ -62,7 +62,8 @@
 .ss-card::before { content: ""; position: absolute; inset-block: 0; inset-inline-start: 0; width: 3px; background: var(--ss-border); transition: background var(--transition-fast, .15s ease); }
 .ss-card:hover { border-color: var(--ss-accent); box-shadow: var(--shadow-card-hover, 0 6px 18px rgba(0,0,0,.4)); }
 .ss-card--available::before { background: var(--ss-success); }
-.ss-card.completed { opacity: .58; }
+.ss-card.completed { opacity: .72; }
+.ss-card.completed:hover, .ss-card.completed:focus-within { opacity: 1; }  /* 互動時恢復對比：控件可用、focus 環可見（a11y）*/
 .ss-card.completed .ss-title { text-decoration: line-through; text-decoration-color: var(--ss-muted); }
 .ss-card--flash { animation: ss-flash 1.4s ease; }
 @keyframes ss-flash { 0%, 100% { box-shadow: var(--shadow-card, 0 1px 2px rgba(0,0,0,.3)); } 25% { box-shadow: 0 0 0 3px var(--ss-accent); } }
