@@ -18,10 +18,11 @@
 }
 
 /* ── 時間 / 天氣列 ── */
-.ss-timebar { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4, 16px); margin-block: var(--space-5, 20px); }
-.ss-time-item { display: flex; min-width: 0; flex-direction: column; gap: var(--space-1, 4px); }
-.ss-time-item > * { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ss-time-item .codex-big { color: var(--ss-accent); }
+.ss-timebar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3, 12px) var(--space-6, 24px); margin-block: var(--space-4, 16px); }
+.ss-time-item { display: flex; min-width: 0; align-items: baseline; gap: var(--space-2, 8px); }
+.ss-time-item .codex-label { flex: 0 0 auto; }
+.ss-time-item .codex-big { color: var(--ss-accent); font-size: 1.6rem; line-height: 1.1; letter-spacing: .02em; }
+.ss-time-item .codex-body { font-family: var(--font-mono, monospace); font-size: var(--fs-body, 14px); color: var(--ss-text); }
 
 /* ── 版本分頁（含「全部」）── */
 .ss-exp-tabs { display: flex; flex-wrap: wrap; gap: var(--space-2, 8px); margin-block: var(--space-5, 20px) var(--space-3, 12px); }
@@ -44,15 +45,18 @@
 .ss-stats { margin-block: var(--space-3, 12px) var(--space-2, 8px); color: var(--ss-muted); }
 .ss-stats b { color: var(--ss-accent); font-weight: var(--fw-bold, 700); }
 
-/* ── 下一個可進行 提示列 ── */
-.ss-next-hint { display: flex; align-items: center; gap: var(--space-3, 12px); width: 100%; margin-block: var(--space-3, 12px) var(--space-4, 16px); padding: var(--space-3, 12px) var(--space-4, 16px); border: thin solid var(--ss-accent); border-radius: var(--radius-sm, 6px); background: linear-gradient(90deg, var(--ss-accent-soft), transparent 70%); color: var(--ss-text); font: inherit; text-align: start; cursor: pointer; transition: var(--transition-fast, .15s ease); }
-.ss-next-hint:hover { background: linear-gradient(90deg, var(--ss-accent-soft), var(--ss-accent-soft)); }
+/* ── 下一個可進行 提示（top 3，含版本）── */
+.ss-next-hint { margin-block: var(--space-3, 12px) var(--space-4, 16px); padding: var(--space-2, 8px) var(--space-3, 12px); border: thin solid var(--ss-accent); border-radius: var(--radius-sm, 6px); background: linear-gradient(90deg, var(--ss-accent-soft), transparent 82%); }
 .ss-next-hint[hidden] { display: none; }
-.ss-nh-key { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; color: var(--ss-accent); font-family: var(--font-mono, monospace); font-size: var(--fs-xs, 11px); letter-spacing: .12em; }
+.ss-nh-key { display: inline-flex; align-items: center; gap: 6px; padding-inline: var(--space-1, 4px); color: var(--ss-accent); font-family: var(--font-mono, monospace); font-size: var(--fs-xs, 11px); letter-spacing: .12em; }
 .ss-nh-key::before { content: "\23ED"; }
+.ss-nh-list { display: flex; flex-direction: column; margin-top: 4px; }
+.ss-nh-item { display: flex; align-items: center; flex-wrap: wrap; gap: 3px var(--space-3, 12px); width: 100%; padding: 4px var(--space-2, 8px); border: 0; border-radius: var(--radius-sm, 6px); background: transparent; color: var(--ss-text); font: inherit; font-size: var(--fs-small, 12px); text-align: start; cursor: pointer; transition: background var(--transition-fast, .15s ease); }
+.ss-nh-item:hover, .ss-nh-item:focus-visible { background: var(--ss-accent-soft); outline: none; }
+.ss-nh-ver { flex: 0 0 auto; padding: 1px 7px; border-radius: var(--radius-pill, 999px); background: var(--ss-surface-2); color: var(--ss-accent); font-family: var(--font-mono, monospace); font-size: var(--fs-xs, 11px); font-weight: var(--fw-bold, 700); }
 .ss-nh-ord { flex: 0 0 auto; font-family: var(--font-mono, monospace); color: var(--ss-muted); }
 .ss-nh-name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: var(--fw-semibold, 600); }
-.ss-nh-zone { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ss-muted); font-size: var(--fs-small, 12px); }
+.ss-nh-zone { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ss-muted); }
 .ss-nh-wait { flex: 0 0 auto; margin-inline-start: auto; padding: 2px 8px; border-radius: var(--radius-pill, 999px); background: var(--ss-surface); color: var(--ss-accent); font-family: var(--font-mono, monospace); font-weight: var(--fw-bold, 700); }
 
 /* ── 卡片格 ── */
@@ -112,6 +116,8 @@
 /* 引導說明（有填才顯示；可多行）*/
 .ss-guide { display: flex; gap: var(--space-2, 8px); margin: 0; padding: var(--space-2, 8px) var(--space-4, 16px); padding-inline-start: calc(var(--space-4, 16px) + 3px); border-top: thin solid var(--ss-hair); color: var(--ss-text); font-size: var(--fs-small, 12px); line-height: 1.5; }
 .ss-guide-key { flex: 0 0 auto; align-self: flex-start; padding: 1px 7px; border-radius: var(--radius-pill, 999px); background: var(--ss-accent-soft); color: var(--ss-accent); font-family: var(--font-mono, monospace); font-size: var(--fs-xs, 11px); }
+.ss-guide-txt { min-width: 0; overflow-wrap: anywhere; }
+.ss-guide--empty .ss-guide-txt { color: var(--ss-muted); }
 
 /* note */
 .ss-note { display: flex; gap: var(--space-2, 8px); margin: 0; padding: var(--space-2, 8px) var(--space-4, 16px); padding-inline-start: calc(var(--space-4, 16px) + 3px); color: var(--ss-warn); font-size: var(--fs-small, 12px); }

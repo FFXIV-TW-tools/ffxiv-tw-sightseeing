@@ -100,7 +100,7 @@
   <main class="container">
 
     <!-- === 時間 / 天氣列（app.js updateTime 每秒刷新）=== -->
-    <section class="codex-tablet codex-tablet--cyan ss-timebar" style="padding: 1rem 1.25rem;">
+    <section class="codex-tablet codex-tablet--cyan ss-timebar" style="padding: 0.55rem 1rem;">
       <span class="codex-hud" aria-hidden="true"></span>
       <div class="ss-time-item">
         <span class="codex-label codex-label--muted">艾歐澤亞時間</span>
@@ -143,8 +143,8 @@
       可進行 <b id="active-count">0</b>
     </section>
 
-    <!-- === 下一個可進行 提示（app.js updateNextHint 填入）=== -->
-    <button type="button" class="ss-next-hint" id="next-hint" hidden></button>
+    <!-- === 下一個可進行 提示（app.js updateNextHint 填入 top 3）=== -->
+    <div class="ss-next-hint" id="next-hint" hidden></div>
 
     <!-- === 探索筆記卡片格（app.js renderLogs 填入）=== -->
     <section class="ss-grid" id="log-grid" aria-live="polite"></section>

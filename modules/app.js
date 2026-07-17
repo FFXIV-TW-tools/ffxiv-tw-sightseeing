@@ -8,6 +8,7 @@ const ZONES = window.SIGHTSEEING_ZONES || {};
 const GUIDES = window.SIGHTSEEING_GUIDES || {};
 const EXPS = ['arr', 'hw', 'sb', 'shb', 'ew', 'dt'];
 const EXP_NAMES = { arr: '新生', hw: '蒼天', sb: '紅蓮', shb: '漆黑', ew: '曉月', dt: '黃金' };
+const VER = { arr: '2.x', hw: '3.x', sb: '4.x', shb: '5.x', ew: '6.x', dt: '7.x' };
 const STORE = 'ffxiv-sightseeing-completed';
 const ET = window.EorzeaTime || {};
 const WT = window.Weather || {};
@@ -91,20 +92,25 @@ function badges() { EXPS.forEach(exp => { const el = $('#badge-' + exp); if (el)
 function updateNextHint(ui) {
   const hint = $('#next-hint');
   if (!hint) return;
-  let best = null;
+  const cands = [];
   state.visible.forEach(item => {
     const ms = item.availability && item.availability.nextMs;
-    if (Number.isFinite(ms) && ms > 0 && (!best || ms < best.ms)) best = { item: item, ms: ms };
+    if (Number.isFinite(ms) && ms > 0) cands.push({ item: item, ms: ms });
   });
-  if (!best) { hint.hidden = true; hint.dataset.target = ''; return; }
-  const entry = best.item.entry;
+  if (!cands.length) { hint.hidden = true; hint.innerHTML = ''; return; }
+  cands.sort((a, b) => a.ms - b.ms);
   hint.hidden = false;
-  hint.dataset.target = best.item.id;
   hint.innerHTML = '<span class="ss-nh-key">下一個可進行</span>' +
-    '<span class="ss-nh-ord">#' + esc(pad(entry.no)) + '</span>' +
-    '<span class="ss-nh-name">' + esc(itemName(entry)) + '</span>' +
-    '<span class="ss-nh-zone">' + esc((best.item.zone || {}).tc || '') + '</span>' +
-    '<span class="ss-nh-wait">' + esc(wait(best.ms)) + '</span>';
+    '<div class="ss-nh-list">' + cands.slice(0, 3).map(c => {
+      const entry = c.item.entry, exp = expOf(entry);
+      return '<button type="button" class="ss-nh-item" data-target="' + esc(c.item.id) + '">' +
+        '<span class="ss-nh-ver">' + esc(VER[exp] || '') + ' ' + esc(EXP_NAMES[exp] || '') + '</span>' +
+        '<span class="ss-nh-ord">#' + esc(pad(entry.no)) + '</span>' +
+        '<span class="ss-nh-name">' + esc(itemName(entry)) + '</span>' +
+        '<span class="ss-nh-zone">' + esc((c.item.zone || {}).tc || '') + '</span>' +
+        '<span class="ss-nh-wait">' + esc(wait(c.ms)) + '</span>' +
+      '</button>';
+    }).join('') + '</div>';
 }
 function updateZones(ui) {
   if (!ui.zone) return;
@@ -163,7 +169,7 @@ function card(item) {
       '<div class="ss-map">' + (mapHTML(entry, z) || '<div class="ss-map-empty">地圖資料暫缺</div>') + '</div>' +
       '<dl class="ss-ledger">' + rows.join('') + '</dl>' +
     '</div>' +
-    (guide ? '<p class="ss-guide"><span class="ss-guide-key">引導</span>' + esc(guide) + '</p>' : '') +
+    '<p class="ss-guide' + (guide ? '' : ' ss-guide--empty') + '"><span class="ss-guide-key">引導</span><span class="ss-guide-txt">' + (guide ? esc(guide) : '—') + '</span></p>' +
     (entry.note ? '<p class="ss-note">' + esc(entry.note) + '</p>' : '') +
     '<footer class="ss-foot"><span class="ss-dot" aria-hidden="true"></span><span class="ss-state" data-live="status"></span><span class="ss-next" data-live="next"></span></footer>' +
     '</article>';
@@ -259,8 +265,9 @@ function init() {
     stats(ui, Array.from(state.visible.values()));
   });
   const hint = $('#next-hint');
-  if (hint) hint.addEventListener('click', () => {
-    const id = hint.dataset.target;
+  if (hint) hint.addEventListener('click', event => {
+    const it = event.target instanceof Element ? event.target.closest('.ss-nh-item') : null;
+    const id = it && it.dataset.target;
     const el = id && $$('.ss-card', ui.grid).find(card => card.dataset.id === id);
     if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('ss-card--flash'); setTimeout(() => el.classList.remove('ss-card--flash'), 1400); }
   });
