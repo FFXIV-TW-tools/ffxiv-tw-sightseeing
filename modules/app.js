@@ -33,7 +33,9 @@ const hasTime = entry => timeValue(entry.timeStart) !== null && timeValue(entry.
 const targets = entry => Array.isArray(entry.weathers) ? entry.weathers.filter(Boolean) : [];
 const hasWeather = entry => targets(entry).length > 0;
 const formatMMSS = ms => { if (!Number.isFinite(Number(ms)) || Number(ms) < 0) return '--:--'; const s = Math.floor(Number(ms) / 1000); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); };
-const wait = ms => !Number.isFinite(Number(ms)) ? '計算中' : Number(ms) <= 0 ? '現在' : typeof ET.formatWaitTime === 'function' ? ET.formatWaitTime(ms) : formatMMSS(ms);
+// ⚠ 不可寫成 Number.isFinite(Number(ms))：Number(null)===0（不是 NaN）會逃過守門、被印成「現在」——
+// 而 null 的語義是「未知／找不到」。2026-07-17 南林區雷雨誤顯示「下一次 現在」的根因。
+const wait = ms => !Number.isFinite(ms) ? '計算中' : ms <= 0 ? '現在' : typeof ET.formatWaitTime === 'function' ? ET.formatWaitTime(ms) : formatMMSS(ms);
 const weatherTC = value => { try { return typeof WT.getWeatherNameTC === 'function' ? WT.getWeatherNameTC(value) : value; } catch { return value; } };
 const timeLabel = entry => { if (!hasTime(entry)) return ''; const f = value => String(Math.floor(Number(value) < 24 ? Number(value) : Number(value) / 100)).padStart(2, '0') + ':00'; return f(entry.timeStart) + '–' + f(entry.timeEnd); };
 
@@ -54,11 +56,38 @@ function getWeatherWait(next, now) {
 function nextWeather(z, wanted, now) {
   if (!z.weatherZone || !wanted.length || typeof WT.findNextWeather !== 'function') return null;
   try {
-    const result = WT.findNextWeather(z.weatherZone, wanted, 100);
+    const result = WT.findNextWeather(z.weatherZone, wanted);
     if (!result) return null;
     const ms = getWeatherWait({ result: result }, now);
     return Number.isFinite(ms) ? { result: result, time: result.time, msUntil: ms } : null;
   } catch { return null; }
+}
+// 掃未來天氣週期，回「天氣符合 ∩ 時間窗開啟」的第一刻（epoch ms）；掃描窗內找不到回 null。
+// ⚠ 絕不可退回 Math.max(時間等待, 天氣等待)：ET 一天＝4200 秒＝剛好 3 個天氣週期，兩個閘各自
+//    循環，max 只保證「較晚那個到了」，不保證那一刻另一個還成立 —— 天氣週期只有 23分20秒，
+//    等到時間窗開時該天氣多半早就過了。2026-07-17 實測：80/80 個 both-gated 條目、67.5% 給錯時間。
+// 跨午夜窗（18–5，21 個條目）不自行推算，一律交給已處理 wrap 的 ET.getTimeUntilRange，避免平行實作。
+function nextBothOK(entry, z, wanted, now) {
+  if (!z.weatherZone || typeof WT.getWeatherForZone !== 'function' || typeof ET.getTimeUntilRange !== 'function') return null;
+  const period = Number(ET.WEATHER_PERIOD_MS);
+  const scan = Number(WT.SCAN_PERIODS);
+  if (!Number.isFinite(period) || !Number.isFinite(scan)) return null;
+  const start = timeValue(entry.timeStart);
+  const end = timeValue(entry.timeEnd);
+  try {
+    const first = Math.floor(now / period) * period;
+    for (let i = 0; i < scan; i++) {
+      const pStart = first + i * period;
+      const pEnd = pStart + period;
+      // 天氣在整個週期內固定（種子按 8 ET 小時算），取週期起點判定即可
+      if (!wanted.includes(WT.getWeatherForZone(z.weatherZone, Math.floor(pStart / 1000)))) continue;
+      const from = Math.max(pStart, now);
+      const result = ET.getTimeUntilRange(start, end, from) || {};
+      const open = result.inRange ? from : from + Number(result.waitMs);
+      if (Number.isFinite(open) && open < pEnd) return open; // 窗在這個天氣週期內開啟＝兩閘同時成立
+    }
+  } catch { return null; }
+  return null;
 }
 function availability(entry, z, now) {
   const timeGate = hasTime(entry);
@@ -74,9 +103,18 @@ function availability(entry, z, now) {
   const current = weatherGate ? currentWeather(z, now) : null;
   const weatherOK = !weatherGate || Boolean(current && wanted.includes(current.value));
   const next = weatherGate && !weatherOK ? nextWeather(z, wanted, now) : null;
-  const unknown = (timeGate && time.waitMs === null) || (weatherGate && !current && !next);
+  // 天氣未知＝要看天氣但「現在天氣讀不到」或「掃描窗內找不到下一次符合」。
+  // ⚠ 後者絕不可當 0：0 的語義是「不用等」，會讓下游把「算不出來」顯示成「現在／不必等」。
+  const weatherUnknown = weatherGate && !weatherOK && (!current || !next);
+  const unknown = (timeGate && time.waitMs === null) || weatherUnknown;
   const available = !unknown && time.inRange && weatherOK;
-  const nextMs = unknown ? null : available ? 0 : Math.max(time.inRange ? 0 : time.waitMs || 0, weatherOK ? 0 : next ? next.msUntil : 0);
+  // 兩閘都有＝必須掃交集（單閘才能直接用該閘的等待時間）。
+  // 走到 else 若 !weatherOK 則 next 必非 null（否則已被 weatherUnknown 攔成 unknown）。
+  let nextMs;
+  if (unknown) nextMs = null;
+  else if (available) nextMs = 0;
+  else if (timeGate && weatherGate) { const open = nextBothOK(entry, z, wanted, now); nextMs = open === null ? null : Math.max(0, open - now); }
+  else nextMs = timeGate ? time.waitMs : next.msUntil;
   return { available: available, status: unknown ? '等待中（條件資料不足）' : !timeGate && !weatherGate ? '隨時可進行' : available ? '現在可進行' : '目前不可進行', nextMs: nextMs, time: time, weather: { gated: weatherGate, current: current, matches: weatherOK, next: next, wanted: wanted } };
 }
 function loadDone() {
@@ -197,7 +235,9 @@ function updateCard(element, item, now) {
   const status = $('[data-live="status"]', element);
   if (status) { status.textContent = a.status; status.classList.toggle('ss-status--success', a.available); status.classList.toggle('ss-status--muted', !a.available); }
   const next = $('[data-live="next"]', element);
-  if (next) { next.textContent = a.available || a.nextMs === 0 ? '' : '下次可進行：' + wait(a.nextMs); next.hidden = !next.textContent; }
+  // 判準與 updateNextHint／排序／ss-card--soon 一致：只有「確定要等且等得到」才顯示時間。
+  // ⚠ 舊寫法 a.nextMs === 0 才隱藏 → nextMs=null（未知）不等於 0，反而印出「下次可進行：現在」。
+  if (next) { next.textContent = Number.isFinite(a.nextMs) && a.nextMs > 0 ? '下次可進行：' + wait(a.nextMs) : ''; next.hidden = !next.textContent; }
   const time = $('[data-live="time"]', element);
   if (time && a.time.gated) time.textContent = a.time.inRange ? timeLabel(item.entry) + ' · 符合' : timeLabel(item.entry) + ' · 下一時段 ' + wait(a.time.waitMs);
   const weather = $('[data-live="weather"]', element);
@@ -306,3 +346,6 @@ function init() {
   setInterval(() => tick(ui, Date.now()), 1000);
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true }); else init();
+
+// 純函式對外導出，供 tools/validate-availability.mjs 迴歸測試（瀏覽器端不使用，無執行期影響）
+export { wait, availability, timeValue };

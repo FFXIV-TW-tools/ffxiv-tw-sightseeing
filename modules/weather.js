@@ -35,6 +35,15 @@ const Weather = (function() {
     // 天氣週期長度 (毫秒) - 8 艾歐澤亞小時
     const WEATHER_PERIOD = 1400000; // 23分20秒 = 1,400,000ms
 
+    // 預設掃描窗（週期數）＝「往前預測多遠」的單一事實源，findNextWeather 與 app.js 的
+    // 天氣∩時間交集掃描共用。1500 週期 ≈ 24.3 天。
+    // 舊值 100（≈38.9 小時）太小，2026-07-17 實測跨 2.7 年模擬的實際最大間隔：
+    //   · 只看天氣：185 週期（East Shroud 打雷）→ 舊窗 100 必然週期性掃不到
+    //   · 天氣 ∩ 時間窗：447 週期 ≈ 7.2 天（South Shroud 雷雨 × ET 08–12，即 #044 巴斯卡隆酒家）
+    // 取 1500 對實測最差值有 3.4× 餘裕。放大不增成本：迴圈找到即 return，
+    // 掃滿只發生在「真的沒有」時（實測 100 與 1500 皆 ~0.03ms/tick）。
+    const SCAN_PERIODS = 1500;
+
     // 區域別名映射 (子區域 -> 主區域)
     const ZONE_ALIASES = {
         "Limsa Lominsa Upper Decks": "Limsa Lominsa",
@@ -433,10 +442,10 @@ const Weather = (function() {
      * 尋找下一個符合條件的天氣
      * @param {string} zone - 區域名稱
      * @param {Array} targetWeathers - 目標天氣列表
-     * @param {number} maxPeriods - 最大搜尋週期數
-     * @returns {Object|null} 找到的天氣資訊或 null
+     * @param {number} maxPeriods - 最大搜尋週期數（預設 SCAN_PERIODS）
+     * @returns {Object|null} 找到的天氣資訊；掃描窗內找不到回 null（呼叫端不可當 0 處理）
      */
-    function findNextWeather(zone, targetWeathers, maxPeriods = 100) {
+    function findNextWeather(zone, targetWeathers, maxPeriods = SCAN_PERIODS) {
         const periodSeconds = 1400;
         const now = Math.floor(Date.now() / 1000);
         const currentPeriod = Math.floor(now / periodSeconds);
@@ -470,6 +479,7 @@ const Weather = (function() {
 
     // 公開 API
     return {
+        SCAN_PERIODS,
         WEATHER_ICONS,
         ZONE_WEATHER,
         ZONE_ALIASES,
