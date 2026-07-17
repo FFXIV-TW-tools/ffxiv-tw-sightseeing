@@ -118,7 +118,8 @@
 
     <!-- === 版本分頁（2.0~7.0）=== -->
     <nav class="ss-exp-tabs" id="exp-tabs" aria-label="版本分頁">
-      <button class="ss-tab" data-exp="arr" aria-pressed="true">2.x 新生<span class="ss-tab-badge" id="badge-arr">80</span></button>
+      <button class="ss-tab" data-exp="all" aria-pressed="true">全部<span class="ss-tab-badge" id="badge-all">340</span></button>
+      <button class="ss-tab" data-exp="arr" aria-pressed="false">2.x 新生<span class="ss-tab-badge" id="badge-arr">80</span></button>
       <button class="ss-tab" data-exp="hw"  aria-pressed="false">3.x 蒼天<span class="ss-tab-badge" id="badge-hw">62</span></button>
       <button class="ss-tab" data-exp="sb"  aria-pressed="false">4.x 紅蓮<span class="ss-tab-badge" id="badge-sb">62</span></button>
       <button class="ss-tab" data-exp="shb" aria-pressed="false">5.x 漆黑<span class="ss-tab-badge" id="badge-shb">45</span></button>
@@ -141,6 +142,9 @@
       已完成 <b id="completed-count">0</b>（<b id="completed-percent">0</b>%）·
       可進行 <b id="active-count">0</b>
     </section>
+
+    <!-- === 下一個可進行 提示（app.js updateNextHint 填入）=== -->
+    <button type="button" class="ss-next-hint" id="next-hint" hidden></button>
 
     <!-- === 探索筆記卡片格（app.js renderLogs 填入）=== -->
     <section class="ss-grid" id="log-grid" aria-live="polite"></section>
