@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<!--
+  FFXIV 繁中服 探索筆記工具（Sightseeing Log）
+  ============================================
+  骨架 + element ID 契約由 CC 維護；JS 模組（app/eorzea-time/weather）由 codex 實作、
+  資料（sightseeing-data）由 grok 產出。地圖渲染 vendored from marketboard（modules/map_view.js）。
+-->
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="google-site-verification" content="d5WDZwqeL4aAN0vGxMvg4mAi1OtpBhcr_xLJJ-3sXBI">
+<meta name="tool-name" content="探索筆記">
+<title>FFXIV 探索筆記 — 繁中服探索日誌收集工具</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔭</text></svg>">
+<meta name="description" content="FFXIV 繁中服探索筆記（Sightseeing Log）收集工具：2.0~7.0 全 340 個探索日誌，含地圖座標、艾歐澤亞時間、天氣條件與表情提示。">
+
+<!-- SEO（<HOST_URL> 部署後填 https://ffxiv-tw-sightseeing.pages.dev/）-->
+<link rel="canonical" href="<HOST_URL>">
+<meta property="og:url" content="<HOST_URL>">
+<meta property="og:site_name" content="FFXIV 繁中服工具箱">
+<meta property="og:title" content="FFXIV 探索筆記">
+<meta property="og:description" content="繁中服探索筆記收集工具：2.0~7.0 全 340 個探索日誌，含地圖座標、時間、天氣與表情提示。">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://ffxiv-tw-tools-portal.pages.dev/og-image.png">
+<meta property="og:locale" content="zh_TW">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="preconnect" href="https://ffxiv-tw-tools-portal.pages.dev" crossorigin>
+<link rel="preconnect" href="https://xivapi.com" crossorigin>
+<!-- Portal 共享資源（tokens/header CDN）— document.write 為唯一標準寫法（parser-inserted defer 保序）-->
+<script>(function(){
+  var dev = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  var base = dev ? 'http://localhost:8774/ffxiv-tw-tools-portal/' : 'https://ffxiv-tw-tools-portal.pages.dev/';
+  document.write(
+    '<link rel="stylesheet" href="' + base + 'tokens.css">' +
+    '<link rel="stylesheet" href="' + base + 'header.css">' +
+    '<script defer src="' + base + 'header.js"><\/script>' +
+    '<script defer src="' + base + 'settings-client.js"><\/script>'
+  );
+})();</script>
+
+<style>
+  * { box-sizing: border-box; }
+  :root {
+    --accent:      var(--color-accent-cyan, #4ec9d0);
+    --accent-2:    var(--color-accent-cyan-hover, #5dd1d8);
+    --accent-soft: var(--color-accent-cyan-soft, rgba(78, 201, 208, 0.18));
+    --bg-1:     var(--color-bg, #0d1b2a);
+    --bg-2:     var(--color-surface, #1b263b);
+    --bg-3:     var(--color-surface-hover, #243349);
+    --text:     var(--color-text, #f5f5f5);
+    --text-dim: var(--color-text-muted, #b0bdd0);
+    --border:   var(--color-border, #2f3650);
+    --warn:     var(--color-warn, #e8a45a);
+    --danger:   var(--color-danger, #e57373);
+    --success:  var(--color-success, #7dd87d);
+  }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-sans, "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif);
+    background:
+      var(--pattern-overlay),
+      var(--pattern-scanline),
+      var(--gradient-body, linear-gradient(135deg, #0d1b2a, #1a1f2e, #2b3450));
+    color: var(--text);
+    min-height: 100vh;
+    padding-top: 64px;  /* 預留 fixed navbar，避免跨域 header.css 晚到 CLS */
+  }
+  @media (max-width: 640px) { body { padding-top: 56px; } }
+  .container { max-width: 1200px; margin: 0 auto; padding-inline: var(--space-4, 16px); }
+</style>
+
+<link rel="stylesheet" href="styles/90-map.css">
+<link rel="stylesheet" href="css/style.css">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "FFXIV 探索筆記",
+  "url": "<HOST_URL>",
+  "description": "FFXIV 繁中服探索筆記（Sightseeing Log）收集工具：2.0~7.0 全 340 個探索日誌，含地圖座標、艾歐澤亞時間、天氣條件與表情提示。",
+  "applicationCategory": "GameApplication",
+  "operatingSystem": "Web",
+  "browserRequirements": "Requires JavaScript",
+  "inLanguage": "zh-TW",
+  "isAccessibleForFree": true,
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "TWD" },
+  "isPartOf": { "@type": "WebSite", "@id": "https://ffxiv-tw-tools-portal.pages.dev/#website" },
+  "publisher": { "@type": "Organization", "name": "FFXIV TW Tools", "url": "https://ffxiv-tw-tools-portal.pages.dev/" }
+}
+</script>
+</head>
+<body>
+  <header class="page-header">
+    <h1 class="codex-h1"><span class="ph-icon" aria-hidden="true">🔭</span>探索筆記 <span class="sub codex-label codex-label--muted">FFXIV 繁中服</span></h1>
+  </header>
+
+  <main class="container">
+
+    <!-- === 時間 / 天氣列（app.js updateTime 每秒刷新）=== -->
+    <section class="codex-tablet codex-tablet--cyan ss-timebar" style="padding: 1rem 1.25rem;">
+      <span class="codex-hud" aria-hidden="true"></span>
+      <div class="ss-time-item">
+        <span class="codex-label codex-label--muted">艾歐澤亞時間</span>
+        <span class="codex-big" id="et-clock">--:--</span>
+      </div>
+      <div class="ss-time-item">
+        <span class="codex-label codex-label--muted">現實時間</span>
+        <span class="codex-body" id="local-time">--:--</span>
+      </div>
+      <div class="ss-time-item">
+        <span class="codex-label codex-label--muted">下次天氣變化</span>
+        <span class="codex-body" id="weather-countdown">--:--</span>
+      </div>
+    </section>
+
+    <!-- === 版本分頁（2.0~7.0）=== -->
+    <nav class="ss-exp-tabs" id="exp-tabs" aria-label="版本分頁">
+      <button class="ss-tab" data-exp="arr" aria-pressed="true">2.x 新生<span class="ss-tab-badge" id="badge-arr">80</span></button>
+      <button class="ss-tab" data-exp="hw"  aria-pressed="false">3.x 蒼天<span class="ss-tab-badge" id="badge-hw">62</span></button>
+      <button class="ss-tab" data-exp="sb"  aria-pressed="false">4.x 紅蓮<span class="ss-tab-badge" id="badge-sb">62</span></button>
+      <button class="ss-tab" data-exp="shb" aria-pressed="false">5.x 漆黑<span class="ss-tab-badge" id="badge-shb">45</span></button>
+      <button class="ss-tab" data-exp="ew"  aria-pressed="false">6.x 曉月<span class="ss-tab-badge" id="badge-ew">46</span></button>
+      <button class="ss-tab" data-exp="dt"  aria-pressed="false">7.x 黃金<span class="ss-tab-badge" id="badge-dt">45</span></button>
+    </nav>
+
+    <!-- === 篩選列 === -->
+    <section class="ss-filters">
+      <input type="search" id="search-input" class="ss-search" placeholder="搜尋名稱 / 地區…" autocomplete="off">
+      <select id="zone-filter" class="ss-select"><option value="">全部地區</option></select>
+      <label class="ss-check"><input type="checkbox" id="hide-completed"> 隱藏已完成</label>
+      <label class="ss-check" id="only-available-wrap"><input type="checkbox" id="only-available"> 僅顯示可進行</label>
+      <label class="ss-check"><input type="checkbox" id="sort-by-time"> 依可進行時間排序</label>
+    </section>
+
+    <!-- === 統計列 === -->
+    <section class="ss-stats codex-small">
+      顯示 <b id="visible-count">0</b> / <b id="total-count">0</b> ·
+      已完成 <b id="completed-count">0</b>（<b id="completed-percent">0</b>%）·
+      可進行 <b id="active-count">0</b>
+    </section>
+
+    <!-- === 探索筆記卡片格（app.js renderLogs 填入）=== -->
+    <section class="ss-grid" id="log-grid" aria-live="polite"></section>
+
+  </main>
+
+  <!-- 模組（codex 實作 app/eorzea-time/weather；map_view/esc vendored；data by grok）-->
+  <script src="data/zones.js"></script>
+  <script src="data/sightseeing-data.js"></script>
+  <script type="module" src="modules/app.js"></script>
+</body>
+</html>
