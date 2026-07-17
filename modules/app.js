@@ -10,6 +10,7 @@ const EXPS = ['arr', 'hw', 'sb', 'shb', 'ew', 'dt'];
 const EXP_NAMES = { arr: '新生', hw: '蒼天', sb: '紅蓮', shb: '漆黑', ew: '曉月', dt: '黃金' };
 const VER = { arr: '2.x', hw: '3.x', sb: '4.x', shb: '5.x', ew: '6.x', dt: '7.x' };
 const STORE = 'ffxiv-sightseeing-completed';
+const SOON_MS = 15 * 60 * 1000; // 「即將開放」門檻：15 分鐘內
 const ET = window.EorzeaTime || {};
 const WT = window.Weather || {};
 const TABS = ['all'].concat(EXPS);
@@ -181,6 +182,7 @@ function updateCard(element, item, now) {
   item.availability = a;
   element.dataset.available = String(a.available);
   element.classList.toggle('ss-card--available', a.available);
+  element.classList.toggle('ss-card--soon', !a.available && Number.isFinite(a.nextMs) && a.nextMs > 0 && a.nextMs <= SOON_MS);
   const status = $('[data-live="status"]', element);
   if (status) { status.textContent = a.status; status.classList.toggle('ss-status--success', a.available); status.classList.toggle('ss-status--muted', !a.available); }
   const next = $('[data-live="next"]', element);

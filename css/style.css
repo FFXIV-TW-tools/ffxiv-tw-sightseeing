@@ -66,9 +66,16 @@
 .ss-card { position: relative; display: flex; min-width: 0; flex-direction: column; overflow: hidden; border: thin solid var(--ss-border); border-radius: var(--radius-card, 12px); background: var(--ss-surface); box-shadow: var(--shadow-card, 0 1px 2px rgba(0,0,0,.3)); transition: border-color var(--transition-fast, .15s ease), box-shadow var(--transition-fast, .15s ease); }
 .ss-card::before { content: ""; position: absolute; inset-block: 0; inset-inline-start: 0; width: 3px; background: var(--ss-border); transition: background var(--transition-fast, .15s ease); }
 .ss-card:hover { border-color: var(--ss-accent); box-shadow: var(--shadow-card-hover, 0 6px 18px rgba(0,0,0,.4)); }
+/* 現在可進行＝綠框 */
+.ss-card--available { border-color: var(--ss-success); }
 .ss-card--available::before { background: var(--ss-success); }
-.ss-card.completed { opacity: .74; }
-.ss-card.completed:hover, .ss-card.completed:focus-within { opacity: 1; }
+/* 即將開放（≤15 分）＝黃框 */
+.ss-card--soon { border-color: var(--ss-warn); }
+.ss-card--soon::before { background: var(--ss-warn); }
+/* 已完成＝變暗＋去飽和；框中性化（特定度高於 available/soon，壓過狀態色）*/
+.ss-card.completed { opacity: .5; border-color: var(--ss-border); filter: grayscale(.45); }
+.ss-card.completed::before { background: var(--ss-border); }
+.ss-card.completed:hover, .ss-card.completed:focus-within { opacity: 1; filter: none; }
 .ss-card.completed .ss-title { text-decoration: line-through; text-decoration-thickness: 2px; text-decoration-color: var(--ss-accent); }
 .ss-card.completed .ss-title > span { color: var(--ss-muted); }
 .ss-card--flash { animation: ss-flash 1.4s ease; }
@@ -126,6 +133,7 @@
 .ss-foot { margin-top: auto; display: flex; align-items: center; gap: var(--space-2, 8px); padding: var(--space-2, 8px) var(--space-4, 16px); padding-inline-start: calc(var(--space-4, 16px) + 3px); border-top: thin solid var(--ss-hair); background: var(--ss-surface-2); font-size: var(--fs-small, 12px); }
 .ss-dot { flex: 0 0 auto; width: .55rem; height: .55rem; border-radius: 50%; background: var(--ss-muted); }
 .ss-card--available .ss-dot { background: var(--ss-success); box-shadow: 0 0 7px var(--ss-success); }
+.ss-card--soon .ss-dot { background: var(--ss-warn); box-shadow: 0 0 7px var(--ss-warn); }
 .ss-state { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ss-muted); font-weight: var(--fw-semibold, 600); }
 .ss-state.ss-status--success { color: var(--ss-success); }
 .ss-next { flex: 0 0 auto; margin-inline-start: auto; color: var(--ss-muted); font-family: var(--font-mono, monospace); font-size: var(--fs-xs, 11px); }
