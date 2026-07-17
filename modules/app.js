@@ -118,9 +118,9 @@ function updateNextHint(ui) {
   if (!now.length && !next.length) { hint.hidden = true; hint.innerHTML = ''; return; }
   hint.hidden = false;
   let html = '';
-  if (now.length) html += nhGroup('ss-nh-group--now', '現在可執行',
+  if (now.length) html += nhGroup('ss-nh-group--now codex-tint-panel codex-tint-panel--success', '現在可執行',
     now.slice(0, 3).map(item => nhItem(item, '<span class="ss-nh-wait ss-nh-wait--now">進行中</span>')).join(''));
-  if (next.length) html += nhGroup('ss-nh-group--next', '下一個可執行',
+  if (next.length) html += nhGroup('ss-nh-group--next codex-tint-panel codex-tint-panel--warn', '下一個可執行',
     next.slice(0, 3).map(c => nhItem(c.item, '<span class="ss-nh-wait">' + esc(wait(c.ms)) + '</span>')).join(''));
   hint.innerHTML = html;
 }

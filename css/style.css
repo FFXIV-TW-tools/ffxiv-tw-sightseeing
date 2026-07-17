@@ -49,10 +49,9 @@
 /* ── 可進行提示（現在可執行綠 / 下一個可執行黃 兩組，配色對齊卡片框）── */
 .ss-next-hint { margin-block: var(--space-3, 12px) var(--space-4, 16px); display: flex; flex-direction: column; gap: var(--space-3, 12px); }
 .ss-next-hint[hidden] { display: none; }
-/* 每組＝獨立色框漸層面板：上綠（現在可執行）下橘（下一個可執行），對齊卡片框色 */
-.ss-nh-group { padding: var(--space-2, 8px) var(--space-3, 12px); border: thin solid; border-radius: var(--radius-sm, 6px); }
-.ss-nh-group--now { border-color: var(--ss-success); background: linear-gradient(90deg, color-mix(in srgb, var(--ss-success) 18%, transparent), transparent 82%); }
-.ss-nh-group--next { border-color: var(--ss-warn); background: linear-gradient(90deg, var(--ss-warn-soft), transparent 82%); }
+/* 每組＝獨立色框漸層面板：上綠（現在可執行）下橘（下一個可執行）。
+   框/漸層/padding 全走設計系統 .codex-tint-panel + --success/--warn 變體（app.js 掛 class），
+   此處不再自畫 — 本工具是該元件的來源，2026-07-17 升為共用後回頭消除平行實作（DRY 鐵則）。 */
 .ss-nh-key { display: inline-flex; align-items: center; gap: 6px; padding-inline: var(--space-1, 4px); font-family: var(--font-mono, monospace); font-size: var(--fs-xs, 11px); font-weight: var(--fw-bold, 700); letter-spacing: .12em; }
 .ss-nh-group--now .ss-nh-key { color: var(--ss-success); }
 .ss-nh-group--now .ss-nh-key::before { content: "\25B6"; }
