@@ -86,7 +86,7 @@ function loadDone() {
 }
 function saveDone() { try { window.localStorage.setItem(STORE, JSON.stringify(Array.from(state.done))); } catch {} }
 function uiElements() {
-  return { grid: $('#log-grid'), tabs: $('#exp-tabs'), search: $('#search-input'), zone: $('#zone-filter'), hide: $('#hide-completed'), only: $('#only-available'), sort: $('#sort-by-time'), et: $('#et-clock'), local: $('#local-time'), countdown: $('#weather-countdown'), visible: $('#visible-count'), total: $('#total-count'), completed: $('#completed-count'), percent: $('#completed-percent'), active: $('#active-count') };
+  return { grid: $('#log-grid'), tabs: $('#exp-tabs'), search: $('#search-input'), zone: $('#zone-filter'), hide: $('#hide-completed'), only: $('#only-available'), sort: $('#sort-by-time'), et: $('#et-clock'), local: $('#local-time'), countdown: $('#weather-countdown'), visible: $('#visible-count'), total: $('#total-count'), completed: $('#completed-count'), completedTotal: $('#completed-total'), percent: $('#completed-percent'), active: $('#active-count') };
 }
 function badges() { EXPS.forEach(exp => { const el = $('#badge-' + exp); if (el) el.textContent = String(Array.isArray(DATA[exp]) ? DATA[exp].length : 0); }); const all = $('#badge-all'); if (all) all.textContent = String(ALL.length); }
 function updateNextHint(ui) {
@@ -197,6 +197,7 @@ function stats(ui, list) {
   if (ui.visible) ui.visible.textContent = String(list.length);
   if (ui.total) ui.total.textContent = String(all.length);
   if (ui.completed) ui.completed.textContent = String(done);
+  if (ui.completedTotal) ui.completedTotal.textContent = String(all.length);
   if (ui.percent) ui.percent.textContent = all.length ? String(Math.round(done * 100 / all.length)) : '0';
   if (ui.active) ui.active.textContent = String(list.filter(item => item.availability.available).length);
 }
