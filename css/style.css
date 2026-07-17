@@ -89,7 +89,6 @@
 /* 已完成＝變暗＋去飽和；框中性化（特定度高於 available/soon，壓過狀態色）*/
 .ss-card.completed { opacity: .5; border-color: var(--ss-border); filter: grayscale(.45); }
 .ss-card.completed::before { background: var(--ss-border); }
-.ss-card.completed:hover, .ss-card.completed:focus-within { opacity: 1; filter: none; }
 .ss-card.completed .ss-title { text-decoration: line-through; text-decoration-thickness: 2px; text-decoration-color: var(--ss-accent); }
 .ss-card.completed .ss-title > span { color: var(--ss-muted); }
 .ss-card--flash { animation: ss-flash 1.4s ease; }
@@ -161,6 +160,14 @@
 .ss-page-foot p { margin: 0 0 3px; }
 .ss-page-foot a { color: var(--ss-accent); }
 
+/* 回到頂端浮動鈕（左下，避開右下貓小胖隱藏鈕；app.js 依捲動切 .is-visible）*/
+.ss-to-top { position: fixed; left: var(--space-5, 20px); bottom: var(--space-5, 20px); z-index: 40; display: inline-grid; place-items: center; width: 3rem; height: 3rem; padding: 0; border: thin solid var(--ss-accent); border-radius: 50%; background: color-mix(in srgb, var(--ss-accent) 16%, var(--ss-surface-2)); color: var(--ss-accent); cursor: pointer; opacity: 0; transform: translateY(10px); pointer-events: none; box-shadow: 0 6px 18px rgba(0,0,0,.5), 0 0 14px var(--ss-accent-soft); transition: opacity .2s ease, transform .2s ease, box-shadow .15s ease, background .15s ease; }
+.ss-to-top svg { display: block; }
+.ss-to-top.is-visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+.ss-to-top.is-visible:hover { transform: translateY(-3px); background: color-mix(in srgb, var(--ss-accent) 28%, var(--ss-surface-2)); box-shadow: 0 10px 24px rgba(0,0,0,.55), 0 0 22px color-mix(in srgb, var(--ss-accent) 45%, transparent); }
+.ss-to-top:active { transform: translateY(-1px); }
+.ss-to-top:focus-visible { outline: 2px solid var(--ss-accent); outline-offset: 3px; }
+
 /* 響應式：窄螢幕地圖與台帳改上下堆、地圖放寬 */
 @media (max-width: 34rem) {
   .ss-body { grid-template-columns: 1fr; }
@@ -175,5 +182,5 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .ss-card--flash { animation: none; }
-  .ss-next-hint, .ss-card, .ss-copy, .ss-tab { transition: none; }
+  .ss-next-hint, .ss-card, .ss-copy, .ss-tab, .ss-to-top { transition: none; }
 }

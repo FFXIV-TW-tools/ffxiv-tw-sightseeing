@@ -276,6 +276,12 @@ function init() {
     if (input.checked) state.done.add(element.dataset.id); else state.done.delete(element.dataset.id);
     element.classList.toggle('completed', input.checked);
     saveDone();
+    // 開著「隱藏已完成」時，剛勾成完成的卡立即移除（免重整才消失）
+    if (input.checked && ui.hide && ui.hide.checked) {
+      state.visible.delete(element.dataset.id);
+      element.remove();
+      updateNextHint(ui);
+    }
     stats(ui, Array.from(state.visible.values()));
   });
   const hint = $('#next-hint');
@@ -285,6 +291,13 @@ function init() {
     const el = id && $$('.ss-card', ui.grid).find(card => card.dataset.id === id);
     if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('ss-card--flash'); setTimeout(() => el.classList.remove('ss-card--flash'), 1400); }
   });
+  const toTop = $('#to-top');
+  if (toTop) {
+    const syncToTop = () => { toTop.classList.toggle('is-visible', window.scrollY >= 400); };
+    window.addEventListener('scroll', syncToTop, { passive: true });
+    syncToTop();
+    toTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+  }
   const onlyWrap = $('#only-available-wrap');
   if (onlyWrap) onlyWrap.hidden = false;
   $$('.ss-tab[data-exp]', ui.tabs || document).forEach(tab => { const active = tab.dataset.exp === state.exp; tab.setAttribute('aria-pressed', String(active)); tab.classList.toggle('active', active); });
