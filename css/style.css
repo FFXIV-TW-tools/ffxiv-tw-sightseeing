@@ -1,5 +1,6 @@
 /* 探索筆記工具樣式 — 製圖野帳（field-log）卡片語彙
-   signature：編號 plate（No.）＋地圖標本＋對齊的標籤台帳（位置/座標/指令/天氣/時間）＋狀態 spine/footer
+   佈局：header/footer 全寬；中段左右並排（地圖標本 | 資料台帳）→ 矮卡、吃掉水平留白。
+   台帳：位置/座標/指令/天氣/時間 各成一列、標籤欄對齊不折行。
    全 token 化（portal tokens.css），dark-only 跟隨 portal。 */
 :root {
   --ss-accent: var(--color-accent-cyan, #4ec9d0);
@@ -13,7 +14,7 @@
   --ss-warn: var(--color-warn, #e6b566);
   --ss-warn-soft: var(--color-warn-soft, rgba(230, 181, 102, 0.14));
   --ss-hair: color-mix(in srgb, var(--ss-border) 65%, transparent);
-  --ss-label-w: 3.25em;
+  --ss-map-w: 9.5rem;
 }
 
 /* ── 時間 / 天氣列 ── */
@@ -47,24 +48,25 @@
 .ss-next-hint { display: flex; align-items: center; gap: var(--space-3, 12px); width: 100%; margin-block: var(--space-3, 12px) var(--space-4, 16px); padding: var(--space-3, 12px) var(--space-4, 16px); border: thin solid var(--ss-accent); border-radius: var(--radius-sm, 6px); background: linear-gradient(90deg, var(--ss-accent-soft), transparent 70%); color: var(--ss-text); font: inherit; text-align: start; cursor: pointer; transition: var(--transition-fast, .15s ease); }
 .ss-next-hint:hover { background: linear-gradient(90deg, var(--ss-accent-soft), var(--ss-accent-soft)); }
 .ss-next-hint[hidden] { display: none; }
-.ss-nh-key { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; color: var(--ss-accent); font-family: var(--font-mono, monospace); font-size: var(--fs-xs, 11px); letter-spacing: .12em; text-transform: none; }
-.ss-nh-key::before { content: "⏭"; }
+.ss-nh-key { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; color: var(--ss-accent); font-family: var(--font-mono, monospace); font-size: var(--fs-xs, 11px); letter-spacing: .12em; }
+.ss-nh-key::before { content: "\23ED"; }
 .ss-nh-ord { flex: 0 0 auto; font-family: var(--font-mono, monospace); color: var(--ss-muted); }
 .ss-nh-name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: var(--fw-semibold, 600); }
 .ss-nh-zone { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ss-muted); font-size: var(--fs-small, 12px); }
 .ss-nh-wait { flex: 0 0 auto; margin-inline-start: auto; padding: 2px 8px; border-radius: var(--radius-pill, 999px); background: var(--ss-surface); color: var(--ss-accent); font-family: var(--font-mono, monospace); font-weight: var(--fw-bold, 700); }
 
 /* ── 卡片格 ── */
-.ss-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr)); gap: var(--space-5, 20px); padding-block: var(--space-2, 8px) var(--space-8, 40px); }
+.ss-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(26rem, 1fr)); gap: var(--space-4, 16px); padding-block: var(--space-2, 8px) var(--space-8, 40px); }
 
-/* ── 卡片：field-log ── */
-.ss-card { position: relative; display: flex; min-width: 0; flex-direction: column; overflow: hidden; border: thin solid var(--ss-border); border-radius: var(--radius-card, 12px); background: var(--ss-surface); box-shadow: var(--shadow-card, 0 1px 2px rgba(0,0,0,.3)); transition: border-color var(--transition-fast, .15s ease), box-shadow var(--transition-fast, .15s ease), transform var(--transition-fast, .15s ease); }
+/* ── 卡片：field-log（header/footer 全寬，中段左右並排）── */
+.ss-card { position: relative; display: flex; min-width: 0; flex-direction: column; overflow: hidden; border: thin solid var(--ss-border); border-radius: var(--radius-card, 12px); background: var(--ss-surface); box-shadow: var(--shadow-card, 0 1px 2px rgba(0,0,0,.3)); transition: border-color var(--transition-fast, .15s ease), box-shadow var(--transition-fast, .15s ease); }
 .ss-card::before { content: ""; position: absolute; inset-block: 0; inset-inline-start: 0; width: 3px; background: var(--ss-border); transition: background var(--transition-fast, .15s ease); }
 .ss-card:hover { border-color: var(--ss-accent); box-shadow: var(--shadow-card-hover, 0 6px 18px rgba(0,0,0,.4)); }
 .ss-card--available::before { background: var(--ss-success); }
-.ss-card.completed { opacity: .72; }
-.ss-card.completed:hover, .ss-card.completed:focus-within { opacity: 1; }  /* 互動時恢復對比：控件可用、focus 環可見（a11y）*/
-.ss-card.completed .ss-title { text-decoration: line-through; text-decoration-color: var(--ss-muted); }
+.ss-card.completed { opacity: .74; }
+.ss-card.completed:hover, .ss-card.completed:focus-within { opacity: 1; }
+.ss-card.completed .ss-title { text-decoration: line-through; text-decoration-thickness: 2px; text-decoration-color: var(--ss-accent); }
+.ss-card.completed .ss-title > span { color: var(--ss-muted); }
 .ss-card--flash { animation: ss-flash 1.4s ease; }
 @keyframes ss-flash { 0%, 100% { box-shadow: var(--shadow-card, 0 1px 2px rgba(0,0,0,.3)); } 25% { box-shadow: 0 0 0 3px var(--ss-accent); } }
 
@@ -74,36 +76,48 @@
 .ss-ord::before { content: "No."; margin-inline-end: 3px; color: var(--ss-muted); font-size: var(--fs-xs, 11px); font-weight: var(--fw-semibold, 600); letter-spacing: 0; }
 .ss-title { flex: 1 1 auto; min-width: 0; margin: 0; font-size: 1rem; font-weight: var(--fw-semibold, 600); line-height: 1.3; }
 .ss-title > span { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ss-done-badge { display: none; }
+.ss-card.completed .ss-done-badge { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 3px; padding: 2px 8px; border-radius: var(--radius-pill, 999px); background: var(--ss-accent-soft); color: var(--ss-accent); font-size: var(--fs-xs, 11px); font-weight: var(--fw-bold, 700); white-space: nowrap; }
 .ss-done { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px; color: var(--ss-muted); font-size: var(--fs-xs, 11px); cursor: pointer; white-space: nowrap; }
+.ss-card.completed .ss-done-txt { display: none; }
 
-/* 地圖標本 */
-.ss-map { padding: var(--space-3, 12px) var(--space-4, 16px) 0; padding-inline-start: calc(var(--space-4, 16px) + 3px); min-width: 0; }
-.ss-map .map-inline-wrap { min-width: 0; }
-.ss-map-empty { display: grid; min-height: 8rem; place-items: center; border: thin dashed var(--ss-border); border-radius: var(--radius-sm, 6px); color: var(--ss-muted); font-size: var(--fs-small, 12px); }
+/* 中段：地圖標本 | 資料台帳 */
+.ss-body { display: grid; grid-template-columns: var(--ss-map-w) minmax(0, 1fr); gap: var(--space-4, 16px); align-items: start; padding: var(--space-3, 12px) var(--space-4, 16px); padding-inline-start: calc(var(--space-4, 16px) + 3px); }
+.ss-map { min-width: 0; width: var(--ss-map-w); }
+/* vendored 90-map.css 把 .map-inline-wrap 寫死 184px → 覆寫成填滿容器，否則溢出蓋住台帳標籤 */
+.ss-map .map-inline-wrap { width: 100%; max-width: 100%; min-width: 0; }
+.ss-map-empty { display: grid; aspect-ratio: 1; place-items: center; border: thin dashed var(--ss-border); border-radius: var(--radius-sm, 6px); color: var(--ss-muted); font-size: var(--fs-small, 12px); text-align: center; }
 
 /* 台帳：位置 / 座標 / 指令 / 天氣 / 時間 各成一列 */
-.ss-ledger { margin: var(--space-3, 12px) 0 0; padding: 0 var(--space-4, 16px); padding-inline-start: calc(var(--space-4, 16px) + 3px); display: flex; flex-direction: column; }
-.ss-row { display: flex; align-items: center; gap: var(--space-3, 12px); padding-block: var(--space-2, 8px); border-top: thin solid var(--ss-hair); min-width: 0; }
-.ss-row:first-child { border-top: 0; }
-.ss-k { flex: 0 0 var(--ss-label-w); display: inline-flex; align-items: center; gap: 5px; color: var(--ss-muted); font-family: var(--font-mono, monospace); font-size: var(--fs-xs, 11px); letter-spacing: .14em; }
-.ss-v { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ss-text); font-size: var(--fs-small, 12px); }
+.ss-ledger { min-width: 0; margin: 0; display: flex; flex-direction: column; }
+.ss-row { display: flex; align-items: flex-start; gap: var(--space-2, 8px); padding-block: var(--space-2, 8px); border-top: thin solid var(--ss-hair); min-width: 0; }
+.ss-row:first-child { border-top: 0; padding-top: 0; }
+.ss-k { flex: 0 0 2.8em; display: inline-flex; align-items: center; gap: 5px; padding-top: 1px; color: var(--ss-muted); font-family: var(--font-mono, monospace); font-size: var(--fs-xs, 11px); letter-spacing: .04em; white-space: nowrap; }
+/* 值一律換行、永不截斷（欄位完整優先於等高）*/
+.ss-v { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; word-break: break-word; color: var(--ss-text); font-size: var(--fs-small, 12px); line-height: 1.45; }
 .ss-v--zone { font-weight: var(--fw-semibold, 600); }
-.ss-v--coord { display: inline-flex; gap: var(--space-3, 12px); font-family: var(--font-mono, monospace); }
-.ss-xy { color: var(--ss-muted); }
+.ss-v--coord { display: flex; flex-wrap: wrap; gap: 2px var(--space-3, 12px); font-family: var(--font-mono, monospace); }
+.ss-xy { flex: 0 0 auto; color: var(--ss-muted); }
 .ss-xy b { color: var(--ss-text); font-weight: var(--fw-semibold, 600); }
 .ss-cmd { color: var(--color-code, var(--ss-accent)); font-family: var(--font-mono, monospace); }
-.ss-emote-tc { margin-inline-start: 8px; color: var(--ss-muted); }
-.ss-wx { width: 1.15rem; height: 1.15rem; object-fit: contain; vertical-align: middle; }
+.ss-emote-tc { margin-inline-start: 6px; color: var(--ss-muted); }
+.ss-v--wx { display: flex; align-items: center; gap: 6px; }
+.ss-wx { flex: 0 0 auto; width: 1.4rem; height: 1.4rem; object-fit: contain; }
+.ss-wx[hidden] { display: none; }
 .ss-clock { color: var(--ss-accent); }
 .ss-req { flex: 0 0 auto; color: var(--ss-muted); font-size: var(--fs-xs, 11px); white-space: nowrap; }
-.ss-copy { flex: 0 0 auto; display: inline-grid; place-items: center; width: 1.75rem; height: 1.75rem; padding: 0; border: thin solid var(--ss-border); border-radius: var(--radius-sm, 6px); background: transparent; color: var(--ss-muted); font-size: 1rem; line-height: 1; cursor: pointer; transition: var(--transition-fast, .15s ease); }
+.ss-copy { flex: 0 0 auto; display: inline-grid; place-items: center; width: 1.6rem; height: 1.6rem; padding: 0; border: thin solid var(--ss-border); border-radius: var(--radius-sm, 6px); background: transparent; color: var(--ss-muted); font-size: .95rem; line-height: 1; cursor: pointer; transition: var(--transition-fast, .15s ease); }
 .ss-copy:hover { border-color: var(--ss-accent); color: var(--ss-accent); }
 
+/* 引導說明（有填才顯示；可多行）*/
+.ss-guide { display: flex; gap: var(--space-2, 8px); margin: 0; padding: var(--space-2, 8px) var(--space-4, 16px); padding-inline-start: calc(var(--space-4, 16px) + 3px); border-top: thin solid var(--ss-hair); color: var(--ss-text); font-size: var(--fs-small, 12px); line-height: 1.5; }
+.ss-guide-key { flex: 0 0 auto; align-self: flex-start; padding: 1px 7px; border-radius: var(--radius-pill, 999px); background: var(--ss-accent-soft); color: var(--ss-accent); font-family: var(--font-mono, monospace); font-size: var(--fs-xs, 11px); }
+
 /* note */
-.ss-note { margin: var(--space-3, 12px) var(--space-4, 16px) 0; margin-inline-start: calc(var(--space-4, 16px) + 3px); padding: var(--space-2, 8px) var(--space-3, 12px); border-inline-start: 3px solid var(--ss-warn); border-radius: var(--radius-sm, 6px); background: var(--ss-warn-soft); color: var(--ss-warn); font-size: var(--fs-small, 12px); }
+.ss-note { display: flex; gap: var(--space-2, 8px); margin: 0; padding: var(--space-2, 8px) var(--space-4, 16px); padding-inline-start: calc(var(--space-4, 16px) + 3px); color: var(--ss-warn); font-size: var(--fs-small, 12px); }
 
 /* footer 狀態列 */
-.ss-foot { margin-top: var(--space-3, 12px); display: flex; align-items: center; gap: var(--space-2, 8px); padding: var(--space-2, 8px) var(--space-4, 16px); padding-inline-start: calc(var(--space-4, 16px) + 3px); border-top: thin solid var(--ss-hair); background: var(--ss-surface-2); font-size: var(--fs-small, 12px); }
+.ss-foot { margin-top: auto; display: flex; align-items: center; gap: var(--space-2, 8px); padding: var(--space-2, 8px) var(--space-4, 16px); padding-inline-start: calc(var(--space-4, 16px) + 3px); border-top: thin solid var(--ss-hair); background: var(--ss-surface-2); font-size: var(--fs-small, 12px); }
 .ss-dot { flex: 0 0 auto; width: .55rem; height: .55rem; border-radius: 50%; background: var(--ss-muted); }
 .ss-card--available .ss-dot { background: var(--ss-success); box-shadow: 0 0 7px var(--ss-success); }
 .ss-state { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ss-muted); font-weight: var(--fw-semibold, 600); }
@@ -114,7 +128,11 @@
 /* 空狀態 */
 .ss-empty { grid-column: 1 / -1; padding: var(--space-6, 24px); border: thin dashed var(--ss-border); border-radius: var(--radius-md, 8px); color: var(--ss-muted); text-align: center; }
 
-/* 響應式 */
+/* 響應式：窄螢幕地圖與台帳改上下堆、地圖放寬 */
+@media (max-width: 34rem) {
+  .ss-body { grid-template-columns: 1fr; }
+  .ss-map { width: 100%; max-width: 15rem; margin-inline: auto; }
+}
 @media (max-width: 40rem) {
   .ss-timebar { grid-template-columns: 1fr; gap: var(--space-3, 12px); }
   .ss-filters > * { flex: 1 1 100%; }

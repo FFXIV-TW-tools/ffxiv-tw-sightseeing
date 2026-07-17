@@ -5,6 +5,7 @@ import './weather.js';
 
 const DATA = window.SIGHTSEEING_DATA || {};
 const ZONES = window.SIGHTSEEING_ZONES || {};
+const GUIDES = window.SIGHTSEEING_GUIDES || {};
 const EXPS = ['arr', 'hw', 'sb', 'shb', 'ew', 'dt'];
 const EXP_NAMES = { arr: '新生', hw: '蒼天', sb: '紅蓮', shb: '漆黑', ew: '曉月', dt: '黃金' };
 const STORE = 'ffxiv-sightseeing-completed';
@@ -152,13 +153,17 @@ function card(item) {
   rows.push(row('位置', '<span class="ss-zone-name">' + zoneName + '</span>', { vClass: 'ss-v--zone' }));
   rows.push(row('座標', coordHTML, { vClass: 'ss-v--coord', trailHTML: copyBtn('data-copy', (z.tc || '') + ' (' + entry.x + ', ' + entry.y + ')') }));
   rows.push(row('指令', (command ? '<code class="ss-cmd">/' + esc(command) + '</code>' : '') + '<span class="ss-emote-tc">' + esc(entry.emote || '—') + '</span>', { vClass: 'ss-v--emote', trailHTML: command ? copyBtn('data-copy-emote', '/' + command) : '' }));
-  if (a.weather.gated) rows.push(row('天氣', '讀取中', { cond: true, live: 'weather', labelHTML: '<img class="ss-wx" data-live="weather-icon" alt="" loading="lazy">天氣', trailHTML: '<span class="ss-req">需 ' + esc(a.weather.wanted.map(weatherTC).join('／')) + '</span>' }));
+  if (a.weather.gated) rows.push('<div class="ss-row ss-row--cond"><dt class="ss-k">天氣</dt><dd class="ss-v ss-v--wx"><img class="ss-wx" data-live="weather-icon" alt="" loading="lazy"><span data-live="weather">讀取中</span></dd><span class="ss-req">需 ' + esc(a.weather.wanted.map(weatherTC).join('／')) + '</span></div>');
   if (a.time.gated) rows.push(row('時間', esc(timeLabel(entry)), { cond: true, live: 'time', labelHTML: '<span class="ss-clock" aria-hidden="true">◷</span>時間' }));
+  const guide = String(GUIDES[item.id] || '').trim();
   const template = document.createElement('template');
   template.innerHTML = '<article class="ss-card' + (item.completed ? ' completed' : '') + '" data-id="' + esc(item.id) + '" data-available="' + String(a.available) + '">' +
-    '<header class="ss-head"><span class="ss-ord">' + esc(pad(entry.no)) + '</span><h2 class="ss-title"><span>' + esc(itemName(entry)) + '</span></h2><label class="ss-done"><input class="ss-complete-input" type="checkbox"' + (item.completed ? ' checked' : '') + ' aria-label="標記完成"><span class="ss-done-txt">完成</span></label></header>' +
-    '<div class="ss-map">' + (mapHTML(entry, z) || '<div class="ss-map-empty">地圖資料暫缺</div>') + '</div>' +
-    '<dl class="ss-ledger">' + rows.join('') + '</dl>' +
+    '<header class="ss-head"><span class="ss-ord">' + esc(pad(entry.no)) + '</span><h2 class="ss-title"><span>' + esc(itemName(entry)) + '</span></h2><span class="ss-done-badge">✓ 已完成</span><label class="ss-done"><input class="ss-complete-input" type="checkbox"' + (item.completed ? ' checked' : '') + ' aria-label="標記完成"><span class="ss-done-txt">完成</span></label></header>' +
+    '<div class="ss-body">' +
+      '<div class="ss-map">' + (mapHTML(entry, z) || '<div class="ss-map-empty">地圖資料暫缺</div>') + '</div>' +
+      '<dl class="ss-ledger">' + rows.join('') + '</dl>' +
+    '</div>' +
+    (guide ? '<p class="ss-guide"><span class="ss-guide-key">引導</span>' + esc(guide) + '</p>' : '') +
     (entry.note ? '<p class="ss-note">' + esc(entry.note) + '</p>' : '') +
     '<footer class="ss-foot"><span class="ss-dot" aria-hidden="true"></span><span class="ss-state" data-live="status"></span><span class="ss-next" data-live="next"></span></footer>' +
     '</article>';

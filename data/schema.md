@@ -70,6 +70,13 @@ window.SIGHTSEEING_DATA = {
 - `⏰ HH:MM–HH:MM` → 拆成 `timeStart`/`timeEnd`（整數時），note 可清空或保留原字。
 - `⚠ 超短時間` → 保留為 `note`，不動 time。
 
+## 2c. `data/guides.js`（引導說明，手動維護，非 AUTO-GEN）
+```js
+window.SIGHTSEEING_GUIDES = { "<exp>-<no三位>": "引導說明字串", ... };
+```
+- 有些探索點較難抵達，補一句怎麼過去。key＝卡片 `data-id`（如 `hw-012`）。
+- **不會被 build 覆寫**（獨立於 sightseeing-data.js）；卡片只在該 id 有說明時顯示「引導」欄。
+
 ## 3. 來源檔（grok 讀）
 - **ARR（80）唯一權威**：`refsite/data_sightseeing-data.js`（cycleapple）— 有 name/region(英)/x,y(小數)/weather/time/emote。region→zoneKey 見 `tmp/zone-mapping.md`。
 - **HW–DT（260）唯一權威**：`refsite/babelin_sightseeing.html` 內 `const ALL_DATA = {...}` 的 hw/sb/shb/ew/dt 陣列 — 有 zone(繁中)/x,y/z/emote/note。zone→zoneKey 見 `tmp/zone-mapping.md`。
