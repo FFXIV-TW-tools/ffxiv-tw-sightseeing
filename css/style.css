@@ -134,6 +134,11 @@
 /* 空狀態 */
 .ss-empty { grid-column: 1 / -1; padding: var(--space-6, 24px); border: thin dashed var(--ss-border); border-radius: var(--radius-md, 8px); color: var(--ss-muted); text-align: center; }
 
+/* 頁尾來源標註 */
+.ss-page-foot { margin-block: var(--space-6, 24px) var(--space-8, 40px); padding-top: var(--space-4, 16px); border-top: thin solid var(--ss-hair); color: var(--ss-muted); line-height: 1.7; }
+.ss-page-foot p { margin: 0 0 3px; }
+.ss-page-foot a { color: var(--ss-accent); }
+
 /* 響應式：窄螢幕地圖與台帳改上下堆、地圖放寬 */
 @media (max-width: 34rem) {
   .ss-body { grid-template-columns: 1fr; }
