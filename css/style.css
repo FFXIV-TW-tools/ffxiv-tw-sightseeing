@@ -36,7 +36,8 @@
 .ss-filters { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3, 12px); margin-block: var(--space-3, 12px); }
 .ss-search, .ss-select { min-width: 0; min-height: 2.25rem; padding: var(--space-2, 8px) var(--space-3, 12px); border: thin solid var(--ss-border); border-radius: var(--radius-sm, 6px); background: var(--ss-surface); color: var(--ss-text); font: inherit; }
 .ss-search { flex: 1 1 12rem; }
-.ss-select { flex: 0 1 auto; }
+/* 固定寬度：換版本重建地區選項時不因內容變寬而位移 */
+.ss-select { flex: 0 0 12rem; }
 .ss-search:focus, .ss-select:focus { border-color: var(--ss-accent); outline: none; box-shadow: 0 0 0 3px var(--ss-accent-soft); }
 .ss-check { display: inline-flex; min-width: 0; align-items: center; gap: var(--space-2, 8px); color: var(--ss-muted); font-size: var(--fs-small, 12px); cursor: pointer; }
 .ss-check input, .ss-complete-input { accent-color: var(--ss-accent); }
