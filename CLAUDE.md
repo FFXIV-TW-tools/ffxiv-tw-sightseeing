@@ -30,7 +30,7 @@ data/zones.js + data/sightseeing-data.js  ──> modules/app.js 渲染
 ```
 - **兩份 data/*.js 皆 AUTO-GEN**：改地區/地圖 → 改 `tools/build_zones.py` 重跑；改條目資料 → 改 `tools/build_data.py` 重跑。勿手改產物。
 - 名稱/時間/emote 主軸＝遊戲 Adventure+Emote sheet（`tools/sources/tc_{Adventure,Emote}.csv`）。
-- **權威主軸＝遊戲原生 sheet**（`datamining_tc/tc_Adventure`＋`tc_Emote`）：名稱/時間窗/表情全走官方繁中（連 HW–DT 個別名都有）。座標才用社群源（Adventure sheet 無座標）。
+- **權威主軸＝遊戲原生 sheet**（`datamining_tc/tc_Adventure`＋`tc_Emote`）：名稱/時間窗/表情全走官方繁中（連 HW–DT 個別名都有）。**座標 X/Y 亦走遊戲原生**：`Adventure.Level` → `tc_Level`(X/Z) + `tc_Map`(SizeFactor) 標準換算（2026-07-18 起、1 位小數，取代 cycleapple/babelin；`build_data.py level_coords`）。僅高度 z 留 babelin（HW–DT），**ARR 無 z**——遊戲 Level.Y 無穩定 world→顯示 Z 換算（全域擬合 129/181 差 >0.5），且無社群 z 可校準各圖偏移。
 - 繁中正名修正（來源錯字）：拉札**漢**（非罕）、克**扎**瑪烏卡（非札）、emote 指向（非指指點點）/坐下到地上（非坐下）。
 - `data/schema.md`＝資料契約單一來源（欄位/天氣鍵/emote 對照）。
 
