@@ -59,9 +59,10 @@
   html, body { margin: 0; padding: 0; }
   body {
     font-family: var(--font-sans, "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif);
+    /* 掃描線 --pattern-scanline 拿掉：1px 週期細線在非 100% 縮放（如 110%）下 subpixel 重採樣
+       產生明顯 moiré 橫紋，本工具卡片間深色留白多、格外顯眼。保留鑽石壓印底紋 + 漸層即足。 */
     background:
       var(--pattern-overlay),
-      var(--pattern-scanline),
       var(--gradient-body, linear-gradient(180deg, #03060c 0%, #070b12 50%, #03060c 100%));
     color: var(--text);
     min-height: 100vh;
