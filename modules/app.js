@@ -131,7 +131,7 @@ function loadDone() {
 }
 function saveDone() { try { window.localStorage.setItem(STORE, JSON.stringify(Array.from(state.done))); } catch {} }
 function loadPrefs() { try { const v = JSON.parse(window.localStorage.getItem(PREFS) || '{}'); return v && typeof v === 'object' ? v : {}; } catch { return {}; } }
-function savePrefs(ui) { try { window.localStorage.setItem(PREFS, JSON.stringify({ hide: !!(ui.hide && ui.hide.checked), only: !!(ui.only && ui.only.checked), sort: !!(ui.sort && ui.sort.checked) })); } catch {} }
+function savePrefs(ui) { try { window.localStorage.setItem(PREFS, JSON.stringify({ exp: state.exp, hide: !!(ui.hide && ui.hide.checked), only: !!(ui.only && ui.only.checked), sort: !!(ui.sort && ui.sort.checked) })); } catch {} }
 function uiElements() {
   return { grid: $('#log-grid'), tabs: $('#exp-tabs'), search: $('#search-input'), zone: $('#zone-filter'), hide: $('#hide-completed'), only: $('#only-available'), sort: $('#sort-by-time'), et: $('#et-clock'), local: $('#local-time'), countdown: $('#weather-countdown'), visible: $('#visible-count'), total: $('#total-count'), completed: $('#completed-count'), completedTotal: $('#completed-total'), percent: $('#completed-percent'), active: $('#active-count') };
 }
@@ -320,10 +320,12 @@ function init() {
   if (ui.hide) ui.hide.checked = !!prefs.hide;
   if (ui.only) ui.only.checked = !!prefs.only;
   if (ui.sort) ui.sort.checked = !!prefs.sort;
+  if (typeof prefs.exp === 'string' && TABS.includes(prefs.exp)) state.exp = prefs.exp; // 版本分頁選擇跨重整保留
   badges();
   updateZones(ui);
   $$('.ss-tab[data-exp]', ui.tabs || document).forEach(tab => tab.addEventListener('click', () => {
     state.exp = TABS.includes(tab.dataset.exp) ? tab.dataset.exp : 'all';
+    savePrefs(ui);
     $$('.ss-tab[data-exp]', ui.tabs || document).forEach(other => { const active = other.dataset.exp === state.exp; other.setAttribute('aria-pressed', String(active)); other.classList.toggle('active', active); });
     updateZones(ui);
     render(ui);
