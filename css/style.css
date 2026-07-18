@@ -109,6 +109,21 @@
 .ss-map { min-width: 0; width: var(--ss-map-w); }
 /* vendored 90-map.css 把 .map-inline-wrap 寫死 184px → 覆寫成填滿容器，否則溢出蓋住台帳標籤 */
 .ss-map .map-inline-wrap { width: 100%; max-width: 100%; min-width: 0; }
+
+/* modal 大圖探索點標記：vendored .map-pin 只有 18px 📍、大圖上太不明顯 → 本地覆寫成信標
+   （cyan 圓點＋白環＋光暈＋脈動擴散環，風格對齊卡片小地圖 .map-inline-pin）。不動 vendored 90-map.css。 */
+.map-pin { font-size: 0; }
+.map-pin::before, .map-pin::after {
+  content: ""; position: absolute; left: 0; top: 0; box-sizing: border-box;
+  width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%;
+}
+.map-pin::before { background: var(--ss-accent, #4ec9d0); border: 2px solid #fff; box-shadow: 0 0 9px 2px var(--ss-accent, #4ec9d0), 0 0 0 1px rgba(0,0,0,.65); }
+.map-pin::after { border: 2px solid var(--ss-accent, #4ec9d0); animation: ss-pin-beacon 1.7s ease-out infinite; }
+@keyframes ss-pin-beacon {
+  0%   { opacity: .85; transform: scale(1); }
+  70%  { opacity: 0;   transform: scale(3.4); }
+  100% { opacity: 0;   transform: scale(3.4); }
+}
 .ss-map-empty { display: grid; aspect-ratio: 1; place-items: center; border: thin dashed var(--ss-border); border-radius: var(--radius-sm, 6px); color: var(--ss-muted); font-size: var(--fs-small, 12px); text-align: center; }
 
 /* 台帳：位置 / 座標 / 指令 / 天氣 / 時間 各成一列 */
@@ -182,4 +197,5 @@
 @media (prefers-reduced-motion: reduce) {
   .ss-card--flash { animation: none; }
   .ss-next-hint, .ss-card, .ss-copy, .ss-tab, .ss-to-top { transition: none; }
+  .map-pin::after { animation: none; opacity: .55; }
 }
