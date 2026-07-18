@@ -13,17 +13,21 @@ const STORE = 'ffxiv-sightseeing-completed';
 const SOON_MS = 15 * 60 * 1000; // 「即將開放」門檻：15 分鐘內
 const ET = window.EorzeaTime || {};
 const WT = window.Weather || {};
-const TABS = ['all'].concat(EXPS);
+const TABS = ['all', 'arr-front', 'arr-back'].concat(EXPS.filter(exp => exp !== 'arr'));
 const state = { exp: 'all', done: new Set(), visible: new Map(), hintOpen: { now: false, next: false } };
 
 EXPS.forEach(exp => (Array.isArray(DATA[exp]) ? DATA[exp] : []).forEach(entry => { entry._exp = exp; }));
 const ALL = EXPS.flatMap(exp => Array.isArray(DATA[exp]) ? DATA[exp] : []);
+// 2.0/ARR 依遊戲機制拆兩個「版本分類」分頁：前半 No.1–20、後半 No.21–80（前半全解才開放後半）
+const ARR = Array.isArray(DATA.arr) ? DATA.arr : [];
+const ARR_FRONT = ARR.filter(entry => entry.no <= 20);
+const ARR_BACK = ARR.filter(entry => entry.no >= 21);
 
 const $ = (s, r) => (r || document).querySelector(s);
 const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
 const esc = value => String(value == null ? '' : value).replace(/[&<>\"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', "'": '&#39;' }[c]));
 const pad = value => String(value == null ? '' : value).padStart(3, '0');
-const entries = () => state.exp === 'all' ? ALL : (Array.isArray(DATA[state.exp]) ? DATA[state.exp] : []);
+const entries = () => state.exp === 'all' ? ALL : state.exp === 'arr-front' ? ARR_FRONT : state.exp === 'arr-back' ? ARR_BACK : (Array.isArray(DATA[state.exp]) ? DATA[state.exp] : []);
 const zone = entry => ZONES[entry && entry.zoneKey] || {};
 const expOf = entry => entry && entry._exp || state.exp;
 const itemId = entry => expOf(entry) + '-' + pad(entry.no);
@@ -128,15 +132,24 @@ function saveDone() { try { window.localStorage.setItem(STORE, JSON.stringify(Ar
 function uiElements() {
   return { grid: $('#log-grid'), tabs: $('#exp-tabs'), search: $('#search-input'), zone: $('#zone-filter'), hide: $('#hide-completed'), only: $('#only-available'), sort: $('#sort-by-time'), et: $('#et-clock'), local: $('#local-time'), countdown: $('#weather-countdown'), visible: $('#visible-count'), total: $('#total-count'), completed: $('#completed-count'), completedTotal: $('#completed-total'), percent: $('#completed-percent'), active: $('#active-count') };
 }
-function badges() { EXPS.forEach(exp => { const el = $('#badge-' + exp); if (el) el.textContent = String(Array.isArray(DATA[exp]) ? DATA[exp].length : 0); }); const all = $('#badge-all'); if (all) all.textContent = String(ALL.length); }
+function badges() {
+  EXPS.forEach(exp => { const el = $('#badge-' + exp); if (el) el.textContent = String(Array.isArray(DATA[exp]) ? DATA[exp].length : 0); });
+  const set = (id, n) => { const el = $('#' + id); if (el) el.textContent = String(n); };
+  set('badge-all', ALL.length); set('badge-arr-front', ARR_FRONT.length); set('badge-arr-back', ARR_BACK.length);
+}
 function nhItem(item, trailHTML) {
   const entry = item.entry, exp = expOf(entry);
+  // mini-card：上排 版本/編號/等待（等待固定右上），下排 名稱/地區獨佔一行 → 各卡等高、不因名稱長短跳行
   return '<button type="button" class="ss-nh-item" data-target="' + esc(item.id) + '">' +
-    '<span class="ss-nh-ver">' + esc(VER[exp] || '') + ' ' + esc(EXP_NAMES[exp] || '') + '</span>' +
-    '<span class="ss-nh-ord">#' + esc(pad(entry.no)) + '</span>' +
-    '<span class="ss-nh-name">' + esc(itemName(entry)) + '</span>' +
-    '<span class="ss-nh-zone">' + esc((item.zone || {}).tc || '') + '</span>' +
-    (trailHTML || '') +
+    '<span class="ss-nh-top">' +
+      '<span class="ss-nh-ver">' + esc(VER[exp] || '') + ' ' + esc(EXP_NAMES[exp] || '') + '</span>' +
+      '<span class="ss-nh-ord">#' + esc(pad(entry.no)) + '</span>' +
+      (trailHTML || '') +
+    '</span>' +
+    '<span class="ss-nh-body">' +
+      '<span class="ss-nh-name">' + esc(itemName(entry)) + '</span>' +
+      '<span class="ss-nh-zone">' + esc((item.zone || {}).tc || '') + '</span>' +
+    '</span>' +
   '</button>';
 }
 function nhGroup(cls, label, count, bodyHTML) {
@@ -269,28 +282,12 @@ function stats(ui, list) {
   if (ui.percent) ui.percent.textContent = all.length ? String(Math.round(done * 100 / all.length)) : '0';
   if (ui.active) ui.active.textContent = String(list.filter(item => item.availability.available).length);
 }
-// 2.0/ARR 遊戲機制：探索日誌前半（No.1–20）全解才會開放後半（No.21–80）→ arr 分頁分兩段呈現。
-// 分段依 entry.no（非位置），故時間排序 / 地區篩選下仍正確（各段內部維持原排序，空段隱藏標頭）。
-function ssSection(label, note) {
-  const el = document.createElement('div');
-  el.className = 'ss-section';
-  const key = document.createElement('span'); key.className = 'ss-section-key'; key.textContent = label; el.append(key);
-  if (note) { const n = document.createElement('span'); n.className = 'ss-section-note'; n.textContent = note; el.append(n); }
-  return el;
-}
-function appendArrSections(fragment, list) {
-  const front = list.filter(item => item.entry.no <= 20);
-  const back = list.filter(item => item.entry.no >= 21);
-  if (front.length) { fragment.append(ssSection('前半 · No.1–20')); front.forEach(item => fragment.append(card(item))); }
-  if (back.length) { fragment.append(ssSection('後半 · No.21–80', '需先完成前半 20 個才會開放')); back.forEach(item => fragment.append(card(item))); }
-}
 function render(ui) {
   const result = filtered(ui);
   state.visible = new Map(result.list.map(item => [item.id, item]));
   const fragment = document.createDocumentFragment();
+  result.list.forEach(item => fragment.append(card(item)));
   if (!result.list.length) { const empty = document.createElement('p'); empty.className = 'ss-empty codex-body'; empty.textContent = entries().length ? '沒有符合條件的探索筆記。' : '目前版本沒有可用資料。'; fragment.append(empty); }
-  else if (state.exp === 'arr') appendArrSections(fragment, result.list);
-  else result.list.forEach(item => fragment.append(card(item)));
   ui.grid.replaceChildren(fragment);
   $$('.ss-card', ui.grid).forEach(element => updateCard(element, state.visible.get(element.dataset.id), result.now));
   stats(ui, result.list);
