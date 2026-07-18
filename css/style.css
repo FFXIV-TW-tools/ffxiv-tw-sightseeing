@@ -5,13 +5,13 @@
 :root {
   --ss-accent: var(--color-accent-cyan, #4ec9d0);
   --ss-accent-soft: var(--color-accent-cyan-soft, rgba(78, 201, 208, 0.16));
-  --ss-surface: var(--color-surface, #161d2b);
-  --ss-surface-2: var(--color-surface-hover, #1e2740);
-  --ss-text: var(--color-text, #f2f5f8);
-  --ss-muted: var(--color-text-muted, #93a1b8);
-  --ss-border: var(--color-border, #2b3450);
-  --ss-success: var(--color-success, #6fd08a);
-  --ss-warn: var(--color-warn, #e6b566);
+  --ss-surface: var(--color-surface, #101824);
+  --ss-surface-2: var(--color-surface-hover, #18222f);
+  --ss-text: var(--color-text, #f5f5f5);
+  --ss-muted: var(--color-text-muted, #c0c9da);
+  --ss-border: var(--color-border, #2b3f56);
+  --ss-success: var(--color-success, #7dd87d);
+  --ss-warn: var(--color-warn, #e8a45a);
   --ss-warn-soft: var(--color-warn-soft, rgba(230, 181, 102, 0.14));
   --ss-hair: color-mix(in srgb, var(--ss-border) 65%, transparent);
   --ss-map-w: 9.5rem;
