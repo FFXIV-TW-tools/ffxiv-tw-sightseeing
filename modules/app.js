@@ -10,6 +10,7 @@ const EXPS = ['arr', 'hw', 'sb', 'shb', 'ew', 'dt'];
 const EXP_NAMES = { arr: '新生', hw: '蒼天', sb: '紅蓮', shb: '漆黑', ew: '曉月', dt: '黃金' };
 const VER = { arr: '2.x', hw: '3.x', sb: '4.x', shb: '5.x', ew: '6.x', dt: '7.x' };
 const STORE = 'ffxiv-sightseeing-completed';
+const PREFS = 'ffxiv-sightseeing-prefs'; // 記住檢視偏好（隱藏已完成 / 僅可進行 / 依時間排序）跨重整不清除
 const SOON_MS = 15 * 60 * 1000; // 「即將開放」門檻：15 分鐘內
 const ET = window.EorzeaTime || {};
 const WT = window.Weather || {};
@@ -129,6 +130,8 @@ function loadDone() {
   } catch { return new Set(); }
 }
 function saveDone() { try { window.localStorage.setItem(STORE, JSON.stringify(Array.from(state.done))); } catch {} }
+function loadPrefs() { try { const v = JSON.parse(window.localStorage.getItem(PREFS) || '{}'); return v && typeof v === 'object' ? v : {}; } catch { return {}; } }
+function savePrefs(ui) { try { window.localStorage.setItem(PREFS, JSON.stringify({ hide: !!(ui.hide && ui.hide.checked), only: !!(ui.only && ui.only.checked), sort: !!(ui.sort && ui.sort.checked) })); } catch {} }
 function uiElements() {
   return { grid: $('#log-grid'), tabs: $('#exp-tabs'), search: $('#search-input'), zone: $('#zone-filter'), hide: $('#hide-completed'), only: $('#only-available'), sort: $('#sort-by-time'), et: $('#et-clock'), local: $('#local-time'), countdown: $('#weather-countdown'), visible: $('#visible-count'), total: $('#total-count'), completed: $('#completed-count'), completedTotal: $('#completed-total'), percent: $('#completed-percent'), active: $('#active-count') };
 }
@@ -169,6 +172,7 @@ function updateNextHint(ui) {
   // 現在可執行＝有時間/天氣限制（2.0 為主）且此刻正好在窗口內的；下一個可執行＝即將到來的
   const now = [], next = [];
   state.visible.forEach(item => {
+    if (state.done.has(item.id)) return; // 已完成不進提示（現在/下一個可執行皆排除）
     const a = item.availability;
     if (!a) return;
     if (a.available && (a.time.gated || a.weather.gated)) now.push(item);
@@ -312,6 +316,10 @@ function init() {
   const ui = uiElements();
   if (!ui.grid) return;
   state.done = loadDone();
+  const prefs = loadPrefs();
+  if (ui.hide) ui.hide.checked = !!prefs.hide;
+  if (ui.only) ui.only.checked = !!prefs.only;
+  if (ui.sort) ui.sort.checked = !!prefs.sort;
   badges();
   updateZones(ui);
   $$('.ss-tab[data-exp]', ui.tabs || document).forEach(tab => tab.addEventListener('click', () => {
@@ -321,7 +329,8 @@ function init() {
     render(ui);
   }));
   if (ui.search) ui.search.addEventListener('input', () => render(ui));
-  [ui.zone, ui.hide, ui.only, ui.sort].filter(Boolean).forEach(control => control.addEventListener('change', () => render(ui)));
+  if (ui.zone) ui.zone.addEventListener('change', () => render(ui));
+  [ui.hide, ui.only, ui.sort].filter(Boolean).forEach(control => control.addEventListener('change', () => { savePrefs(ui); render(ui); }));
   ui.grid.addEventListener('click', event => {
     const target = event.target instanceof Element ? event.target : null;
     if (!target) return;
@@ -341,16 +350,16 @@ function init() {
     const input = event.target instanceof HTMLInputElement ? event.target.closest('.ss-complete-input') : null;
     if (!input) return;
     const element = input.closest('.ss-card');
-    if (input.checked) state.done.add(element.dataset.id); else state.done.delete(element.dataset.id);
+    const id = element.dataset.id;
+    if (input.checked) state.done.add(id); else state.done.delete(id);
     element.classList.toggle('completed', input.checked);
     saveDone();
+    const item = state.visible.get(id);
+    if (item) item.completed = input.checked;
     // 開著「隱藏已完成」時，剛勾成完成的卡立即移除（免重整才消失）
-    if (input.checked && ui.hide && ui.hide.checked) {
-      state.visible.delete(element.dataset.id);
-      element.remove();
-      updateNextHint(ui);
-    }
+    if (input.checked && ui.hide && ui.hide.checked) { state.visible.delete(id); element.remove(); }
     stats(ui, Array.from(state.visible.values()));
+    updateNextHint(ui); // 完成/取消完成即時反映到提示（排除已完成）
   });
   const hint = $('#next-hint');
   if (hint) hint.addEventListener('click', event => {
