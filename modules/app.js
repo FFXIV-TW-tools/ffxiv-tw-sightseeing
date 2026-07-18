@@ -14,7 +14,7 @@ const SOON_MS = 15 * 60 * 1000; // 「即將開放」門檻：15 分鐘內
 const ET = window.EorzeaTime || {};
 const WT = window.Weather || {};
 const TABS = ['all'].concat(EXPS);
-const state = { exp: 'all', done: new Set(), visible: new Map() };
+const state = { exp: 'all', done: new Set(), visible: new Map(), hintOpen: { now: false, next: false } };
 
 EXPS.forEach(exp => (Array.isArray(DATA[exp]) ? DATA[exp] : []).forEach(entry => { entry._exp = exp; }));
 const ALL = EXPS.flatMap(exp => Array.isArray(DATA[exp]) ? DATA[exp] : []);
@@ -139,8 +139,16 @@ function nhItem(item, trailHTML) {
     (trailHTML || '') +
   '</button>';
 }
-function nhGroup(cls, label, itemsHTML) {
-  return '<div class="ss-nh-group ' + cls + '"><span class="ss-nh-key">' + label + '</span><div class="ss-nh-list">' + itemsHTML + '</div></div>';
+function nhGroup(cls, label, count, bodyHTML) {
+  return '<div class="ss-nh-group ' + cls + '"><span class="ss-nh-key">' + label + '<span class="ss-nh-count">' + count + '</span></span><div class="ss-nh-list">' + bodyHTML + '</div></div>';
+}
+// 預設只列前 NH_LIMIT 個、其餘摺疊（可進行/待進行常有數十個）；展開狀態存 state.hintOpen，
+// 因 updateNextHint 每秒重繪、DOM 展開態會被沖掉，狀態必須存在 JS 端才不遺失。
+const NH_LIMIT = 3;
+function nhMore(group, total, expanded) {
+  const extra = total - NH_LIMIT;
+  if (extra <= 0) return '';
+  return '<button type="button" class="ss-nh-more" data-group="' + group + '">' + (expanded ? '收合' : '顯示其餘 ' + extra + ' 個') + '</button>';
 }
 function updateNextHint(ui) {
   const hint = $('#next-hint');
@@ -157,10 +165,16 @@ function updateNextHint(ui) {
   if (!now.length && !next.length) { hint.hidden = true; hint.innerHTML = ''; return; }
   hint.hidden = false;
   let html = '';
-  if (now.length) html += nhGroup('ss-nh-group--now codex-tint-panel codex-tint-panel--success', '現在可執行',
-    now.slice(0, 3).map(item => nhItem(item, '<span class="ss-nh-wait ss-nh-wait--now">進行中</span>')).join(''));
-  if (next.length) html += nhGroup('ss-nh-group--next codex-tint-panel codex-tint-panel--warn', '下一個可執行',
-    next.slice(0, 3).map(c => nhItem(c.item, '<span class="ss-nh-wait">' + esc(wait(c.ms)) + '</span>')).join(''));
+  if (now.length) {
+    const open = state.hintOpen.now;
+    const body = (open ? now : now.slice(0, NH_LIMIT)).map(item => nhItem(item, '<span class="ss-nh-wait ss-nh-wait--now">進行中</span>')).join('') + nhMore('now', now.length, open);
+    html += nhGroup('ss-nh-group--now codex-tint-panel codex-tint-panel--success', '現在可執行', now.length, body);
+  }
+  if (next.length) {
+    const open = state.hintOpen.next;
+    const body = (open ? next : next.slice(0, NH_LIMIT)).map(c => nhItem(c.item, '<span class="ss-nh-wait">' + esc(wait(c.ms)) + '</span>')).join('') + nhMore('next', next.length, open);
+    html += nhGroup('ss-nh-group--next codex-tint-panel codex-tint-panel--warn', '下一個可執行', next.length, body);
+  }
   hint.innerHTML = html;
 }
 function updateZones(ui) {
@@ -255,12 +269,28 @@ function stats(ui, list) {
   if (ui.percent) ui.percent.textContent = all.length ? String(Math.round(done * 100 / all.length)) : '0';
   if (ui.active) ui.active.textContent = String(list.filter(item => item.availability.available).length);
 }
+// 2.0/ARR 遊戲機制：探索日誌前半（No.1–20）全解才會開放後半（No.21–80）→ arr 分頁分兩段呈現。
+// 分段依 entry.no（非位置），故時間排序 / 地區篩選下仍正確（各段內部維持原排序，空段隱藏標頭）。
+function ssSection(label, note) {
+  const el = document.createElement('div');
+  el.className = 'ss-section';
+  const key = document.createElement('span'); key.className = 'ss-section-key'; key.textContent = label; el.append(key);
+  if (note) { const n = document.createElement('span'); n.className = 'ss-section-note'; n.textContent = note; el.append(n); }
+  return el;
+}
+function appendArrSections(fragment, list) {
+  const front = list.filter(item => item.entry.no <= 20);
+  const back = list.filter(item => item.entry.no >= 21);
+  if (front.length) { fragment.append(ssSection('前半 · No.1–20')); front.forEach(item => fragment.append(card(item))); }
+  if (back.length) { fragment.append(ssSection('後半 · No.21–80', '需先完成前半 20 個才會開放')); back.forEach(item => fragment.append(card(item))); }
+}
 function render(ui) {
   const result = filtered(ui);
   state.visible = new Map(result.list.map(item => [item.id, item]));
   const fragment = document.createDocumentFragment();
-  result.list.forEach(item => fragment.append(card(item)));
   if (!result.list.length) { const empty = document.createElement('p'); empty.className = 'ss-empty codex-body'; empty.textContent = entries().length ? '沒有符合條件的探索筆記。' : '目前版本沒有可用資料。'; fragment.append(empty); }
+  else if (state.exp === 'arr') appendArrSections(fragment, result.list);
+  else result.list.forEach(item => fragment.append(card(item)));
   ui.grid.replaceChildren(fragment);
   $$('.ss-card', ui.grid).forEach(element => updateCard(element, state.visible.get(element.dataset.id), result.now));
   stats(ui, result.list);
@@ -327,7 +357,11 @@ function init() {
   });
   const hint = $('#next-hint');
   if (hint) hint.addEventListener('click', event => {
-    const it = event.target instanceof Element ? event.target.closest('.ss-nh-item') : null;
+    const target = event.target instanceof Element ? event.target : null;
+    if (!target) return;
+    const more = target.closest('.ss-nh-more');
+    if (more) { const g = more.dataset.group; if (g in state.hintOpen) { state.hintOpen[g] = !state.hintOpen[g]; updateNextHint(ui); } return; }
+    const it = target.closest('.ss-nh-item');
     const id = it && it.dataset.target;
     const el = id && $$('.ss-card', ui.grid).find(card => card.dataset.id === id);
     if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('ss-card--flash'); setTimeout(() => el.classList.remove('ss-card--flash'), 1400); }
