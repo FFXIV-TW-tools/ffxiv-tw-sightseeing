@@ -22,10 +22,26 @@ ROOT = os.path.abspath(os.path.join(REPO, "..", ".."))       # monorepo root（�
 OUT_JS = os.path.join(REPO, "data", "zones.js")
 OUT_MAP = os.path.join(HERE, "zone-mapping.md")
 
+
+# 繁中名第一權威＝本機台服 client 自解包（monorepo cycle 2026-07-29-B038）。
+# 判斷邏輯不在此重寫——共用 data/item_dict/tc_source.py（DRY 鐵則：本地優先散開＝
+# 各處對「什麼算可用的 dump」理解漂移，症狀是名稱靜默退回陸服譯名、沒有測試會紅）。
+def _tc_csv(sheet: str, mono: str) -> str:
+    import sys
+    d = f"{mono}/data/item_dict"
+    if d not in sys.path:
+        sys.path.insert(0, d)
+    import tc_source
+    local = tc_source.local_csv(sheet, f"{d}/datamining_tc")
+    warn = tc_source.client_version_warning(f"{d}/datamining_tc")
+    if warn:
+        print(warn)
+    return str(local) if local else f"{d}/datamining_tc/tc_{sheet}.csv"
+
 # ---- 1. 載 tc_PlaceName: 繁中name -> placename_id（正向）+ id->name ----
 pn_by_name = {}   # 繁中name -> [id, ...]（同名多 id：城市/子區都可能重名，全收）
 pn_by_id = {}     # id -> 繁中name
-with open(f"{ROOT}/data/item_dict/datamining_tc/tc_PlaceName.csv", encoding="utf-8") as f:
+with open(_tc_csv("PlaceName", ROOT), encoding="utf-8") as f:
     r = csv.reader(f)
     rows = list(r)
 # header 3 行：#/offset 等；資料從第 4 行起，col0=key(id), col1=Name
@@ -60,8 +76,19 @@ import re
 _CODE_RE = re.compile(r"^[a-z]\d[ft]\d$")  # 主場景圖：第3碼 f=field / t=town；排除 e=事件圖 / region / default
 
 def _code(m):
+    """地圖 URL → 圖碼（s1f2）。**兩種上游網址形狀都要認**：
+      舊 https://xivapi.com/m/s1f2/s1f2.00.jpg
+      新 https://v2.xivapi.com/api/asset/map/s1f2/00   （Teamcraft 2026-07 換的）
+    只認舊形狀時，換版後 `_valid` 對每一張圖都回 False ⇒ zones.js 的 image/sf 全空，
+    而**沒有任何錯誤**（欄位只是變成空字串與預設 100）。同一個上游變更也讓
+    marketboard 的 47 張採集地圖縮圖被當孤兒刪除——形狀比對式的解析都要同時吃兩種。
+    """
     img = m.get("image") or ""
-    return img.split("/m/")[1].split("/")[0] if "/m/" in img else ""
+    if "/m/" in img:
+        return img.split("/m/")[1].split("/")[0]
+    if "/asset/map/" in img:
+        return img.split("/asset/map/")[1].split("/")[0]
+    return ""
 
 def _valid(m):
     """只收主場景圖（field/town）；排除事件圖(f1e6)/region 概覽/default/空。"""

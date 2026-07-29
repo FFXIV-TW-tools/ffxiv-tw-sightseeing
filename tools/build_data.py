@@ -26,9 +26,25 @@ for zoneKey, tc, wz, exp, src_arr, src_late in ZONES:
         bzone2key[s] = zoneKey
 zone_tc = {zoneKey: tc for zoneKey, tc, *_ in ZONES}
 
+
+# 繁中名第一權威＝本機台服 client 自解包（monorepo cycle 2026-07-29-B038）。
+# 判斷邏輯不在此重寫——共用 data/item_dict/tc_source.py（DRY 鐵則：本地優先散開＝
+# 各處對「什麼算可用的 dump」理解漂移，症狀是名稱靜默退回陸服譯名、沒有測試會紅）。
+def _tc_csv(sheet: str, mono: str) -> str:
+    import sys
+    d = f"{mono}/data/item_dict"
+    if d not in sys.path:
+        sys.path.insert(0, d)
+    import tc_source
+    local = tc_source.local_csv(sheet, f"{d}/datamining_tc")
+    warn = tc_source.client_version_warning(f"{d}/datamining_tc")
+    if warn:
+        print(warn)
+    return str(local) if local else f"{d}/datamining_tc/tc_{sheet}.csv"
+
 # ---- tc_PlaceName: id->tc ----
 pn_tc = {}
-for r in list(csv.reader(open(f"{MONO}/data/item_dict/datamining_tc/tc_PlaceName.csv", encoding="utf-8")))[3:]:
+for r in list(csv.reader(open(_tc_csv("PlaceName", MONO), encoding="utf-8")))[3:]:
     if len(r) >= 2:
         try: pn_tc[int(r[0])] = r[1].strip()
         except ValueError: pass
