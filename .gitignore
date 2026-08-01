@@ -8,3 +8,4 @@ tools/sources/extracted.json
 tools/zone-mapping.md
 __pycache__/
 *.pyc
+_site/
