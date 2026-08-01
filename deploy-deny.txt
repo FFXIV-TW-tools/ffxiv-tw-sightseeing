@@ -7,3 +7,8 @@ deploy-prepare.sh
 docs
 tools
 .adversarial-reviews
+.wrangler
+.venv
+.pytest_cache
+node_modules
+package-lock.json
