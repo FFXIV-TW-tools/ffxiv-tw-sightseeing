@@ -3,7 +3,7 @@
 FFXIV 繁中服（陸行鳥 DC）「探索筆記（Sightseeing Log）」收集工具。收錄 **2.0~7.0 全 340 個探索日誌**，
 每筆附**地圖底圖 + 座標點渲染**（marketboard 那套）、艾歐澤亞時間、天氣條件、表情提示與完成追蹤。
 
-- **Pages URL**：https://ffxiv-tw-sightseeing.pages.dev/ （部署後填實）
+- **Pages URL**：https://sight.xivtc.com/ （部署後填實）
 - **Portal**：FFXIV-TW-tools 生態工具站之一（tokens/header 走 portal CDN）
 - 純前端靜態（vanilla JS + 原生 ES module，無框架、無 build）
 
