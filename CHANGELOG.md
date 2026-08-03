@@ -31,6 +31,7 @@
 - **`deploy-prepare.sh` 只取 git tracked 檔**（刻意設計：保證「本機驗的 == 線上發的」）⇒ 新增檔案要先 `git add` 才會進 `_site`。第一次跑 build 時 `functions/` 沒被複製就是這個原因。
 - 部署面 fail-closed 閘正確擋下新增的 `tests/`（未分類）→ 已歸 `deploy-deny.txt`；`functions` 與 `_routes.json` 歸 `deploy-allow.txt`（測試守這兩條，漏了 build 會直接失敗）。
 - **UUID 不會外洩給第三方**：13 站的 `_headers` 都是 `Referrer-Policy: strict-origin-when-cross-origin`，跨 origin 只送 origin 不送 query string ⇒ portal CDN 與任何外部資源都拿不到 `ftw_uuid`。剩下的曝光面只有同 origin（我們自己的 CF log），**已知且已揭露**，不改成 `no-referrer`（那會連帶影響分析）。
+- **2026-08-03 後續（Task 4 推廣第 1 站時回頭修）**：本站的 `_middleware.js` 與 `handoff.test.mjs` 是其餘 12 站的**複製樣板**，但原稿有三處寫死 `sight.xivtc.com`／`ffxiv-tw-sightseeing.pages.dev`（測試的新網域放行案例、canonical 斷言、preview 放行註解）。那會讓「每站只換兩個常數」不成立——**寫死的註解與斷言就是漏抄的來源**。已全部改為由 `NEW_ORIGIN`／`OLD_HOST` 推導；`faux-hollows` 複製後測試檔**零修改**即全綠，等於反向驗證了泛化是完整的。
 
 ## 2026-07-29 — 地名改吃台服 client 自解包 ＋ 修地圖 URL 形狀比對
 

@@ -32,7 +32,9 @@ const FTW_PARAMS = ['ftw_uuid', 'ftw_uuid_t', 'ftw_link'];
 //   ② Accept 含 text/html（只攔「人在導覽」，資產與 fetch 一律放行）
 //   ③④ host 精確等於 production 舊 host
 //       ⚠️ 用**字串全等**而非 endsWith('.pages.dev')：全等同時滿足 ③ 與 ④——
-//          `<hash>.ffxiv-tw-sightseeing.pages.dev`（CF preview 部署）天然不匹配而被放行。
+//          `<hash>.<OLD_HOST>`（CF preview 部署）天然不匹配而被放行。
+//          ⚠️ 本檔是 13 站的複製樣板（Task 4）：**註解不得寫死主機名**，否則每站複製都要記得改，
+//             而那正是漏抄的來源。複製到新站只換 OLD_HOST / NEW_ORIGIN 兩個常數。
 //          攔了 preview 會讓預覽部署無法驗證；用 endsWith 還會在新網域哪天共用同一份程式碼時自我攔截成迴圈。
 function shouldHandoff(request, url) {
   if (request.method !== 'GET') return false;

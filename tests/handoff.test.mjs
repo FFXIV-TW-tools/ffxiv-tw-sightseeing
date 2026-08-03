@@ -40,7 +40,7 @@ ok(hit({ accept: 'text/css' }) === false, '② 資產請求 → 放行');
 ok(hit({ accept: null }) === false, '② 無 Accept header → 放行');
 ok(hit({ url: `https://abc123.${OLD_HOST}/` }) === false,
   '③④ CF preview 子網域 → 放行（攔了會讓預覽部署無法驗證）');
-ok(hit({ url: 'https://sight.xivtc.com/' }) === false,
+ok(hit({ url: `${NEW_ORIGIN}/` }) === false,
   '③④ 新網域 → 放行（否則自我攔截成無窮迴圈）');
 ok(hit({ url: `https://evil-${OLD_HOST}/` }) === false, '③④ 前綴混淆 → 放行（不攔＝不是我們的站）');
 ok(hit({ url: `https://${OLD_HOST}.attacker.net/` }) === false, '③④ 後綴混淆 → 放行');
@@ -55,7 +55,9 @@ ok(/script-src 'nonce-[A-Za-z0-9]{8,}'/.test(csp), 'CSP 用 nonce 而非 unsafe-
 ok(!csp.includes('connect-src'), '無 connect-src —— 交接頁不發任何網路請求（搬運已於範圍收斂時移除）');
 
 const body = await res.text();
-ok(/<link rel="canonical" href="https:\/\/sight\.xivtc\.com\/\?a=1">/.test(body),
+// ⚠️ 由 NEW_ORIGIN 推導，不得寫死主機名 —— 本檔是 13 站逐站複製的樣板（plan Task 4 Step 1：
+//    「每站只換兩個常數」），寫死的話每站都要記得改測試，而那正是漏抄的來源。
+ok(body.includes(`<link rel="canonical" href="${NEW_ORIGIN}/?a=1">`),
   'canonical 逐路徑指向新網址（本 Function 一上線，靜態 canonical 就不再出現 ⇒ SEO 收斂靠這條）');
 ok(!body.includes('ftw_uuid=') , 'canonical 與 noscript 連結不含 ftw_*（身份不進 SEO 訊號）');
 ok(body.includes('<noscript>') && body.includes(`href="${NEW_ORIGIN}/?a=1"`),
