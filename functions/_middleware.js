@@ -1,4 +1,8 @@
-// functions/_middleware.js — 舊網址交接頁（B-048 Task 3 試點）
+// functions/_middleware.js — 舊網址交接頁（B-048）
+//
+// 【複製到新站要改什麼】只有下面兩個常數：OLD_HOST 與 NEW_ORIGIN。其餘一字不動。
+// 本檔在 13 站之間**正規化後必須逐字節相同**（`tools/check-handoff-consistency.js` 守），
+// 所以連這段標題與註解都不得寫死站名或 Task 編號——寫死的話每站都要記得改，而那正是漏抄的來源。
 //
 // 【做什麼】把還用舊 `*.pages.dev` 書籤進來的人，連同他的跨工具身份一起送到 `xivtc.com`。
 //
@@ -33,8 +37,6 @@ const FTW_PARAMS = ['ftw_uuid', 'ftw_uuid_t', 'ftw_link'];
 //   ③④ host 精確等於 production 舊 host
 //       ⚠️ 用**字串全等**而非 endsWith('.pages.dev')：全等同時滿足 ③ 與 ④——
 //          `<hash>.<OLD_HOST>`（CF preview 部署）天然不匹配而被放行。
-//          ⚠️ 本檔是 13 站的複製樣板（Task 4）：**註解不得寫死主機名**，否則每站複製都要記得改，
-//             而那正是漏抄的來源。複製到新站只換 OLD_HOST / NEW_ORIGIN 兩個常數。
 //          攔了 preview 會讓預覽部署無法驗證；用 endsWith 還會在新網域哪天共用同一份程式碼時自我攔截成迴圈。
 function shouldHandoff(request, url) {
   if (request.method !== 'GET') return false;
