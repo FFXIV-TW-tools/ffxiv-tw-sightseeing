@@ -46,6 +46,9 @@ data/zones.js + data/sightseeing-data.js  ──> modules/app.js 渲染
 - grok：原派資料抽取，未交付檔案（只印計畫）→ CC 收回（改用更權威的 Adventure sheet）。
 
 ## VERIFY（改動後必跑）
+- **canonicalTest（safe-push 實跑的那一條；`process/fleet.json` 逐字對照本行）**：`node tools/validate-availability.mjs && node tests/run-all.mjs`
+  > 2026-08-04 併入 `tests/run-all.mjs`：`tests/` 底下的測試檔先前沒有任何自動入口會跑到（跨 repo 稽核＝claude-skills `process/tools/check-orphan-tests.mjs`）。run-all 自動掃描`tests/*.test.{js,mjs}`，新增測試檔不必再記得掛進來。
+
 
 > 基線：**5 支全 PASS**（3 validators ＋ handoff 契約 ＋ CSP 圖片主機）（`validate-data` / `validate-weather` golden / `validate-availability` 四紅線）＋ 3 syntax check OK（2026-08-04 實測）。只准升不准降。
 > 2026-08-04 新增一支（4→5）：`csp-image-hosts.test.mjs`。**由來**：Owner 回報「圖片抓不出來」——2026-07-29 上游 Teamcraft 把地圖網址從 `xivapi.com/m/…` 換成 `v2.xivapi.com/api/asset/map/…`，那次修了資料管線的形狀比對卻沒補 `_headers` 的 img-src ⇒ **340 張地圖被自己的 CSP 擋掉**，撐到使用者回報才發現。**這個缺陷零回饋訊號**：伺服器回 200、三支 validator 全綠（欄位有值、格式正確）、build 全綠，而且**上游換網址是別人的改動**，我們這邊本來沒有任何東西會因此變紅。判準**由 `data/` 與 `modules/` 反推**該有哪些主機、不寫死清單（寫死的話下次上游再換一個網址一樣不會響）；裸 scheme `https:` 視為涵蓋以免誤報。**已做恆綠自我驗證**：拿掉 img-src 的 v2 即精確指名該紅、還原即綠。⚠️ 初稿正則把主機後的 `/` 寫死，導致 `/api/asset/…` 那支分支永遠比不到、**在真的漏了 v2 的狀態下印綠燈**——寫這類「由資料反推」的哨兵，一定要用真實的缺陷狀態驗它會紅。
