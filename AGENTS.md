@@ -47,7 +47,8 @@ data/zones.js + data/sightseeing-data.js  ──> modules/app.js 渲染
 
 ## VERIFY（改動後必跑）
 
-> 基線：**4 支全 PASS**（3 validators ＋ handoff 契約）（`validate-data` / `validate-weather` golden / `validate-availability` 四紅線）＋ 3 syntax check OK（2026-07-20 實測）。只准升不准降。
+> 基線：**5 支全 PASS**（3 validators ＋ handoff 契約 ＋ CSP 圖片主機）（`validate-data` / `validate-weather` golden / `validate-availability` 四紅線）＋ 3 syntax check OK（2026-08-04 實測）。只准升不准降。
+> 2026-08-04 新增一支（4→5）：`csp-image-hosts.test.mjs`。**由來**：Owner 回報「圖片抓不出來」——2026-07-29 上游 Teamcraft 把地圖網址從 `xivapi.com/m/…` 換成 `v2.xivapi.com/api/asset/map/…`，那次修了資料管線的形狀比對卻沒補 `_headers` 的 img-src ⇒ **340 張地圖被自己的 CSP 擋掉**，撐到使用者回報才發現。**這個缺陷零回饋訊號**：伺服器回 200、三支 validator 全綠（欄位有值、格式正確）、build 全綠，而且**上游換網址是別人的改動**，我們這邊本來沒有任何東西會因此變紅。判準**由 `data/` 與 `modules/` 反推**該有哪些主機、不寫死清單（寫死的話下次上游再換一個網址一樣不會響）；裸 scheme `https:` 視為涵蓋以免誤報。**已做恆綠自我驗證**：拿掉 img-src 的 v2 即精確指名該紅、還原即綠。⚠️ 初稿正則把主機後的 `/` 寫死，導致 `/api/asset/…` 那支分支永遠比不到、**在真的漏了 v2 的狀態下印綠燈**——寫這類「由資料反推」的哨兵，一定要用真實的缺陷狀態驗它會紅。
 > 排程分級（維護閉環 §6，unattended-safe）：validators ＋ `--check` ＝ **normal**（快、無互動、可 daily cron）；UI smoke ＝ **interactive**（需 portal+http.server+headless，**永不 cron**）。
 
 ```bash
@@ -57,6 +58,7 @@ node tools/validate-availability.mjs # 可進行時間四紅線（鐵則 7）：
 node --check modules/weather.js modules/eorzea-time.js
 node --input-type=module --check < modules/app.js   # app.js 是 ES module，不能用裸 --check
 node tests/handoff.test.mjs           # 舊網址交接頁契約（B-048）：四個攔截條件各有正負案例＋標頭/canonical/跳脫/_routes≡manifest
+node tests/csp-image-hosts.test.mjs   # 資料裡的圖片主機 ⊆ _headers 的 img-src（上游換網址時會響）
 # UI smoke（interactive，人工）：需 portal :8774 起 + 本機 http.server，headless 截圖看卡片/地圖/分頁渲染
 ```
 
