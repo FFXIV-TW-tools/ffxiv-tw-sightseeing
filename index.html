@@ -141,6 +141,15 @@
   "publisher": { "@type": "Organization", "name": "FFXIV TW Tools", "url": "https://xivtc.com/" }
 }
 </script>
+
+  <!-- modules/app.js 的靜態 import 圖 — 放 <head> 讓瀏覽器解析初期就平行抓，
+       不必等 body 尾端的 app.js 下載解析完才逐層發現依賴 -->
+  <!-- MODULEPRELOAD:BEGIN — 由 tools/gen-modulepreload.mjs 生成，勿手改 -->
+  <link rel="modulepreload" href="modules/eorzea-time.js">
+  <link rel="modulepreload" href="modules/esc.js">
+  <link rel="modulepreload" href="modules/map_view.js">
+  <link rel="modulepreload" href="modules/weather.js">
+  <!-- MODULEPRELOAD:END -->
 </head>
 <body>
   <header class="page-header">

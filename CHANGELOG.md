@@ -2,6 +2,20 @@
 
 > 日期段落制（cycle 收官為段）；條目含人話「為什麼」，不從 git log 自動生成。格式見 DEVLOOP §4.3。
 
+## 2026-08-05 — 展平 ES module 載入瀑布（B-002）
+
+**病灶**：ES module 的依賴只有在父模組下載並解析完之後才會被瀏覽器發現。本站的 `modules/app.js` 還在 `</body>` 前，所以整條鏈是「解析完整份 HTML → 抓 app.js → 解析 → 才發現 4 支相依」。同型病灶在 market 站量到 production 排成 5 波（0→300→360→420→540ms），同一批檔平行抓只要 150ms。
+
+**修法**：`<head>` 加 4 條 `<link rel="modulepreload">`（`modules/app.js` 的靜態 import 圖），瀏覽器解析初期就平行抓。純新增標籤，不動邏輯、不改模組求值順序。
+
+本站只有 4 支相依，絕對幅度小於 market（67 支）與 cosmic（19 支）——但**放 `<head>` 的相對收益反而比它們大**，因為那兩站的 module 入口在 head、本站在 body 尾端，等待的是整份 HTML 解析完。
+
+⚠️ **清單生成不手貼**（漂掉的症狀是開頁慢一點——無錯誤、無警告、build 全綠）。生成器與哨兵是跨站樣板，**各站只准差 `export const ENTRY` 一行**；哨兵檔與 market 版逐字節相同。
+
+### Added
+
+- `tools/gen-modulepreload.mjs`／`tests/modulepreload-drift.test.mjs` — 自 market（B-081）複製。四條反向斷言：集合雙向相等／入口不得自我預載／href 對應檔案須存在／區塊須與生成器輸出逐字節相同。
+
 ## 2026-08-03 — 舊網址交接頁（monorepo B-048 Task 3 試點）
 
 **為什麼**：13 站已掛上 `xivtc.com`，但手上是舊 `*.pages.dev` 書籤的使用者不會知道，也不會把跨工具身份（UUID）帶過去。本站是**試點**——交接邏輯先在這裡驗證，過了才推廣其餘 12 站。
