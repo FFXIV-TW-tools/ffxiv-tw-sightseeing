@@ -1,33 +1,33 @@
 /**
  * Eorzea Time Calculator
- * 艾歐澤亞時間計算模組
+ * 艾奧傑亞時間計算模組
  *
  * 時間換算：
- * - 1 艾歐澤亞日 = 70 分鐘現實時間
- * - 1 艾歐澤亞小時 = 175 秒現實時間
+ * - 1 艾奧傑亞日 = 70 分鐘現實時間
+ * - 1 艾奧傑亞小時 = 175 秒現實時間
  * - 倍率 = 3600/175 = 20.571428...
  */
 
 const EorzeaTime = (function() {
-    // 艾歐澤亞時間倍率 (1 艾歐澤亞秒 = 1/20.571428 現實秒)
+    // 艾奧傑亞時間倍率 (1 艾奧傑亞秒 = 1/20.571428 現實秒)
     const EORZEA_MULTIPLIER = 3600 / 175;
 
-    // 一個艾歐澤亞日的毫秒數 (70 分鐘)
+    // 一個艾奧傑亞日的毫秒數 (70 分鐘)
     const MS_PER_EORZEA_DAY = 70 * 60 * 1000;
 
-    // 一個艾歐澤亞小時的毫秒數 (175 秒)
+    // 一個艾奧傑亞小時的毫秒數 (175 秒)
     const MS_PER_EORZEA_HOUR = 175 * 1000;
 
-    // 天氣週期長度 (8 艾歐澤亞小時 = 23分20秒)
+    // 天氣週期長度 (8 艾奧傑亞小時 = 23分20秒)
     const WEATHER_PERIOD_MS = 8 * MS_PER_EORZEA_HOUR;
 
     /**
-     * 取得當前艾歐澤亞時間
+     * 取得當前艾奧傑亞時間
      * @param {number} timestamp - Unix timestamp (毫秒), 預設為當前時間
      * @returns {Object} 包含小時、分鐘、秒的物件
      */
     function getCurrentEorzeaTime(timestamp = Date.now()) {
-        // 計算艾歐澤亞毫秒
+        // 計算艾奧傑亞毫秒
         const eorzeaMs = timestamp * EORZEA_MULTIPLIER;
 
         // 計算當天已過的毫秒數
@@ -41,7 +41,7 @@ const EorzeaTime = (function() {
     }
 
     /**
-     * 格式化艾歐澤亞時間為字串
+     * 格式化艾奧傑亞時間為字串
      * @param {Object} time - 時間物件
      * @param {boolean} showSeconds - 是否顯示秒
      * @returns {string} 格式化的時間字串
@@ -60,7 +60,7 @@ const EorzeaTime = (function() {
 
     /**
      * 取得當前天氣週期索引
-     * 天氣在 00:00, 08:00, 16:00 變化 (艾歐澤亞時間)
+     * 天氣在 00:00, 08:00, 16:00 變化 (艾奧傑亞時間)
      * @param {number} timestamp - Unix timestamp (毫秒)
      * @returns {number} 天氣週期索引 (0-2)
      */
@@ -88,12 +88,12 @@ const EorzeaTime = (function() {
     function getTimeUntilNextWeather(timestamp = Date.now()) {
         const time = getCurrentEorzeaTime(timestamp);
 
-        // 計算當前時段已經過的艾歐澤亞小時數
+        // 計算當前時段已經過的艾奧傑亞小時數
         const hoursInPeriod = time.hours % 8;
         const minutesInPeriod = time.minutes;
         const secondsInPeriod = time.seconds;
 
-        // 計算剩餘的艾歐澤亞時間
+        // 計算剩餘的艾奧傑亞時間
         const remainingHours = 7 - hoursInPeriod;
         const remainingMinutes = 59 - minutesInPeriod;
         const remainingSeconds = 59 - secondsInPeriod;
@@ -114,9 +114,9 @@ const EorzeaTime = (function() {
     }
 
     /**
-     * 檢查指定的艾歐澤亞時間是否在指定範圍內
+     * 檢查指定的艾奧傑亞時間是否在指定範圍內
      * 區間為**半開** [start, end)：遊戲窗「05–08」代表 05:00–07:59，08:00 即關窗。
-     * @param {number} currentHour - 當前艾歐澤亞小時 (0-23)
+     * @param {number} currentHour - 當前艾奧傑亞小時 (0-23)
      * @param {number} startTime - 開始時間 (格式: 800 表示 8:00)
      * @param {number} endTime - 結束時間 (格式: 1200 表示 12:00)
      * @returns {boolean} 是否在範圍內

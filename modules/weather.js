@@ -2,7 +2,7 @@
  * FFXIV Weather System
  * 天氣預測系統
  *
- * 天氣變化：每 8 艾歐澤亞小時 (現實 23 分 20 秒)
+ * 天氣變化：每 8 艾奧傑亞小時 (現實 23 分 20 秒)
  * 天氣時段：00:00-07:59, 08:00-15:59, 16:00-23:59
  */
 
@@ -32,7 +32,7 @@ const Weather = (function() {
         'Everlasting Light': '常世之光',
         'Termination': '終末'
     };
-    // 天氣週期長度 (毫秒) - 8 艾歐澤亞小時
+    // 天氣週期長度 (毫秒) - 8 艾奧傑亞小時
     const WEATHER_PERIOD = 1400000; // 23分20秒 = 1,400,000ms
 
     // 預設掃描窗（週期數）＝「往前預測多遠」的單一事實源，findNextWeather 與 app.js 的
@@ -346,7 +346,7 @@ const Weather = (function() {
      * @returns {number} 天氣種子值 (0-99)
      */
     function calculateWeatherSeed(timestamp) {
-        // 計算艾歐澤亞時間
+        // 計算艾奧傑亞時間
         const unixTime = Math.floor(timestamp);
 
         // 獲取 8 小時週期的基準時間

@@ -1,7 +1,7 @@
 # ffxiv-tw-sightseeing — FFXIV 繁中服 探索筆記工具
 
 FFXIV 繁中服（陸行鳥 DC）「探索筆記（Sightseeing Log）」收集工具。收錄 **2.0~7.0 全 340 個探索日誌**，
-每筆附**地圖底圖 + 座標點渲染**（marketboard 那套）、艾歐澤亞時間、天氣條件、表情提示與完成追蹤。
+每筆附**地圖底圖 + 座標點渲染**（marketboard 那套）、艾奧傑亞時間、天氣條件、表情提示與完成追蹤。
 
 - **Pages URL**：https://sight.xivtc.com/ （部署後填實）
 - **Portal**：FFXIV-TW-tools 生態工具站之一（tokens/header 走 portal CDN）
@@ -18,7 +18,7 @@ FFXIV 繁中服（陸行鳥 DC）「探索筆記（Sightseeing Log）」收集�
 index.html              骨架 + portal bootstrap + element ID 契約
 css/style.css           卡片/分頁/篩選樣式
 modules/app.js          主程式（分頁/篩選/卡片/完成追蹤/地圖委派）
-modules/eorzea-time.js  艾歐澤亞時間（移植 cycleapple）
+modules/eorzea-time.js  艾奧傑亞時間（移植 cycleapple）
 modules/weather.js      天氣預測（移植 cycleapple，bit-exact 對標 canonical）
 modules/map_view.js     地圖渲染（vendored from marketboard，上游同步）
 modules/esc.js          escHtml（vendored，map_view 依賴）
