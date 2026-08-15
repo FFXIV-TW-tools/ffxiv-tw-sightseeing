@@ -1,0 +1,10 @@
+# 行尾決定論（2026-08-16）：`tests/modulepreload-drift.test.mjs` 斷言「index.html 的區塊
+# ≡ 生成器輸出逐字節相同」，而生成器 `renderBlock()` 一律以 `\n` 組字串。Windows 上
+# `core.autocrlf=true` 會在 checkout 時把 HTML 轉成 CRLF ⇒ 該測試在**任何 Windows 檢出**
+# 必紅、在 CI（Linux）必綠——git blob 本身是乾淨的 LF，遠端與 CF build 都沒問題，
+# 壞的只有本機那道 canonicalTest 閘。恆紅的假紅燈比沒有哨兵更糟：它訓練人繞過閘門。
+# 只釘 HTML（現存唯一參與逐字節比對的類型）；其餘副檔名不動，避免與其他 repo 的
+# worktree 行尾不一致（跨 repo 比對的 check-handoff-consistency.js 雖已正規化行尾，
+# 但沒必要為此擴大面）。同型前例＝ranking B-073（該 repo 釘的是 js/mjs/css，因為它的
+# cachebust 雜湊吃那三類的 worktree 位元組）。
+*.html text eol=lf

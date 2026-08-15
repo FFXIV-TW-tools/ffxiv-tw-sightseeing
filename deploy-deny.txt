@@ -1,4 +1,5 @@
 .adversarial-reviews
+.gitattributes
 .gitignore
 .pytest_cache
 .venv
