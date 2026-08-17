@@ -153,8 +153,8 @@
 .ss-wx[hidden] { display: none; }
 .ss-clock { color: var(--ss-accent); }
 .ss-req { flex: 0 0 auto; color: var(--ss-muted); font-size: var(--fs-xs, 11px); white-space: nowrap; }
-.ss-copy { flex: 0 0 auto; display: inline-grid; place-items: center; width: 1.6rem; height: 1.6rem; padding: 0; border: thin solid var(--ss-border); border-radius: var(--radius-sm, 6px); background: transparent; color: var(--ss-muted); font-size: .95rem; line-height: 1; cursor: pointer; transition: var(--transition-fast, .15s ease); }
-.ss-copy:hover { border-color: var(--ss-accent); color: var(--ss-accent); }
+/* 複製鈕的本地實作已於 2026-08-17 遷至共用 .codex-icon-btn（B-132）——外觀、hover 與
+   prefers-reduced-motion 全部由共用版負責，本地不再覆寫，否則會蓋掉 24px 透明無框的設計。 */
 
 /* 引導說明（有填才顯示；可多行）*/
 .ss-guide { display: flex; gap: var(--space-2, 8px); margin: 0; padding: var(--space-2, 8px) var(--space-4, 16px); padding-inline-start: calc(var(--space-4, 16px) + 3px); border-top: thin solid var(--ss-hair); color: var(--ss-text); font-size: var(--fs-small, 12px); line-height: 1.5; }
@@ -205,6 +205,6 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .ss-card--flash { animation: none; }
-  .ss-next-hint, .ss-card, .ss-copy, .ss-tab, .ss-to-top { transition: none; }
+  .ss-next-hint, .ss-card, .ss-tab, .ss-to-top { transition: none; }
   .map-pin::after { animation: none; opacity: .55; }
 }

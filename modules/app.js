@@ -227,8 +227,16 @@ function row(key, valueHTML, options) {
   const trail = o.trailHTML || '';
   return '<div class="ss-row' + (o.cond ? ' ss-row--cond' : '') + '"><dt class="ss-k">' + label + '</dt><dd class="ss-v' + (o.vClass ? ' ' + o.vClass : '') + '"' + (o.live ? ' data-live="' + o.live + '"' : '') + '>' + valueHTML + '</dd>' + trail + '</div>';
 }
+// 複製鈕＝共用 `.codex-icon-btn`（B-027 就是為這個用途做的：當時複製鈕在 5 個 repo 各刻一份、
+// glyph 還四種不一致）。點擊行為綁 `[data-copy]` 屬性、與圖示無關，故換元件不動接線。
+// ⚠️ 降級路徑不是防禦性過度設計：portal 的 CSS/JS 走跨網域 CDN，「工具已部署、portal 還沒」
+//    是已知會發生的狀態（同 marketboard `modules/clipboard.js` 的處置）；JS 這層降回 ⧉ 與改之前一樣。
 function copyBtn(attr, value) {
-  return '<button class="ss-copy" type="button" ' + attr + '="' + esc(value) + '" aria-label="複製">⧉</button>';
+  const attrs = { class: 'codex-icon-btn--sm' };
+  attrs[attr] = value;
+  if (window.FFXIVIcons) return window.FFXIVIcons.btnHTML('copy', '複製', attrs);
+  return '<button type="button" class="codex-icon-btn codex-icon-btn--sm" '
+    + attr + '="' + esc(value) + '" aria-label="複製">⧉</button>';
 }
 function card(item) {
   const entry = item.entry;
