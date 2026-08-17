@@ -111,7 +111,7 @@ export function openMapModal({ img, sf, markers, title, aetherytes }) {
     <div class="map-modal" role="dialog" aria-modal="true" aria-label="${escHtml(title || '地圖')}">
       <header class="map-modal-header">
         <h3 class="codex-h3">${escHtml(title || '地圖')}</h3>
-        <button class="map-modal-close codex-btn codex-btn--ghost" aria-label="關閉地圖">✕</button>
+        <button type="button" class="map-modal-close codex-modal__close" aria-label="關閉地圖">✕</button>
       </header>
       <div class="map-modal-canvas">
         <img class="map-modal-img" src="${escHtml(img)}" alt="${escHtml(title || '地圖')}" loading="lazy"
