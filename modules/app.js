@@ -347,7 +347,26 @@ function init() {
     const map = target.closest('.map-inline--clickable');
     if (map) { try { openMapModal(JSON.parse(decodeURIComponent(map.dataset.map))); } catch {} return; }
     const copy = target.closest('[data-copy], [data-copy-emote]');
-    if (copy && navigator.clipboard) navigator.clipboard.writeText(copy.dataset.copy || copy.dataset.copyEmote).then(() => { const old = copy.textContent; copy.textContent = '已複製'; setTimeout(() => { copy.textContent = old; }, 1200); }).catch(() => {});
+    // 成功回饋走共用元件的 .is-ok（打勾轉綠 1.2s），**不動按鈕內容**。
+    // 舊寫法是 `copy.textContent = '已複製'`，有兩個缺陷：
+    //   ① 三個字塞進 20px 的圖示鈕 → 直排（emoji 版的 1.6rem 方框就已經會）
+    //   ② textContent 會刪掉 SVG 子節點，而還原時 old 是空字串（SVG 無文字）⇒ 按鈕**永久空白**
+    // 圖示鈕的回饋只能靠顏色/圖形，不能塞字（Owner 2026-08-18 實機回報）。
+    if (copy && navigator.clipboard) {
+      const value = copy.dataset.copy || copy.dataset.copyEmote;
+      navigator.clipboard.writeText(value).then(() => {
+        // ① 看得見的文字回饋＝toast（生態共用，treasure/marketboard 同一條路）。
+        //    **不可以塞進按鈕裡**：那是 20px 的圖示鈕，三個字會擠成直排，而且 textContent
+        //    會刪掉 SVG 子節點、還原時 old 是空字串 ⇒ 按鈕永久空白（2026-08-18 實機事故）。
+        // ② 按鈕本身用共用成功態 .is-ok（圖示轉綠）當就地提示 —— 它是輔助，不是唯一回饋。
+        if (window.FFXIVToast && FFXIVToast.show) FFXIVToast.show('已複製：' + value, 'ok');
+        copy.classList.add('is-ok');
+        copy.setAttribute('aria-label', '已複製');   // 純圖示鈕沒有可讀文字，狀態只能從 aria-label 傳達
+        setTimeout(() => { copy.classList.remove('is-ok'); copy.setAttribute('aria-label', '複製'); }, 1200);
+      }).catch(() => {
+        if (window.FFXIVToast && FFXIVToast.show) FFXIVToast.show('複製失敗，請手動選取', 'warn');
+      });
+    }
   });
   ui.grid.addEventListener('keydown', event => {
     const target = event.target instanceof Element ? event.target : null;
