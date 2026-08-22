@@ -46,6 +46,8 @@ data/zones.js + data/sightseeing-data.js  ──> modules/app.js 渲染
 - grok：原派資料抽取，未交付檔案（只印計畫）→ CC 收回（改用更權威的 Adventure sheet）。
 
 ## VERIFY（改動後必跑）
+- **CLS：`.ss-grid` 必須預留首屏高度**（2026-08-23）。卡片由 `renderLogs` 非同步填入，填之前這一格是 0 高 ⇒ footer 停在 y≈419（**畫面內**），填完後頁面長到 5 萬多 px、footer 被推出畫面＝一筆 layout shift。本站是全生態 CLS poor 比例最高的一個（CF RUM **59%**），而根因就這一發——**內容少的頁面反而更慘**：footer 在首屏內，所以位移全額計入；內容多的站 footer 本來就在 fold 外，同樣的成長反而不計。修法＝`min-height: 72svh`（沿用 ranking 既有值），`svh` 不用裸 `vh`。修後 1366/900/390＝0.006/0.001/0.011。哨兵＝`<monorepo>/tools/check-cls.mjs`。
+
 - **canonicalTest（safe-push 實跑的那一條；`process/fleet.json` 逐字對照本行）**：`node tools/validate-availability.mjs && node tests/run-all.mjs`
   > 2026-08-04 併入 `tests/run-all.mjs`：`tests/` 底下的測試檔先前沒有任何自動入口會跑到（跨 repo 稽核＝claude-skills `process/tools/check-orphan-tests.mjs`）。run-all 自動掃描`tests/*.test.{js,mjs}`，新增測試檔不必再記得掛進來。
 

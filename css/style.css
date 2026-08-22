@@ -82,7 +82,13 @@
 .ss-nh-group--next .ss-nh-item:hover, .ss-nh-group--next .ss-nh-item:focus-visible { background: var(--ss-warn-soft); border-color: color-mix(in srgb, var(--ss-warn) 45%, transparent); }
 
 /* ── 卡片格 ── */
-.ss-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(26rem, 1fr)); gap: var(--space-4, 16px); padding-block: var(--space-2, 8px) var(--space-8, 40px); }
+/* min-height：卡片由 app.js renderLogs 非同步填入，填之前這一格是 0 高 ⇒ footer 停在
+   y≈419（畫面內），填完後頁面長到 5 萬多 px、footer 被推出畫面＝一筆 layout shift
+   （實測 1366/900/390px 的載入期 CLS 0.082/0.092/0.127 全部來自這一發）。
+   撐開後 footer 一開始就在 fold 外，之後再長多少都不計位移。
+   ⚠️ 用 svh 不用裸 vh（手機網址列收合時 vh 會變，反而自己製造一次位移；
+   舊瀏覽器吃不到 svh 時前一宣告的 vh 仍生效）。72 ＝ 沿用 ranking 的既有值。 */
+.ss-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(26rem, 1fr)); gap: var(--space-4, 16px); padding-block: var(--space-2, 8px) var(--space-8, 40px); min-height: 72vh; min-height: 72svh; }
 
 /* ── 卡片：field-log（header/footer 全寬，中段左右並排）── */
 .ss-card { position: relative; display: flex; min-width: 0; flex-direction: column; overflow: hidden; border: thin solid var(--ss-border); border-radius: var(--radius-card, 12px); background: var(--ss-surface); box-shadow: var(--shadow-card, 0 1px 2px rgba(0,0,0,.3)); transition: border-color var(--transition-fast, .15s ease), box-shadow var(--transition-fast, .15s ease); }
