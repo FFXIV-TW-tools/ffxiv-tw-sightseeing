@@ -209,6 +209,24 @@
   .ss-grid { grid-template-columns: 1fr; }
   .ss-nh-zone { display: none; }
 }
+/* ── 觸控命中區（2026-08-26，行動適配預設化政策的四條驗收線之一）──
+   393px 實測：每張卡的「完成」label 只有 49×19、兩顆「複製」圖示鈕各 20×20，
+   而全站有 340 張卡 ⇒ 1020 個過小目標。
+   ⚠️ 複製鈕**刻意不給滿 44px 高**：座標列與指令列的實測間距只有 36px，兩個 44px 疊層會互相
+   重疊 8px，而重疊的下場是「按到隔壁那顆」＝複製到錯的東西——比小目標更糟。
+   高度取 36（貼齊列距、不重疊）、寬度取 44（右緣本來就是空白，橫向不搶任何東西）。 */
+@media (pointer: coarse) {
+  .ss-done { min-height: 44px; }
+  .ss-row .codex-icon-btn--sm { position: relative; width: 32px; height: 32px; }
+  .ss-row .codex-icon-btn--sm::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 44px; height: 36px;
+    transform: translate(-50%, -50%);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ss-card--flash { animation: none; }
   .ss-next-hint, .ss-card, .ss-tab, .ss-to-top { transition: none; }
