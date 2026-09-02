@@ -62,7 +62,7 @@ node tools/validate-weather.mjs      # 天氣移植 bit-exact 對 golden
 node tools/validate-availability.mjs # 可進行時間四紅線（鐵則 7）：wait 未知值／null≠0／掃描窗餘裕／往返驗算
 node --check modules/weather.js modules/eorzea-time.js
 node --input-type=module --check < modules/app.js   # app.js 是 ES module，不能用裸 --check
-node tests/handoff.test.mjs           # 舊網址交接頁契約（B-048）：四個攔截條件各有正負案例＋標頭/canonical/跳脫/_routes≡manifest
+node tests/handoff.test.mjs           # 舊網址交接頁契約（B-048）：四個攔截條件各有正負案例＋標頭/canonical/跳脫/_routes≡manifest （2026-09-02 起 middleware 對舊 host 回 **HTTP 301**——GSC 實查 Google 否決 canonical、inline JS 跳轉對爬蟲無效；可導覽路徑列回 `_routes.json`）
 node tests/csp-image-hosts.test.mjs   # 資料裡的圖片主機 ⊆ _headers 的 img-src（上游換網址時會響）
 # UI smoke（interactive，人工）：需 portal :8774 起 + 本機 http.server，headless 截圖看卡片/地圖/分頁渲染
 ```
