@@ -1,0 +1,6 @@
+{
+  "canonicalTest": "node tools/validate-availability.mjs && node tests/run-all.mjs",
+  "scale": "S",
+  "delegable": true,
+  "notes": "S 偏 M 靜態站；DEVLOOP retrofit 2026-07-20（B-009），工件齊；部署未完成→該 repo B-001"
+}
