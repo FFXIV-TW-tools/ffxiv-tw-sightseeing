@@ -52,7 +52,7 @@ data/zones.js + data/sightseeing-data.js  ──> modules/app.js 渲染
 - **canonicalTest（safe-push 實跑的那一條；`~/.claude/process/fleet.json` 逐字對照本行）**：`node tools/validate-availability.mjs && node tests/run-all.mjs`
 - `tests/run-all.mjs` 自動掃描 `tests/*.test.{js,mjs}`，新增測試檔不必再記得掛進來。
 
-> 基線：**4 支全 PASS**（3 validators ＋ CSP 圖片主機）（`validate-data` / `validate-weather` golden / `validate-availability` 四紅線）＋ 3 syntax check OK（2026-08-04 實測）。只准升不准降。
+> 基線：**4 支全 PASS**（3 validators ＋ CSP 圖片主機）（`validate-data` / `validate-weather` golden / `validate-availability` 四紅線）＋ 3 syntax check OK（2026-08-04 實測）。不得靜默下降。
 
 - **CLS：`.ss-grid` 必須預留首屏高度**——`min-height: 72svh`（沿用 ranking 既有值，`svh` 不用裸 `vh`）。卡片由 `renderLogs` 非同步填入，拿掉即回歸。哨兵＝`<monorepo>/tools/check-cls.mjs`。
 - **`_headers` 的 `img-src` 是資料的下游**：換／新增圖片主機時同步 `_headers`；判準由 `data/` 與 `modules/` 反推（`tests/csp-image-hosts.test.mjs`），**不寫死清單**。
