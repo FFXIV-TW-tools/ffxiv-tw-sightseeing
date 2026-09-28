@@ -21,49 +21,42 @@
 .ss-timebar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3, 12px) var(--space-6, 24px); margin-block: var(--space-4, 16px); }
 .ss-time-item { display: flex; min-width: 0; align-items: baseline; gap: var(--space-2, 8px); }
 .ss-time-item .codex-label { flex: 0 0 auto; }
-.ss-time-item .codex-big { color: var(--ss-accent); font-size: 1.6rem; line-height: 1.1; letter-spacing: .02em; }
-.ss-time-item .codex-body { font-family: var(--font-mono, monospace); font-size: var(--fs-body, 14px); color: var(--ss-text); }
+.ss-time-item .codex-big, .ss-time-item .codex-body { min-width: 5ch; font-variant-numeric: tabular-nums; }
+.ss-time-item .codex-body { min-width: 6ch; }
 
-/* ── 版本分頁（含「全部」）── */
-.ss-exp-tabs { display: flex; flex-wrap: wrap; gap: var(--space-2, 8px); margin-block: var(--space-5, 20px) var(--space-3, 12px); }
-.ss-tab { display: inline-flex; flex: 0 0 auto; align-items: center; gap: var(--space-2, 8px); min-height: 2.25rem; padding: var(--space-2, 8px) var(--space-3, 12px); border: thin solid var(--ss-border); border-radius: var(--radius-sm, 6px); background: var(--ss-surface); color: var(--ss-muted); font: inherit; font-weight: var(--fw-semibold, 600); cursor: pointer; transition: var(--transition-fast, .15s ease); }
-.ss-tab:hover, .ss-tab:focus-visible { border-color: var(--ss-accent); color: var(--ss-text); outline: none; }
-.ss-tab.active, .ss-tab[aria-pressed="true"] { border-color: var(--ss-accent); background: var(--ss-accent-soft); color: var(--ss-accent); }
-.ss-tab[data-exp="all"] { font-weight: var(--fw-bold, 700); }
-.ss-tab-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 1.5rem; padding-inline: var(--space-1, 4px); border-radius: var(--radius-sm, 6px); background: var(--ss-surface-2); color: inherit; font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--fs-xs, 11px); }
+/* 版本分頁只在容器內橫捲，數字槽保留三位數的寬度。 */
+.ss-exp-tabs { margin-block: var(--space-5, 20px) var(--space-3, 12px); max-width: 100%; overflow-x: auto; flex-wrap: nowrap; }
+.ss-exp-tabs .codex-tab { flex: 0 0 auto; white-space: nowrap; }
+.ss-exp-tabs .codex-count { min-width: 7ch; justify-content: center; }
+.ss-exp-note { margin: 0 0 var(--space-3, 12px); color: var(--ss-text); font-size: var(--fs-small); }
 
-/* ── 篩選列 ── */
-.ss-filters { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3, 12px); margin-block: var(--space-3, 12px); }
-.ss-search, .ss-select { min-width: 0; min-height: 2.25rem; padding: var(--space-2, 8px) var(--space-3, 12px); border: thin solid var(--ss-border); border-radius: var(--radius-sm, 6px); background: var(--ss-surface); color: var(--ss-text); font: inherit; }
-.ss-search { flex: 1 1 12rem; }
-/* 固定寬度：換版本重建地區選項時不因內容變寬而位移 */
-.ss-select { flex: 0 0 12rem; }
-.ss-search:focus, .ss-select:focus { border-color: var(--ss-accent); outline: none; box-shadow: 0 0 0 3px var(--ss-accent-soft); }
-.ss-check { display: inline-flex; min-width: 0; align-items: center; gap: var(--space-2, 8px); color: var(--ss-muted); font-size: var(--fs-small, 12px); cursor: pointer; }
-.ss-check input, .ss-complete-input { accent-color: var(--ss-accent); }
-
-/* ── 統計 ── */
-.ss-stats { margin-block: var(--space-3, 12px) var(--space-2, 8px); color: var(--ss-muted); }
-.ss-stats b { color: var(--ss-accent); font-weight: var(--fw-bold, 700); }
+/* 控制列只管本站的固定地區欄寬及小螢幕換行。 */
+.ss-filters { margin-block: var(--space-3, 12px); }
+.ss-filter-search { flex: 1 1 12rem; min-width: min(12rem, 100%); }
+.ss-filter-zone { min-width: 0; }
+.ss-filters #zone-filter { width: 12rem; min-width: 12rem; flex: 0 0 12rem; }
+.ss-complete-input { accent-color: var(--ss-accent); }
+.ss-summary { margin-block: var(--space-3, 12px) var(--space-2, 8px); }
+.ss-summary .codex-kpi__value { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ss-summary #completed-count, .ss-summary #completed-total, .ss-summary #visible-count, .ss-summary #total-count { display: inline-block; min-width: 3ch; }
+.ss-summary #active-count { min-width: 3ch; }
+.ss-first-visit { margin-block: var(--space-3, 12px); }
+.ss-first-visit[hidden] { display: none; }
+.ss-first-visit p { margin: 0 0 var(--space-2, 8px); }
 
 /* ── 可進行提示（現在可執行綠 / 下一個可執行黃 兩組，配色對齊卡片框）── */
 .ss-next-hint { margin-block: var(--space-3, 12px) var(--space-4, 16px); display: flex; flex-direction: column; gap: var(--space-3, 12px); }
 .ss-next-hint[hidden] { display: none; }
+@media (min-width: 60rem) {
+  .ss-next-hint:not([hidden]) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+}
 /* 每組＝獨立色框漸層面板：上綠（現在可執行）下橘（下一個可執行）。
    框/漸層/padding 全走設計系統 .codex-tint-panel + --success/--warn 變體（app.js 掛 class），
    此處不再自畫 — 本工具是該元件的來源，2026-07-17 升為共用後回頭消除平行實作（DRY 鐵則）。 */
-.ss-nh-key { display: inline-flex; align-items: center; gap: 6px; padding-inline: var(--space-1, 4px); font-family: var(--font-mono, monospace); font-size: var(--fs-xs, 11px); font-weight: var(--fw-bold, 700); letter-spacing: .12em; }
-.ss-nh-group--now .ss-nh-key { color: var(--ss-success); }
-.ss-nh-group--now .ss-nh-key::before { content: "\25B6"; }
-.ss-nh-group--next .ss-nh-key { color: var(--ss-warn); }
-.ss-nh-group--next .ss-nh-key::before { content: "\23ED"; }
-/* 多欄 grid：清單常有數十項，展開後靠橫向欄位攤平、免拉成一長條（省空間）。窄螢幕自動回單欄 */
-.ss-nh-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr)); gap: var(--space-2, 8px) var(--space-3, 12px); margin-top: 6px; }
-.ss-nh-count { margin-inline-start: 6px; padding: 0 6px; border-radius: var(--radius-sm, 6px); background: var(--ss-surface-2); font-family: var(--font-mono, monospace); font-size: var(--fs-xs, 11px); font-weight: var(--fw-bold, 700); }
-.ss-nh-more { grid-column: 1 / -1; justify-self: start; margin-top: 6px; padding: 3px 10px; border: thin solid var(--ss-border); border-radius: var(--radius-sm, 6px); background: transparent; color: var(--ss-muted); font: inherit; font-size: var(--fs-xs, 11px); cursor: pointer; transition: var(--transition-fast, .15s ease); }
-.ss-nh-more:hover, .ss-nh-more:focus-visible { border-color: var(--ss-accent); color: var(--ss-text); outline: none; }
-.ss-nh-group--now .ss-nh-more:hover, .ss-nh-group--now .ss-nh-more:focus-visible { border-color: var(--ss-success); color: var(--ss-success); }
-.ss-nh-group--next .ss-nh-more:hover, .ss-nh-group--next .ss-nh-more:focus-visible { border-color: var(--ss-warn); color: var(--ss-warn); }
+/* 多欄 grid：窄螢幕可收至 100%，不把整頁推寬。 */
+.ss-nh-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(20rem, 100%), 1fr)); gap: var(--space-2, 8px) var(--space-3, 12px); margin-top: var(--space-2, 8px); }
+.ss-nh-list .codex-btn { grid-column: 1 / -1; justify-self: start; }
+.ss-nh-group .codex-count { min-width: 3ch; }
 /* 每筆＝自包含 mini-card（上排 版本/編號/等待，下排 名稱/地區）→ 各卡等高、等待固定右上、不因名稱長短跳行 */
 .ss-nh-item { display: flex; flex-direction: column; gap: 3px; width: 100%; min-width: 0; padding: 6px 9px; border: thin solid var(--ss-hair); border-radius: var(--radius-sm, 6px); background: color-mix(in srgb, var(--ss-surface) 45%, transparent); color: var(--ss-text); font: inherit; font-size: var(--fs-small, 12px); text-align: start; cursor: pointer; transition: background var(--transition-fast, .15s ease), border-color var(--transition-fast, .15s ease); }
 .ss-nh-item:hover, .ss-nh-item:focus-visible { background: var(--ss-accent-soft); border-color: color-mix(in srgb, var(--ss-accent) 45%, transparent); outline: none; }
@@ -88,23 +81,24 @@
    撐開後 footer 一開始就在 fold 外，之後再長多少都不計位移。
    ⚠️ 用 svh 不用裸 vh（手機網址列收合時 vh 會變，反而自己製造一次位移；
    舊瀏覽器吃不到 svh 時前一宣告的 vh 仍生效）。72 ＝ 沿用 ranking 的既有值。 */
-.ss-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(26rem, 1fr)); gap: var(--space-4, 16px); padding-block: var(--space-2, 8px) var(--space-8, 40px); min-height: 72vh; min-height: 72svh; }
+.ss-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(26rem, 100%), 1fr)); align-content: start; gap: var(--space-4, 16px); padding-block: var(--space-2, 8px) var(--space-8, 40px); min-height: 72vh; min-height: 72svh; }
+/* 首次載入提示會在資料整理後才填入；把 loading grid 的佔位放到首屏下方，
+   再用 transform 將 loading 文案帶回操作區，避免提示進場推動可見的結果格。 */
+.ss-grid:has(> .ss-empty-state[role="status"]) { margin-top: 55svh; }
+.ss-grid > .ss-empty-state[role="status"] { transform: translateY(-55svh); }
 
 /* ── 卡片：field-log（header/footer 全寬，中段左右並排）── */
-.ss-card { position: relative; display: flex; min-width: 0; flex-direction: column; overflow: hidden; border: thin solid var(--ss-border); border-radius: var(--radius-card, 12px); background: var(--ss-surface); box-shadow: var(--shadow-card, 0 1px 2px rgba(0,0,0,.3)); transition: border-color var(--transition-fast, .15s ease), box-shadow var(--transition-fast, .15s ease); }
-.ss-card::before { content: ""; position: absolute; inset-block: 0; inset-inline-start: 0; width: 3px; background: var(--ss-border); transition: background var(--transition-fast, .15s ease); }
-.ss-card:hover { border-color: var(--ss-accent); box-shadow: var(--shadow-card-hover, 0 6px 18px rgba(0,0,0,.4)); }
+.ss-card { position: relative; display: flex; min-width: 0; flex-direction: column; overflow: hidden; padding: 0; }
+.ss-card::before { content: ""; position: absolute; inset-block: 0; inset-inline-start: 0; width: 3px; background: var(--ss-border); }
 /* 現在可進行＝綠框 */
 .ss-card--available { border-color: var(--ss-success); }
 .ss-card--available::before { background: var(--ss-success); }
 /* 即將開放（≤15 分）＝黃框 */
 .ss-card--soon { border-color: var(--ss-warn); }
 .ss-card--soon::before { background: var(--ss-warn); }
-/* 已完成＝變暗＋去飽和；框中性化（特定度高於 available/soon，壓過狀態色）*/
-.ss-card.completed { opacity: .5; border-color: var(--ss-border); filter: grayscale(.45); }
+.ss-card.completed { border-color: var(--ss-border); }
 .ss-card.completed::before { background: var(--ss-border); }
 .ss-card.completed .ss-title { text-decoration: line-through; text-decoration-thickness: 2px; text-decoration-color: var(--ss-accent); }
-.ss-card.completed .ss-title > span { color: var(--ss-muted); }
 .ss-card--flash { animation: ss-flash 1.4s ease; }
 @keyframes ss-flash { 0%, 100% { box-shadow: var(--shadow-card, 0 1px 2px rgba(0,0,0,.3)); } 25% { box-shadow: 0 0 0 3px var(--ss-accent); } }
 
@@ -115,8 +109,8 @@
 .ss-title { flex: 1 1 auto; min-width: 0; margin: 0; font-size: 1rem; font-weight: var(--fw-semibold, 600); line-height: 1.3; }
 .ss-title > span { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ss-done-badge { display: none; }
-.ss-card.completed .ss-done-badge { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 3px; padding: 2px 8px; border-radius: var(--radius-sm, 6px); background: var(--ss-accent-soft); color: var(--ss-accent); font-size: var(--fs-xs, 11px); font-weight: var(--fw-bold, 700); white-space: nowrap; }
-.ss-done { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px; color: var(--ss-muted); font-size: var(--fs-xs, 11px); cursor: pointer; white-space: nowrap; }
+.ss-card.completed .ss-done-badge { display: inline-flex; flex: 0 0 auto; }
+.ss-done { flex: 0 0 auto; display: inline-flex; align-items: center; gap: var(--space-1, 4px); color: var(--ss-text); font-size: var(--fs-small); cursor: pointer; white-space: nowrap; }
 .ss-card.completed .ss-done-txt { display: none; }
 
 /* 中段：地圖標本 | 資料台帳 */
@@ -125,40 +119,29 @@
 /* vendored 90-map.css 把 .map-inline-wrap 寫死 184px → 覆寫成填滿容器，否則溢出蓋住台帳標籤 */
 .ss-map .map-inline-wrap { width: 100%; max-width: 100%; min-width: 0; }
 
-/* modal 大圖探索點標記：vendored .map-pin 只有 18px 📍、大圖上太不明顯 → 本地覆寫成信標
-   （cyan 圓點＋白環＋光暈＋脈動擴散環，風格對齊卡片小地圖 .map-inline-pin）。不動 vendored 90-map.css。 */
-.map-pin { font-size: 0; }
-.map-pin::before, .map-pin::after {
-  content: ""; position: absolute; left: 0; top: 0; box-sizing: border-box;
-  width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%;
-}
-.map-pin::before { background: var(--ss-accent, #4ec9d0); border: 2px solid #fff; box-shadow: 0 0 9px 2px var(--ss-accent, #4ec9d0), 0 0 0 1px rgba(0,0,0,.65); }
-.map-pin::after { border: 2px solid var(--ss-accent, #4ec9d0); animation: ss-pin-beacon 1.7s ease-out infinite; }
-@keyframes ss-pin-beacon {
-  0%   { opacity: .85; transform: scale(1); }
-  70%  { opacity: 0;   transform: scale(3.4); }
-  100% { opacity: 0;   transform: scale(3.4); }
-}
-.ss-map-empty { display: grid; aspect-ratio: 1; place-items: center; border: thin dashed var(--ss-border); border-radius: var(--radius-sm, 6px); color: var(--ss-muted); font-size: var(--fs-small, 12px); text-align: center; }
+/* 小圖載入失敗時保留原尺寸並提供可讀座標退路；vendored 地圖待上游同步。 */
+.ss-map .map-inline-wrap + .ss-map-empty { display: none; }
+.ss-map:has(.map-inline--failed) .ss-map-empty { display: grid; }
+.ss-map-empty { display: grid; aspect-ratio: 1; place-items: center; border: thin dashed var(--ss-border); border-radius: var(--radius-sm, 6px); color: var(--ss-text); font-size: var(--fs-small); text-align: center; padding: var(--space-2, 8px); }
 
 /* 台帳：位置 / 座標 / 指令 / 天氣 / 時間 各成一列 */
 .ss-ledger { min-width: 0; margin: 0; display: flex; flex-direction: column; }
 .ss-row { display: flex; align-items: flex-start; gap: var(--space-2, 8px); padding-block: var(--space-2, 8px); border-top: thin solid var(--ss-hair); min-width: 0; }
 .ss-row:first-child { border-top: 0; padding-top: 0; }
-.ss-k { flex: 0 0 2.8em; display: inline-flex; align-items: center; gap: 5px; padding-top: 1px; color: var(--ss-muted); font-family: var(--font-mono, monospace); font-size: var(--fs-xs, 11px); letter-spacing: .04em; white-space: nowrap; }
+.ss-k { flex: 0 0 2.8em; display: inline-flex; align-items: center; gap: 5px; padding-top: 1px; color: var(--ss-text); font-size: var(--fs-small); font-weight: var(--fw-semibold, 600); white-space: nowrap; }
 /* 值一律換行、永不截斷（欄位完整優先於等高）*/
 .ss-v { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; word-break: break-word; color: var(--ss-text); font-size: var(--fs-small, 12px); line-height: 1.45; }
 .ss-v--zone { font-weight: var(--fw-semibold, 600); }
 .ss-v--coord { display: flex; flex-wrap: wrap; gap: 2px var(--space-3, 12px); font-family: var(--font-mono, monospace); }
-.ss-xy { flex: 0 0 auto; color: var(--ss-muted); }
+.ss-xy { flex: 0 0 auto; color: var(--ss-text); }
 .ss-xy b { color: var(--ss-text); font-weight: var(--fw-semibold, 600); }
 .ss-cmd { color: var(--color-code, var(--ss-accent)); font-family: var(--font-mono, monospace); }
-.ss-emote-tc { margin-inline-start: 6px; color: var(--ss-muted); }
+.ss-emote-tc { margin-inline-start: 6px; color: var(--ss-text); }
 .ss-v--wx { display: flex; align-items: center; gap: 6px; }
 .ss-wx { flex: 0 0 auto; width: 1.4rem; height: 1.4rem; object-fit: contain; }
 .ss-wx[hidden] { display: none; }
 .ss-clock { color: var(--ss-accent); }
-.ss-req { flex: 0 0 auto; color: var(--ss-muted); font-size: var(--fs-xs, 11px); white-space: nowrap; }
+.ss-req { flex: 0 0 auto; color: var(--ss-text); font-size: var(--fs-small); white-space: nowrap; }
 /* 複製鈕的本地實作已於 2026-08-17 遷至共用 .codex-icon-btn（B-132）——外觀、hover 與
    prefers-reduced-motion 全部由共用版負責，本地不再覆寫，否則會蓋掉 24px 透明無框的設計。 */
 
@@ -181,8 +164,9 @@
 .ss-next { flex: 0 0 auto; margin-inline-start: auto; color: var(--ss-muted); font-family: var(--font-mono, monospace); font-size: var(--fs-xs, 11px); }
 .ss-next[hidden] { display: none; }
 
-/* 空狀態 */
-.ss-empty { grid-column: 1 / -1; padding: var(--space-6, 24px); border: thin dashed var(--ss-border); border-radius: var(--radius-md, 8px); color: var(--ss-muted); text-align: center; }
+/* 空狀態保留首屏 grid 高度，但佔位本身不被拉成大框。 */
+.ss-empty-state { grid-column: 1 / -1; align-self: start; }
+.ss-empty-state p { margin: var(--space-2, 8px) 0; }
 
 /* 頁尾來源標註 */
 .ss-page-foot { margin-block: var(--space-6, 24px) var(--space-8, 40px); padding-top: var(--space-4, 16px); border-top: thin solid var(--ss-hair); color: var(--ss-muted); line-height: 1.7; }
@@ -203,11 +187,17 @@
   .ss-map { width: 100%; max-width: 15rem; margin-inline: auto; }
 }
 @media (max-width: 40rem) {
-  .ss-timebar { grid-template-columns: 1fr; gap: var(--space-3, 12px); }
-  .ss-filters > * { flex: 1 1 100%; }
-  .ss-check { flex-basis: auto; }
+  .ss-timebar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2, 8px); }
+  .ss-time-item { flex-direction: column; gap: 0; }
+  .ss-time-item:first-of-type { grid-column: 1 / -1; flex-direction: row; align-items: baseline; gap: var(--space-2, 8px); }
+  .ss-filter-search, .ss-filter-zone { flex: 1 1 100%; }
+  .ss-filters #zone-filter { width: 100%; min-width: 0; flex: 1 1 auto; }
   .ss-grid { grid-template-columns: 1fr; }
   .ss-nh-zone { display: none; }
+  .ss-nh-group { min-width: 0; }
+  .ss-nh-list { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: min(75vw, 15rem); overflow-x: auto; max-width: 100%; scroll-snap-type: x proximity; }
+  .ss-nh-list > * { scroll-snap-align: start; }
+  .ss-nh-list .codex-btn { grid-column: auto; align-self: center; }
 }
 /* ── 觸控命中區（2026-08-26，行動適配預設化政策的四條驗收線之一）──
    393px 實測：每張卡的「完成」label 只有 49×19、兩顆「複製」圖示鈕各 20×20，
@@ -229,6 +219,5 @@
 
 @media (prefers-reduced-motion: reduce) {
   .ss-card--flash { animation: none; }
-  .ss-next-hint, .ss-card, .ss-tab, .ss-to-top { transition: none; }
-  .map-pin::after { animation: none; opacity: .55; }
+  .ss-next-hint, .ss-card, .ss-to-top { transition: none; }
 }

@@ -2,6 +2,8 @@
 import { renderInlineMap, openMapModal } from './map_view.js';
 import './eorzea-time.js';
 import './weather.js';
+import { iconSVG, fillStaticIcons } from './ss_visual.js';
+import { formatTimeWindow, formatUnfinishedList } from './ss_list.js';
 
 const DATA = window.SIGHTSEEING_DATA || {};
 const ZONES = window.SIGHTSEEING_ZONES || {};
@@ -43,7 +45,7 @@ const formatMMSS = ms => { if (!Number.isFinite(ms) || ms < 0) return '--:--'; c
 // 而 null 的語義是「未知／找不到」。2026-07-17 南林區雷雨誤顯示「下一次 現在」的根因。
 const wait = ms => !Number.isFinite(ms) ? '計算中' : ms <= 0 ? '現在' : typeof ET.formatWaitTime === 'function' ? ET.formatWaitTime(ms) : formatMMSS(ms);
 const weatherTC = value => { try { return typeof WT.getWeatherNameTC === 'function' ? WT.getWeatherNameTC(value) : value; } catch { return value; } };
-const timeLabel = entry => { if (!hasTime(entry)) return ''; const f = value => String(Math.floor(Number(value) < 24 ? Number(value) : Number(value) / 100)).padStart(2, '0') + ':00'; return f(entry.timeStart) + '–' + f(entry.timeEnd); };
+const timeLabel = entry => hasTime(entry) ? formatTimeWindow(entry) : '';
 
 function currentWeather(z, now) {
   if (!z.weatherZone || typeof WT.getWeatherForZone !== 'function') return null;
@@ -131,14 +133,19 @@ function loadDone() {
 }
 function saveDone() { try { window.localStorage.setItem(STORE, JSON.stringify(Array.from(state.done))); } catch {} }
 function loadPrefs() { try { const v = JSON.parse(window.localStorage.getItem(PREFS) || '{}'); return v && typeof v === 'object' ? v : {}; } catch { return {}; } }
-function savePrefs(ui) { try { window.localStorage.setItem(PREFS, JSON.stringify({ exp: state.exp, hide: !!(ui.hide && ui.hide.checked), only: !!(ui.only && ui.only.checked), sort: !!(ui.sort && ui.sort.checked) })); } catch {} }
+function pressed(control) { return control?.getAttribute('aria-pressed') === 'true'; }
+function setPressed(control, value) { if (control) control.setAttribute('aria-pressed', String(value)); }
+function savePrefs(ui) { try { window.localStorage.setItem(PREFS, JSON.stringify({ exp: state.exp, hide: pressed(ui.hide), only: pressed(ui.only), sort: pressed(ui.sort) })); } catch {} }
 function uiElements() {
-  return { grid: $('#log-grid'), tabs: $('#exp-tabs'), search: $('#search-input'), zone: $('#zone-filter'), hide: $('#hide-completed'), only: $('#only-available'), sort: $('#sort-by-time'), et: $('#et-clock'), local: $('#local-time'), countdown: $('#weather-countdown'), visible: $('#visible-count'), total: $('#total-count'), completed: $('#completed-count'), completedTotal: $('#completed-total'), percent: $('#completed-percent'), active: $('#active-count') };
+  return { grid: $('#log-grid'), tabs: $('#exp-tabs'), search: $('#search-input'), zone: $('#zone-filter'), hide: $('#hide-completed'), only: $('#only-available'), sort: $('#sort-by-time'), copy: $('#copy-visible'), et: $('#et-clock'), local: $('#local-time'), countdown: $('#weather-countdown'), visible: $('#visible-count'), total: $('#total-count'), completed: $('#completed-count'), completedTotal: $('#completed-total'), percent: $('#completed-percent'), active: $('#active-count') };
 }
 function badges() {
-  EXPS.forEach(exp => { const el = $('#badge-' + exp); if (el) el.textContent = String(Array.isArray(DATA[exp]) ? DATA[exp].length : 0); });
-  const set = (id, n) => { const el = $('#' + id); if (el) el.textContent = String(n); };
-  set('badge-all', ALL.length); set('badge-arr-front', ARR_FRONT.length); set('badge-arr-back', ARR_BACK.length);
+  const groups = { all: ALL, 'arr-front': ARR_FRONT, 'arr-back': ARR_BACK };
+  EXPS.filter(exp => exp !== 'arr').forEach(exp => { groups[exp] = Array.isArray(DATA[exp]) ? DATA[exp] : []; });
+  TABS.forEach(key => {
+    const list = groups[key], el = $('#badge-' + key);
+    if (el) el.textContent = list.filter(entry => state.done.has(itemId(entry))).length + '/' + list.length;
+  });
 }
 function nhItem(item, trailHTML) {
   const entry = item.entry, exp = expOf(entry);
@@ -156,7 +163,8 @@ function nhItem(item, trailHTML) {
   '</button>';
 }
 function nhGroup(cls, label, count, bodyHTML) {
-  return '<div class="ss-nh-group ' + cls + '"><span class="ss-nh-key">' + label + '<span class="ss-nh-count">' + count + '</span></span><div class="ss-nh-list">' + bodyHTML + '</div></div>';
+  const tone = cls.includes('--now') ? 'var(--color-success)' : 'var(--color-warn)';
+  return '<div class="ss-nh-group ' + cls + '"><div class="codex-group-head" style="--group-tone:' + tone + '"><span class="codex-group-head__title">' + label + '</span><span class="codex-count">' + count + '</span></div><div class="ss-nh-list">' + bodyHTML + '</div></div>';
 }
 // 預設只列前 NH_LIMIT 個、其餘摺疊（可進行/待進行常有數十個）；展開狀態存 state.hintOpen，
 // 因 updateNextHint 每秒重繪、DOM 展開態會被沖掉，狀態必須存在 JS 端才不遺失。
@@ -164,11 +172,19 @@ const NH_LIMIT = 3;
 function nhMore(group, total, expanded) {
   const extra = total - NH_LIMIT;
   if (extra <= 0) return '';
-  return '<button type="button" class="ss-nh-more" data-group="' + group + '">' + (expanded ? '收合' : '顯示其餘 ' + extra + ' 個') + '</button>';
+  return '<button type="button" class="codex-btn codex-btn--ghost" data-group="' + group + '">' + (expanded ? '收合' : '顯示其餘 ' + extra + ' 筆') + '</button>';
 }
 function updateNextHint(ui) {
   const hint = $('#next-hint');
   if (!hint) return;
+  // 每秒更新倒數會替換提示 DOM；保留鍵盤焦點和手機提示列自己的橫捲位置。
+  const active = hint.contains(document.activeElement) ? document.activeElement : null;
+  const focusItem = active?.dataset.target;
+  const focusGroup = active?.dataset.group;
+  const scroll = {
+    now: $('.ss-nh-group--now .ss-nh-list', hint)?.scrollLeft || 0,
+    next: $('.ss-nh-group--next .ss-nh-list', hint)?.scrollLeft || 0
+  };
   // 現在可執行＝有時間/天氣限制（2.0 為主）且此刻正好在窗口內的；下一個可執行＝即將到來的
   const now = [], next = [];
   state.visible.forEach(item => {
@@ -185,14 +201,24 @@ function updateNextHint(ui) {
   if (now.length) {
     const open = state.hintOpen.now;
     const body = (open ? now : now.slice(0, NH_LIMIT)).map(item => nhItem(item, '<span class="ss-nh-wait ss-nh-wait--now">進行中</span>')).join('') + nhMore('now', now.length, open);
-    html += nhGroup('ss-nh-group--now codex-tint-panel codex-tint-panel--success', '現在可執行', now.length, body);
+    html += nhGroup('ss-nh-group--now codex-tint-panel codex-tint-panel--success', '現在可進行', now.length, body);
   }
   if (next.length) {
     const open = state.hintOpen.next;
     const body = (open ? next : next.slice(0, NH_LIMIT)).map(c => nhItem(c.item, '<span class="ss-nh-wait">' + esc(wait(c.ms)) + '</span>')).join('') + nhMore('next', next.length, open);
-    html += nhGroup('ss-nh-group--next codex-tint-panel codex-tint-panel--warn', '下一個可執行', next.length, body);
+    html += nhGroup('ss-nh-group--next codex-tint-panel codex-tint-panel--warn', '接下來可進行', next.length, body);
   }
   hint.innerHTML = html;
+  for (const group of ['now', 'next']) {
+    const list = $('.ss-nh-group--' + group + ' .ss-nh-list', hint);
+    if (list && scroll[group]) list.scrollLeft = scroll[group];
+  }
+  if (active) {
+    const replacement = focusItem
+      ? $$('.ss-nh-item', hint).find(el => el.dataset.target === focusItem)
+      : $$('[data-group]', hint).find(el => el.dataset.group === focusGroup);
+    replacement?.focus({ preventScroll: true });
+  }
 }
 function updateZones(ui) {
   if (!ui.zone) return;
@@ -213,13 +239,16 @@ function filtered(ui) {
     return { entry: entry, zone: z, id: id, index: index, completed: state.done.has(id), availability: a };
   }).filter(item => {
     const text = (itemName(item.entry) + ' ' + (item.entry.name || '') + ' ' + (item.zone.tc || '') + ' ' + (item.entry.zoneKey || '')).toLocaleLowerCase();
-    return (!query || text.includes(query)) && (!zoneKey || item.entry.zoneKey === zoneKey) && (!ui.hide || !ui.hide.checked || !item.completed) && (!ui.only || !ui.only.checked || item.availability.available);
+    return (!query || text.includes(query)) && (!zoneKey || item.entry.zoneKey === zoneKey) && (!pressed(ui.hide) || !item.completed) && (!pressed(ui.only) || item.availability.available);
   });
-  if (ui.sort && ui.sort.checked) list.sort((a, b) => (a.availability.nextMs == null ? Infinity : a.availability.nextMs) - (b.availability.nextMs == null ? Infinity : b.availability.nextMs) || a.index - b.index);
+  if (pressed(ui.sort)) list.sort((a, b) => (a.availability.nextMs == null ? Infinity : a.availability.nextMs) - (b.availability.nextMs == null ? Infinity : b.availability.nextMs) || a.index - b.index);
   return { list: list, now: now };
 }
 function mapHTML(entry, z) {
-  try { return renderInlineMap({ img: z.image, sf: z.sf, markers: [{ x: entry.x, y: entry.y }], title: z.tc, clickToEnlarge: true }); } catch { return ''; }
+  try {
+    const html = renderInlineMap({ img: z.image, sf: z.sf, markers: [{ x: entry.x, y: entry.y, label: itemName(entry) }], title: (z.tc || entry.zoneKey || '未知地區') + '・No.' + pad(entry.no) + ' ' + itemName(entry), clickToEnlarge: true });
+    return html && html + '<div class="ss-map-empty">地圖暫時無法顯示，仍可使用 X／Y 座標尋找。</div>';
+  } catch { return ''; }
 }
 function row(key, valueHTML, options) {
   const o = options || {};
@@ -253,10 +282,10 @@ function card(item) {
   if (a.time.gated) rows.push(row('時間', esc(timeLabel(entry)), { cond: true, live: 'time', labelHTML: '<span class="ss-clock" aria-hidden="true">◷</span>時間' }));
   const guide = String(GUIDES[item.id] || '').trim();
   const template = document.createElement('template');
-  template.innerHTML = '<article class="ss-card' + (item.completed ? ' completed' : '') + '" data-id="' + esc(item.id) + '" data-available="' + String(a.available) + '">' +
-    '<header class="ss-head"><span class="ss-ord">' + esc(pad(entry.no)) + '</span><h2 class="ss-title"><span>' + esc(itemName(entry)) + '</span></h2><span class="ss-done-badge">✓ 已完成</span><label class="ss-done"><input class="ss-complete-input" type="checkbox"' + (item.completed ? ' checked' : '') + ' aria-label="標記完成"><span class="ss-done-txt">完成</span></label></header>' +
+  template.innerHTML = '<article class="codex-card ss-card' + (item.completed ? ' completed' : '') + '" data-id="' + esc(item.id) + '" data-available="' + String(a.available) + '">' +
+    '<header class="ss-head"><span class="ss-ord">' + esc(pad(entry.no)) + '</span><h2 class="ss-title"><span>' + esc(itemName(entry)) + '</span></h2><span class="ss-done-badge codex-badge codex-badge--success codex-badge--hollow">✓ 已完成</span><label class="ss-done"><input class="ss-complete-input" type="checkbox"' + (item.completed ? ' checked' : '') + ' aria-label="標記完成"><span class="ss-done-txt">標記完成</span></label></header>' +
     '<div class="ss-body">' +
-      '<div class="ss-map">' + (mapHTML(entry, z) || '<div class="ss-map-empty">地圖資料暫缺</div>') + '</div>' +
+      '<div class="ss-map">' + (mapHTML(entry, z) || '<div class="ss-map-empty">地圖暫時無法顯示，仍可使用 X／Y 座標尋找。</div>') + '</div>' +
       '<dl class="ss-ledger">' + rows.join('') + '</dl>' +
     '</div>' +
     '<p class="ss-guide' + (guide ? '' : ' ss-guide--empty') + '"><span class="ss-guide-key">引導</span><span class="ss-guide-txt">' + (guide ? esc(guide) : '—') + '</span></p>' +
@@ -294,15 +323,46 @@ function stats(ui, list) {
   if (ui.percent) ui.percent.textContent = all.length ? String(Math.round(done * 100 / all.length)) : '0';
   if (ui.active) ui.active.textContent = String(list.filter(item => item.availability.available).length);
 }
+function emptyState(ui) {
+  const list = entries();
+  const noData = ALL.length === 0;
+  const noVersion = !noData && list.length === 0;
+  const allDone = list.length > 0 && list.every(entry => state.done.has(itemId(entry)));
+  const completedOnly = allDone && pressed(ui.hide) && !ui.search.value.trim() && !ui.zone.value && !pressed(ui.only);
+  const headline = noData ? '探索筆記資料載入失敗，請重新整理頁面。' : noVersion ? '此版本目前沒有點位，請切換其他版本。' : completedOnly ? '這個版本的筆記都完成了！' : '找不到符合條件的探索筆記。';
+  const hint = noData || noVersion || completedOnly ? '' : '<p>試著清除搜尋與篩選。</p>';
+  const action = noVersion ? '' : '<button type="button" class="codex-btn codex-btn--ghost" data-ss-clear="' + (noData ? 'reload' : completedOnly ? 'completed' : 'filters') + '">' + (noData ? '重新整理' : completedOnly ? '顯示已完成筆記' : '清除搜尋與篩選') + '</button>';
+  const empty = document.createElement('div');
+  empty.className = 'codex-empty ss-empty-state';
+  empty.innerHTML = '<span class="codex-empty__icon" aria-hidden="true">' + iconSVG(noData ? 'warning' : 'binoculars') + '</span><strong>' + headline + '</strong>' + hint + action;
+  return empty;
+}
+function updateCopyAvailability(ui) {
+  if (!ui.copy) return;
+  const hasItems = Array.from(state.visible.values()).some(item => !item.completed);
+  ui.copy.setAttribute('aria-disabled', String(!hasItems));
+  ui.copy.dataset.help = hasItems ? '複製目前顯示、尚未完成的筆記' : '目前沒有可複製的未完成筆記';
+}
 function render(ui) {
   const result = filtered(ui);
   state.visible = new Map(result.list.map(item => [item.id, item]));
   const fragment = document.createDocumentFragment();
   result.list.forEach(item => fragment.append(card(item)));
-  if (!result.list.length) { const empty = document.createElement('p'); empty.className = 'ss-empty codex-body'; empty.textContent = entries().length ? '沒有符合條件的探索筆記。' : '目前版本沒有可用資料。'; fragment.append(empty); }
+  if (!result.list.length) fragment.append(emptyState(ui));
   ui.grid.replaceChildren(fragment);
   $$('.ss-card', ui.grid).forEach(element => updateCard(element, state.visible.get(element.dataset.id), result.now));
   stats(ui, result.list);
+  updateCopyAvailability(ui);
+  const visit = $('#first-visit');
+  if (visit) {
+    visit.hidden = state.done.size !== 0 || !result.list.length || !!ui.search.value.trim() || !!ui.zone.value || pressed(ui.hide) || pressed(ui.only);
+    const action = $('#first-visit-action');
+    if (action) {
+      const available = result.list.some(item => item.availability.available);
+      action.textContent = available ? '查看現在可進行' : '瀏覽全部點位';
+      action.dataset.ssVisit = available ? 'available' : 'all';
+    }
+  }
   updateNextHint(ui);
 }
 function tick(ui, now) {
@@ -317,7 +377,7 @@ function tick(ui, now) {
     if (a && !a.time.gated && !a.weather.gated) return;
     updateCard(element, item, now);
   });
-  stats(ui, Array.from(state.visible.values()));
+  if (ui.active) ui.active.textContent = String(Array.from(state.visible.values()).filter(item => item.availability.available).length);
   updateNextHint(ui);
 }
 function init() {
@@ -325,22 +385,71 @@ function init() {
   if (!ui.grid) return;
   state.done = loadDone();
   const prefs = loadPrefs();
-  if (ui.hide) ui.hide.checked = !!prefs.hide;
-  if (ui.only) ui.only.checked = !!prefs.only;
-  if (ui.sort) ui.sort.checked = !!prefs.sort;
+  setPressed(ui.hide, !!prefs.hide);
+  setPressed(ui.only, !!prefs.only);
+  setPressed(ui.sort, !!prefs.sort);
   if (typeof prefs.exp === 'string' && TABS.includes(prefs.exp)) state.exp = prefs.exp; // 版本分頁選擇跨重整保留
   badges();
+  fillStaticIcons();
   updateZones(ui);
-  $$('.ss-tab[data-exp]', ui.tabs || document).forEach(tab => tab.addEventListener('click', () => {
+  const tabs = $$('.codex-tab[data-exp]', ui.tabs || document);
+  const syncTabs = () => {
+    tabs.forEach(tab => tab.setAttribute('aria-pressed', String(tab.dataset.exp === state.exp)));
+    const note = $('#arr-back-note');
+    if (note) note.hidden = state.exp !== 'arr-back';
+  };
+  syncTabs();
+  const selectedTab = tabs.find(tab => tab.dataset.exp === state.exp);
+  if (selectedTab && ui.tabs) ui.tabs.scrollLeft = Math.max(0, selectedTab.offsetLeft - ui.tabs.offsetLeft - ui.tabs.clientWidth + selectedTab.offsetWidth);
+  tabs.forEach(tab => tab.addEventListener('click', () => {
     state.exp = TABS.includes(tab.dataset.exp) ? tab.dataset.exp : 'all';
+    syncTabs();
     savePrefs(ui);
-    $$('.ss-tab[data-exp]', ui.tabs || document).forEach(other => { const active = other.dataset.exp === state.exp; other.setAttribute('aria-pressed', String(active)); other.classList.toggle('active', active); });
     updateZones(ui);
     render(ui);
   }));
   if (ui.search) ui.search.addEventListener('input', () => render(ui));
   if (ui.zone) ui.zone.addEventListener('change', () => render(ui));
-  [ui.hide, ui.only, ui.sort].filter(Boolean).forEach(control => control.addEventListener('change', () => { savePrefs(ui); render(ui); }));
+  [ui.hide, ui.only, ui.sort].filter(Boolean).forEach(control => control.addEventListener('click', () => {
+    setPressed(control, !pressed(control));
+    savePrefs(ui);
+    render(ui);
+  }));
+  document.addEventListener('keydown', event => {
+    if (event.isComposing || event.ctrlKey || event.altKey || event.metaKey) return;
+    const target = event.target instanceof Element ? event.target : null;
+    if (event.key === '/' && !target?.closest('input, textarea, select, [contenteditable]') && !document.querySelector('.map-modal-overlay, .codex-modal-overlay')) {
+      event.preventDefault();
+      ui.search?.focus();
+    } else if (event.key === 'Escape' && target === ui.search && !document.querySelector('.map-modal-overlay, .codex-modal-overlay') && ui.search.value) {
+      ui.search.value = '';
+      render(ui);
+    }
+  });
+  ui.grid.addEventListener('click', event => {
+    const clear = event.target instanceof Element && event.target.closest('[data-ss-clear]');
+    if (!clear) return;
+    if (clear.dataset.ssClear === 'reload') { location.reload(); return; }
+    if (clear.dataset.ssClear === 'completed') setPressed(ui.hide, false);
+    else { ui.search.value = ''; ui.zone.value = ''; setPressed(ui.hide, false); setPressed(ui.only, false); }
+    savePrefs(ui);
+    render(ui);
+  });
+  $('#first-visit-action')?.addEventListener('click', event => {
+    setPressed(ui.only, event.currentTarget.dataset.ssVisit === 'available');
+    savePrefs(ui);
+    render(ui);
+  });
+  ui.copy?.addEventListener('click', () => {
+    if (ui.copy.getAttribute('aria-disabled') === 'true') return;
+    const text = formatUnfinishedList(Array.from(state.visible.values()), weatherTC);
+    if (!text) return;
+    navigator.clipboard?.writeText(text).then(() => {
+      window.FFXIVToast?.show('已複製待探索清單', 'ok');
+    }).catch(() => {
+      window.FFXIVToast?.show('複製失敗，請手動選取', 'warn');
+    }) ?? window.FFXIVToast?.show('複製失敗，請手動選取', 'warn');
+  });
   ui.grid.addEventListener('click', event => {
     const target = event.target instanceof Element ? event.target : null;
     if (!target) return;
@@ -386,15 +495,21 @@ function init() {
     const item = state.visible.get(id);
     if (item) item.completed = input.checked;
     // 開著「隱藏已完成」時，剛勾成完成的卡立即移除（免重整才消失）
-    if (input.checked && ui.hide && ui.hide.checked) { state.visible.delete(id); element.remove(); }
-    stats(ui, Array.from(state.visible.values()));
-    updateNextHint(ui); // 完成/取消完成即時反映到提示（排除已完成）
+    if (input.checked && pressed(ui.hide)) { state.visible.delete(id); element.remove(); }
+    badges();
+    if (!state.visible.size) render(ui);
+    else {
+      stats(ui, Array.from(state.visible.values()));
+      updateCopyAvailability(ui);
+      updateNextHint(ui);
+      const visit = $('#first-visit'); if (visit) visit.hidden = state.done.size !== 0;
+    }
   });
   const hint = $('#next-hint');
   if (hint) hint.addEventListener('click', event => {
     const target = event.target instanceof Element ? event.target : null;
     if (!target) return;
-    const more = target.closest('.ss-nh-more');
+    const more = target.closest('[data-group]');
     if (more) { const g = more.dataset.group; if (g in state.hintOpen) { state.hintOpen[g] = !state.hintOpen[g]; updateNextHint(ui); } return; }
     const it = target.closest('.ss-nh-item');
     const id = it && it.dataset.target;
@@ -408,9 +523,7 @@ function init() {
     syncToTop();
     toTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
   }
-  const onlyWrap = $('#only-available-wrap');
-  if (onlyWrap) onlyWrap.hidden = false;
-  $$('.ss-tab[data-exp]', ui.tabs || document).forEach(tab => { const active = tab.dataset.exp === state.exp; tab.setAttribute('aria-pressed', String(active)); tab.classList.toggle('active', active); });
+  window.FFXIVHelp?.setup();
   render(ui);
   tick(ui, Date.now());
   setInterval(() => tick(ui, Date.now()), 1000);
