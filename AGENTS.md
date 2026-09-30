@@ -76,7 +76,8 @@ node tests/csp-image-hosts.test.mjs   # 資料裡的圖片主機 ⊆ _headers �
 
 - **允許清單而非排除清單**：頂層出現任何未列入 `deploy-allow.txt`／`deploy-deny.txt` 的項目 → **build 直接失敗**。新增內部資產的預設值是「不發佈」，不靠任何人記得。分類閘另有兩條靜默放行（CF 容器 npm 產物固定 skip 清單、`git check-ignore`）——它只是「逼人歸類」的提醒層；**真正的部署邊界是第 2 段複製迴圈的 allow-list 比對**，改腳本時該比對不可動，skip 清單只放建置環境產物、不得用來繞分類。
 - **新增站台資產**（新頁面／新資料夾）→ 加進 `deploy-allow.txt`；**新增內部資產** → 加進 `deploy-deny.txt`。改完跑一次 `sh deploy-prepare.sh` 確認印出「✓ 部署輸出就緒」。
-- **腳本改動禁忌**：① 只能用 POSIX 語法（CF 容器的 `sh` 是 dash，`read -r -d ''` 之類 bashism 會靜默失敗、輸出 0 檔而 build 仍「成功」⇒ 整站 404）② 根層檔名不可無條件 `mkdir "$OUT/${f%/*}"`（會建出「叫 index.html 的目錄」⇒ `/` 404）③ 不得移除出貨前驗收閘（輸出 <3 檔／缺 index.html／內部檔混入 → 非零 exit，CF 保留前一版）④ **產物路徑不得假設獨佔**：固定的 `_site` 會被並行 session／cron 互踩，且「逐次專屬」不加鎖仍會撞在 `rm -rf _site`。本 repo 日後若接排程／並行寫入者，照 ranking 的做法改（建到 `_site.tmp.$$`、清單走 repo 外 `mktemp`、換名段用 `mkdir "$_site.lock"` 序列化），別重新 debug 一次。
+- **腳本改動禁忌**：① 只能用 POSIX 語法（CF 容器的 `sh` 是 dash，`read -r -d ''` 之類 bashism 會靜默失敗、輸出 0 檔而 build 仍「成功」⇒ 整站 404）② 根層檔名不可無條件 `mkdir "$OUT/${f%/*}"`（會建出「叫 index.html 的目錄」⇒ `/` 404）③ 不得移除出貨前驗收閘（輸出 <3 檔／缺 index.html／內部檔混入 → 非零 exit，CF 保留前一版）④ **產物路徑不得假設獨佔**：S 型（固定 `_site/`）與 T 型（換名無鎖）皆 single-writer，禁並行跑 `deploy-prepare.sh`；C 型換名鎖不得回退。
+  - 本 repo＝S 型。
 - **部署後驗（務必帶 cache-bust）**：`curl -sL -o /dev/null -w '%{http_code} %{content_type} %{url_effective}\n' "https://<repo>.pages.dev/AGENTS.md?cb=$(date +%s)"` → 回 `text/html` 正常（檔案不存在、走 SPA fallback）；回 `text/markdown` ＝紅燈。pages.dev 已 301 到正式網域，**一定要 `-L` 看最後一跳**（`-sI` 只拿到轉址頁的 `text/html`＝假綠燈）。**不帶 cache-bust 會得到假紅燈**（舊部署的邊緣殘留，`CF-Cache-Status: HIT` ＋大 `Age`，最長 7 天自癒，不是外洩）。
 
 ## 開發循環（DEVLOOP）
