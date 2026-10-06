@@ -1,3 +1,4 @@
+* text=auto eol=lf
 # 行尾決定論（2026-08-16）：`tests/modulepreload-drift.test.mjs` 斷言「index.html 的區塊
 # ≡ 生成器輸出逐字節相同」，而生成器 `renderBlock()` 一律以 `\n` 組字串。Windows 上
 # `core.autocrlf=true` 會在 checkout 時把 HTML 轉成 CRLF ⇒ 該測試在**任何 Windows 檢出**
@@ -8,3 +9,6 @@
 # 但沒必要為此擴大面）。同型前例＝ranking B-073（該 repo 釘的是 js/mjs/css，因為它的
 # cachebust 雜湊吃那三類的 worktree 位元組）。
 *.html text eol=lf
+*.ps1 text eol=crlf
+*.cmd text eol=crlf
+*.bat text eol=crlf
