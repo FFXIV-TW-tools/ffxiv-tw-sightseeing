@@ -2,6 +2,12 @@
 
 > 日期段落制（cycle 收官為段）；條目含人話「為什麼」，不從 git log 自動生成。格式見 DEVLOOP §4.3。
 
+## 2026-10-10 — 完成紀錄退回 localStorage（過度設計收斂）
+
+- **改動**：完成紀錄由 IndexedDB＋跨分頁廣播＋損毀備份／重置面板，退回 `localStorage` 讀寫（`ss_storage.js` 約 30 行）；刪除 `ss_progress_data.js`、`ss_progress_ui.js` 與 index 的恢復面板、對應 CSS／README 救援流程。原兩條 finding 改用最小修：勾選前重讀只改本次 ID（跨分頁覆蓋）、損毀時提示並停止寫入（原值不被蓋掉）。勾選後改走既有 `render`，保留鍵盤焦點。
+- **理由**：保護的只是 340 個勾選；損毀最壞結果是重勾，IndexedDB 在隱私模式反而多一類失敗。CSP、同版資料、可進行時間等修正不動。
+- **影響**：9/9 canonical 通過。2026-10-09 版若已部署且使用者勾過，其 IndexedDB 紀錄不會被讀回；舊 `localStorage` 紀錄仍在。`docs/specs`、`docs/health-reviews` 內的 IndexedDB 描述為凍結歷史證據，不改。
+
 ## 2026-10-09 — 核准改善：CSP、同版資料、原子進度與恢復（cycle: 2026-10-09-sightseeing-hardening）
 
 - **改動**：CSP 改 bootstrap 精確 hash，沿用上游地圖 error listener；六張同版 native sheet 與來源／生成 manifest；IndexedDB transaction 原子寫入及完整備份、確認重置。

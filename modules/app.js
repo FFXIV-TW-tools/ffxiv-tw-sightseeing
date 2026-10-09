@@ -5,8 +5,7 @@ import './weather.js';
 import { iconSVG, fillStaticIcons } from './ss_visual.js';
 import { formatTimeWindow, formatUnfinishedList } from './ss_list.js';
 import { availability, hasTime, wait, formatMMSS } from './ss_availability.js';
-import { createProgressStore } from './ss_storage.js';
-import { createProgressUI } from './ss_progress_ui.js';
+import { loadCompleted, saveCompleted, COMPLETED_KEY } from './ss_storage.js';
 
 const DATA = window.SIGHTSEEING_DATA || {};
 const ZONES = window.SIGHTSEEING_ZONES || {};
@@ -14,13 +13,13 @@ const GUIDES = window.SIGHTSEEING_GUIDES || {};
 const EXPS = ['arr', 'hw', 'sb', 'shb', 'ew', 'dt'];
 const EXP_NAMES = { arr: '新生', hw: '蒼天', sb: '紅蓮', shb: '漆黑', ew: '曉月', dt: '黃金' };
 const VER = { arr: '2.x', hw: '3.x', sb: '4.x', shb: '5.x', ew: '6.x', dt: '7.x' };
-const STORE = 'ffxiv-sightseeing-completed';
 const PREFS = 'ffxiv-sightseeing-prefs'; // 記住檢視偏好（隱藏已完成 / 僅可進行 / 依時間排序）跨重整不清除
+const UNREADABLE = '完成紀錄讀不到或已損毀；為免蓋掉原紀錄，本頁勾選不會儲存。';
 const SOON_MS = 15 * 60 * 1000; // 「即將開放」門檻：15 分鐘內
 const ET = window.EorzeaTime || {};
 const WT = window.Weather || {};
 const TABS = ['all', 'arr-front', 'arr-back'].concat(EXPS.filter(exp => exp !== 'arr'));
-const state = { exp: 'all', done: new Set(), progress: 'loading', pending: new Map(), readToken: 0, visible: new Map(), composing: false, hintOpen: { now: false, next: false } };
+const state = { exp: 'all', done: new Set(), visible: new Map(), composing: false, hintOpen: { now: false, next: false } };
 
 EXPS.forEach(exp => (Array.isArray(DATA[exp]) ? DATA[exp] : []).forEach(entry => { entry._exp = exp; }));
 const ALL = EXPS.flatMap(exp => Array.isArray(DATA[exp]) ? DATA[exp] : []);
@@ -80,7 +79,7 @@ function badges() {
   EXPS.filter(exp => exp !== 'arr').forEach(exp => { groups[exp] = Array.isArray(DATA[exp]) ? DATA[exp] : []; });
   TABS.forEach(key => {
     const list = groups[key], el = $('#badge-' + key);
-    if (el) el.textContent = (state.progress === 'ready' ? list.filter(entry => state.done.has(itemId(entry))).length : '—') + '/' + list.length;
+    if (el) el.textContent = list.filter(entry => state.done.has(itemId(entry))).length + '/' + list.length;
   });
 }
 function nhItem(item, trailHTML) {
@@ -249,12 +248,7 @@ function updateCard(element, item) {
   const a = item.availability;
   element.classList.toggle('completed', item.completed);
   const checkbox = $('.ss-complete-input', element);
-  if (checkbox) {
-    const pending = state.pending.get(item.id);
-    checkbox.checked = pending ? pending.checked : item.completed;
-    checkbox.disabled = state.progress !== 'ready' || !!pending;
-    checkbox.setAttribute('aria-busy', String(!!pending));
-  }
+  if (checkbox) checkbox.checked = item.completed;
   element.dataset.available = String(a.available);
   element.classList.toggle('ss-card--available', a.available);
   element.classList.toggle('ss-card--soon', !a.available && Number.isFinite(a.nextMs) && a.nextMs > 0 && a.nextMs <= SOON_MS);
@@ -283,9 +277,9 @@ function stats(ui, list) {
   const done = all.filter(entry => state.done.has(itemId(entry))).length;
   if (ui.visible) ui.visible.textContent = String(list.length);
   if (ui.total) ui.total.textContent = String(all.length);
-  if (ui.completed) ui.completed.textContent = state.progress === 'ready' ? String(done) : '—';
+  if (ui.completed) ui.completed.textContent = String(done);
   if (ui.completedTotal) ui.completedTotal.textContent = String(all.length);
-  if (ui.percent) ui.percent.textContent = state.progress !== 'ready' ? '—' : all.length ? String(Math.round(done * 100 / all.length)) : '0';
+  if (ui.percent) ui.percent.textContent = all.length ? String(Math.round(done * 100 / all.length)) : '0';
   if (ui.active) ui.active.textContent = String(list.filter(item => item.availability.available).length);
 }
 function emptyState(ui) {
@@ -312,7 +306,7 @@ function updateCopyAvailability(ui) {
 function updateFirstVisit(ui) {
   const visit = $('#first-visit');
   if (!visit) return;
-  visit.hidden = state.progress !== 'ready' || state.done.size !== 0 || !state.visible.size || !!ui.search.value.trim() || !!ui.zone.value || pressed(ui.hide) || pressed(ui.only);
+  visit.hidden = state.done.size !== 0 || !state.visible.size || !!ui.search.value.trim() || !!ui.zone.value || pressed(ui.hide) || pressed(ui.only);
   if (visit.hidden) return;
   const action = $('#first-visit-action');
   if (!action) return;
@@ -322,7 +316,6 @@ function updateFirstVisit(ui) {
   action.dataset.ssVisit = available ? 'available' : 'all';
 }
 function render(ui, now = Date.now(), ticking = false) {
-  if (state.progress === 'loading') return;
   const result = filtered(ui, now);
   state.visible = new Map(result.list.map(item => [item.id, item]));
   /** @type {HTMLElement[]} */
@@ -357,7 +350,7 @@ function tick(ui, now) {
   if (ui.et && typeof ET.getCurrentEorzeaTime === 'function' && typeof ET.formatTime === 'function') { try { ui.et.textContent = ET.formatTime(ET.getCurrentEorzeaTime(now)); } catch { ui.et.textContent = '--:--'; } }
   if (ui.local) { const d = new Date(now); ui.local.textContent = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
   if (ui.countdown && typeof ET.getTimeUntilNextWeather === 'function') { try { ui.countdown.textContent = formatMMSS(ET.getTimeUntilNextWeather(now).ms); } catch { ui.countdown.textContent = '--:--'; } }
-  if (state.composing || state.progress === 'loading') return;
+  if (state.composing) return;
   // only／sort 的 membership 或順序取決於時間，才重新篩選；其他檢視只更新 gated 卡。
   if (pressed(ui.only) || pressed(ui.sort)) { render(ui, now, true); return; }
   $$('.ss-card', ui.grid).forEach(element => {
@@ -373,36 +366,9 @@ function tick(ui, now) {
 function init() {
   const ui = uiElements();
   if (!ui.grid) return;
-  const store = createProgressStore();
-  const progressUI = createProgressUI(store, refreshProgress, feedback);
-  /** Every refresh, including failures, shares the same ordering token. */
-  async function refreshProgress() {
-    const token = ++state.readToken;
-    const committed = [...state.pending].filter(([, pending]) => pending.committed);
-    const clearCommitted = () => {
-      for (const [id, pending] of committed) if (state.pending.get(id) === pending) state.pending.delete(id);
-    };
-    try {
-      const snapshot = await store.read();
-      if (token !== state.readToken) return;
-      clearCommitted();
-      state.progress = snapshot.kind;
-      state.done = new Set(snapshot.ids);
-      progressUI.render(snapshot);
-    } catch (error) {
-      if (token !== state.readToken) return;
-      clearCommitted();
-      state.progress = 'unavailable';
-      progressUI.render(null, '完成紀錄無法讀取，已停止寫入；這不是可確認重置的損毀狀態。' +
-        (error instanceof Error ? error.message : String(error)));
-    }
-    badges();
-    render(ui);
-  }
-  progressUI.render(null);
-  store.subscribe(() => { void refreshProgress(); });
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) void refreshProgress(); });
-  window.addEventListener('pageshow', () => { void refreshProgress(); });
+  const loaded = loadCompleted();
+  state.done = loaded.ids;
+  if (!loaded.ok) feedback(UNREADABLE);
   const prefs = loadPrefs();
   setPressed(ui.hide, !!prefs.hide);
   setPressed(ui.only, !!prefs.only);
@@ -498,27 +464,25 @@ function init() {
     event.preventDefault();
     try { openMapModal(JSON.parse(decodeURIComponent(map.dataset.map))); } catch {}
   });
-  ui.grid.addEventListener('change', async event => {
+  ui.grid.addEventListener('change', event => {
     const input = event.target instanceof HTMLInputElement ? event.target.closest('.ss-complete-input') : null;
     if (!input) return;
-    const element = input.closest('.ss-card');
-    const id = element.dataset.id;
-    if (state.progress !== 'ready' || state.pending.has(id)) { render(ui); return; }
-    const pending = { checked: input.checked, committed: false };
-    state.pending.set(id, pending);
+    const id = input.closest('.ss-card').dataset.id;
+    // 寫入前重讀，只改本次 ID：另一分頁剛勾的不會被本頁舊快照蓋掉。
+    const current = loadCompleted();
+    if (current.ok) state.done = current.ids;
+    if (input.checked) state.done.add(id); else state.done.delete(id);
+    if (!current.ok) feedback(UNREADABLE);
+    else if (!saveCompleted(state.done)) feedback('完成紀錄無法儲存；變更僅在本頁生效。');
+    badges();
     render(ui);
-    try {
-      await store.updateCompleted(id, pending.checked);
-      pending.committed = true;
-    } catch (error) {
-      state.pending.delete(id);
-      feedback('完成紀錄交易失敗，本次變更未提交：' + (error instanceof Error ? error.message : String(error)));
-      render(ui);
-    }
-    await refreshProgress();
   });
   window.addEventListener('storage', event => {
-    if (event.key === STORE || event.key === null) void refreshProgress();
+    if (event.key !== COMPLETED_KEY && event.key !== null) return;
+    const current = loadCompleted();
+    if (current.ok) state.done = current.ids;
+    badges();
+    render(ui);
   });
   const hint = $('#next-hint');
   if (hint) hint.addEventListener('click', /** @param {MouseEvent} event */ event => {
@@ -540,7 +504,6 @@ function init() {
   }
   window.FFXIVHelp?.setup();
   render(ui);
-  void refreshProgress();
   tick(ui, Date.now());
   setInterval(() => tick(ui, Date.now()), 1000);
 }

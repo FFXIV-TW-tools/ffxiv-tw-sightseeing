@@ -18,8 +18,7 @@ FFXIV 繁中服（陸行鳥 DC）「探索筆記（Sightseeing Log）」收集�
 index.html              骨架 + portal bootstrap + element ID 契約
 css/style.css           卡片/分頁/篩選樣式
 modules/app.js          主程式（分頁/篩選/卡片/完成追蹤/地圖委派）
-modules/ss_storage.js   IndexedDB 原子交易、legacy 遷移與原文備份
-modules/ss_progress_ui.js  損毀警告、下載與確認重置
+modules/ss_storage.js   完成紀錄 localStorage 讀寫（損毀時不寫回）
 modules/eorzea-time.js  艾奧傑亞時間（移植 cycleapple）
 modules/weather.js      天氣預測（移植 cycleapple，bit-exact 對標 canonical）
 modules/map_view.js     地圖渲染（vendored from marketboard，上游同步）
@@ -36,84 +35,9 @@ svc start portal            # 需 portal :8774 才吃得到 tokens/header CDN
 python -m http.server 8xxx  # 或掛進 svc；index.html dev-mode 會抓 localhost:8774
 ```
 
-## 完成紀錄與恢復
+## 完成紀錄
 
-- 完成集合保存於 IndexedDB `ffxiv-sightseeing`（version 1）→ object store `progress` → key `completed`。同時勾選不同 ID 以 transaction 序列合併；同 ID 以後一筆交易為準，不承諾跨裝置／斷電零遺失。
-- 首次成功交易遷移 `localStorage.ffxiv-sightseeing-completed` 的字串陣列或 truthy-key object，保留未知 ID、JSON 原文與 legacy key；之後只寫 IndexedDB。檢視偏好仍在 `ffxiv-sightseeing-prefs`。
-- 舊版分頁改動 legacy key 時持續警告，不自動合併；先備份、關閉舊版分頁，再重新整理。資料庫不可用時不能勾選，不當成損毀重置。
-- 損毀時只提供原文備份；下載開始不代表已保存。必須勾選「我已確認備份檔案保存完成」，再於獨立確認框清空完成集合。取消不寫入；備份後資料改變會拒絕重置。JSON 無法完整表示的值禁止下載／重置，原值仍留在 DB。
-- 重置保留 migration marker、legacy 原文與偏好，並在同一交易保存最後一次原文至 `progress` → `recovery-backup`；不會自動猜回損毀內容。
-
-下載檔遺失時，可先唯讀取出 DB 內最後一次 `recovery-backup`；它不是累積歷史，仍不保證損毀內容能還原。以下產生同格式備份，另存後再走下方救援驗證，**不直接覆寫**：
-
-```js
-const recovery = await new Promise((resolve, reject) => {
-  let blocked = false;
-  const request = indexedDB.open('ffxiv-sightseeing', 1);
-  request.onupgradeneeded = () => request.transaction.abort(); // 不建立空救援 DB
-  request.onblocked = () => { blocked = true; reject(new Error('請關閉其他本站分頁後重試')); };
-  request.onerror = () => reject(request.error);
-  request.onsuccess = () => {
-    const db = request.result;
-    if (blocked) { db.close(); return; }
-    if (!db.objectStoreNames.contains('progress')) { db.close(); reject(new Error('救援資料不存在')); return; }
-    const tx = db.transaction('progress', 'readonly');
-    const read = tx.objectStore('progress').get('recovery-backup');
-    let value;
-    read.onsuccess = () => { value = read.result; };
-    tx.oncomplete = () => { db.close(); value ? resolve(value) : reject(new Error('沒有重置備份')); };
-    tx.onabort = () => { db.close(); reject(tx.error); };
-  };
-});
-const { progressSnapshotJson } = await import('/modules/ss_progress_data.js');
-copy(JSON.stringify({
-  database: { name: 'ffxiv-sightseeing', store: 'progress', key: 'completed' },
-  snapshot: JSON.parse(progressSnapshotJson(recovery.recordExists, recovery.record, recovery.legacyRaw))
-}, null, 2));
-```
-
-### DevTools 人工救援（不是回寫 legacy key）
-
-只在你明確要覆寫本機完成集合時操作：關閉全部本站新舊分頁，再只開一個分頁；期間不要勾選。先在 Console 取得並另存**當前**完整原文，無法完整備份就停止：
-
-```js
-const progress = (await import('/modules/ss_storage.js')).createProgressStore();
-copy((await progress.backup()).json); // DevTools copy；貼到本機檔案並確認保存
-```
-
-再貼入已保存的下載備份。下例只接受可完整驗證的 record／legacy，不猜修損毀字串或忽略非法 ID：
-
-```js
-const backup = JSON.parse(prompt('貼上下載備份 JSON'));
-if (backup.database?.name !== 'ffxiv-sightseeing' || backup.database?.store !== 'progress'
-    || backup.database?.key !== 'completed' || backup.snapshot?.format !== 1
-    || typeof backup.snapshot.recordExists !== 'boolean'
-    || !(backup.snapshot.legacyRaw === null || typeof backup.snapshot.legacyRaw === 'string')) {
-  throw new Error('不是本站完整原文備份');
-}
-const { completedRecord, parseLegacyProgress } = await import('/modules/ss_progress_data.js');
-const ids = backup.snapshot.recordExists
-  ? completedRecord(backup.snapshot.record).ids
-  : parseLegacyProgress(backup.snapshot.legacyRaw);
-if (!confirm(`覆寫此瀏覽器 progress/completed 為已驗證的 ${ids.length} 個 ID？已另存當前原文才確認。`)) {
-  throw new Error('已取消，未覆寫');
-}
-const raw = localStorage.getItem('ffxiv-sightseeing-completed');
-await new Promise((resolve, reject) => {
-  const request = indexedDB.open('ffxiv-sightseeing', 1);
-  request.onerror = () => reject(request.error);
-  request.onsuccess = () => {
-    const db = request.result;
-    const tx = db.transaction('progress', 'readwrite');
-    tx.objectStore('progress').put({ ids, legacyRaw: raw }, 'completed');
-    tx.oncomplete = () => { db.close(); resolve(); };
-    tx.onabort = () => { db.close(); reject(tx.error); };
-  };
-});
-location.reload();
-```
-
-如果 `record` 損毀但備份中的 legacy 原文有效，可明確改用 `parseLegacyProgress(backup.snapshot.legacyRaw)` 取 ID；先檢視結果再覆寫。重寫 legacy key **不是** IndexedDB rollback。
+完成集合是 `localStorage.ffxiv-sightseeing-completed`（字串 ID 陣列；舊版 id→true 物件也能讀），檢視偏好在 `ffxiv-sightseeing-prefs`。每次勾選先重讀再只改該 ID，另一分頁的勾選不會被舊快照蓋掉；其他分頁靠 `storage` 事件更新畫面。讀不到或內容損毀時提示並停止寫入，原值保留；寫入失敗提示「僅在本頁生效」。清除瀏覽資料後無法還原。
 
 ## 出貨驗證
 

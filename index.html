@@ -112,8 +112,6 @@
   <link rel="modulepreload" href="/modules/ss_availability.js">
   <link rel="modulepreload" href="/modules/ss_icons.js">
   <link rel="modulepreload" href="/modules/ss_list.js">
-  <link rel="modulepreload" href="/modules/ss_progress_data.js">
-  <link rel="modulepreload" href="/modules/ss_progress_ui.js">
   <link rel="modulepreload" href="/modules/ss_storage.js">
   <link rel="modulepreload" href="/modules/ss_visual.js">
   <link rel="modulepreload" href="/modules/weather.js">
@@ -141,17 +139,6 @@
         <span class="codex-label"><svg class="codex-ico" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true" focusable="false" data-ss-icon="hourglass-medium"></svg> 下次天氣變化</span>
         <span class="codex-body" id="weather-countdown">--:--</span>
       </div>
-    </section>
-
-    <section id="ss-storage-status" class="codex-tint-panel codex-tint-panel--warn codex-tint-panel--bar ss-storage-status" aria-label="完成紀錄儲存與恢復" hidden>
-      <p data-progress-message role="status" aria-live="polite">正在讀取完成紀錄…</p>
-      <div class="ss-storage-actions">
-        <button type="button" class="codex-btn codex-btn--ghost" data-progress-backup hidden>下載完整原文備份</button>
-        <button type="button" class="codex-btn codex-btn--ghost" data-progress-refresh>重新讀取進度</button>
-        <button type="button" class="codex-btn codex-btn--ghost" data-progress-reload>重新整理頁面</button>
-      </div>
-      <label data-progress-saved-label hidden><input id="ss-progress-saved" class="codex-checkbox" type="checkbox" data-progress-saved> 我已確認備份檔案保存完成</label>
-      <button type="button" class="codex-btn codex-btn--danger" data-progress-reset disabled hidden>重置損毀的完成紀錄…</button>
     </section>
 
     <!-- === 版本分頁（2.0~7.0）=== -->
