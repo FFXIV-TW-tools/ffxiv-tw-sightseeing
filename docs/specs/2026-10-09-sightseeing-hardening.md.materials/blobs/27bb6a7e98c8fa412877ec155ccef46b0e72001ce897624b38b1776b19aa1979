@@ -1,0 +1,112 @@
+# tc-datamine-dump
+
+台服 client（USERJOY 代理版）EXD 解包器：預設輸出 **名稱層** SE Excel CSV 相容格式；`--sightseeing` 為獨立的探索筆記同版 snapshot 模式。
+cycle [2026-07-29-B038-tc-client-datamine](../../docs/specs/2026-07-29-B038-tc-client-datamine-design.md)。
+
+## 用途
+
+繁中名稱層原本吃 upstream `miaki3457/ffxiv-datamining-tc`，但它**落後台服 client 兩個大改版**
+（停在 client `2026.03.12`，本機已 `2026.07.22`）。缺名的新內容會退 OpenCC 機轉簡中，
+產出**陸服譯名的繁體字形**（740 綠裝「儀仗禦敵護耳帽」，台服官方是「典禮禦敵襟翼帽」）。
+本工具直接從本機 client 解包，使我們永遠不落後於自己在玩的版本。
+
+## 入口
+
+```bash
+dotnet run --project tools/tc-datamine-dump                    # 用預設 client 路徑
+dotnet run --project tools/tc-datamine-dump -- --sqpack <路徑>  # 指定 client
+dotnet run --project tools/tc-datamine-dump -- --out <目錄>     # 指定輸出
+```
+
+輸出到 `data/item_dict/datamining_tc/`：每張表一個 `tclocal_<Sheet>.csv` + `tclocal_manifest.json`
+（**表清單唯一權威＝`Program.cs` 的 `counts` 字典**；這裡刻意不寫張數——原本寫「10 個」，加到第 14 張時沒人記得改，而數字錯了不會有任何東西紅）。
+
+### 獨立探索筆記 snapshot（2026-10-09）
+
+```bash
+# 從 monorepo root 執行；--out 必填且只指向探索筆記 snapshot 目錄
+dotnet run --project tools/tc-datamine-dump -- --sightseeing --out C:/FFXIVProject/external/ffxiv-tw-sightseeing/tools/sources
+# client 不在預設路徑時，另加 --sqpack "<game/sqpack 路徑>" 或 FFXIV_TC_SQPACK
+```
+
+只輸出 Adventure／Emote／TextCommand／PlaceName／Level／Map 六張 UTF-8 無 BOM、LF、具名 header CSV，及同 clientVersion／bytes SHA-256／列數的 `native-manifest.json`。不使用一般名稱層 DefaultOutDir／Publish，不改變下方名稱層與 fallback 契約。
+
+Adventure／Emote 以已核對 layout 的 RawRow 讀取，逐欄 type／offset／欄數 hard gate；其餘四張使用 typed checksum gate。未知版本、前後版本改變、缺必要關聯、非有限座標／Map／SizeFactor 或非 340 個探索點均不發布。staging 與一般 I/O 回復獨立；不承諾跨斷電原子性。
+
+解包成功後在探索筆記 repo 跑 `python tools/build_data.py`，同時更新兩份 JS 與 generation manifest。詳 [探索筆記建置契約](../../external/ffxiv-tw-sightseeing/tools/README.md)。standalone checkout 的重建／CF 部署只讀已版控快照，不需要本工具或 client。
+
+
+## 依賴
+
+- .NET **net10.0**
+- `Lumina 7.6.1` + `Lumina.Excel 7.5.0` — **版本必須配對**：Lumina.Excel 7.5.0 要求 Lumina ≥ 7.6.0，
+  而 Lumina 7.6.x 只支援 net10.0
+- ⚠️ **不可**改引用 Dalamud Injector 目錄的 `Lumina.dll`：standalone 執行時 assembly binding
+  找不到 `Lumina, Version=6.0.0.0`（Dalamud 用自己的 loader 解，我們沒有）
+
+## 設計要點
+
+- **語言 slot 是 `Language.TraditionalChinese`（Lumina 第 9 個 enum），不是 `ChineseTraditional`。**
+  標準 8 語（含同名易混的 `ChineseTraditional`）在台服 client 上**全部**拋
+  `UnsupportedLanguageException`。踩過一次就知道，沒踩過會卡住。
+- **只輸出名稱欄**（一個例外：`Item` 另出 `IsUntradable`／`ItemSearchCategory` 兩欄，見下）。
+  欄名由 Lumina typed sheets 提供 ⇒ 零外部 schema 依賴。
+  client 的 EXD 本身**只有欄位型別、沒有欄位名稱**（`Item` 91 欄回傳 `[0]String [1]Int8 …`），
+  欄名屬 EXDSchema／SaintCoinach Definitions 的範疇——要完整 91 欄才需要它們。
+- **結構層 sheet 刻意不在清單內**（`GilShopItem`／`ENpcBase`／`Level`／`Map`／`TerritoryType`）：
+  它們被讀的不只名稱欄，只給名稱會**靜默降級**。那些 sheet 沒有 `tclocal_` 檔 ⇒ 自動續走 upstream。
+  要擴充範圍，該 sheet 被讀到的**每個欄位**都得一併輸出。
+- **結構層的例外**：`tclocal_special_shop.json`（B-039，幣種）與 **`tclocal_ItemStats.csv`**
+  （2026-08-21，裝備素質）。判準不是「結構層一律不做」，而是**upstream 在那一項上給不出正確答案**：
+  前者的幣種要當版 client 才對；後者的 `BaseParamValue` 在 upstream **只到 item 44410**
+  （本機 client 到 48192）—— 症狀是新裝「有欄位、沒數字、不報錯」，正是本工具存在的理由的同一種病。
+  第三個是 **`tclocal_gathering_bonus.json`**（2026-08-22，採集點隱藏加成）：它的文案兩張表
+  （`GatheringCondition`／`GatheringPointBonusType`）看起來是名稱層，但**帶數值佔位符**
+  ——取純文字會得到「鑑別力 」這種半句話，數字該插回哪裡的資訊就此消失 ⇒ 必須用
+  `ToMacroString()` 保留 `<num(lnum1)>`，並連同引用它們的結構
+  （`GatheringPoint` → `GatheringPointBonus` → `GatheringPointBase`）一起解。
+  「upstream 給不出正確答案」在這一項的形式是**版本脫鉤**：xivapi/ffxiv-datamining 是國際服，
+  而這批數字的用途正是「我現在的鑑別力夠不夠」，拿別服當版的門檻會直接給出錯誤的配裝建議、
+  且畫面完全正常。輸出 key＝`GatheringPointBase.RowId`（＝下游 marketboard 的節點 id）。
+  ⚠️ 加成的語意是「這個點**可能**出現的加成」不是固定值：同一個 base 在地圖上生成數個
+  `GatheringPoint` 實體、各自帶不同加成或沒有加成，故以 base 為單位收**去重後的集合**。
+  ⚠️ `DumpItemStats` 內有硬閘：有屬性值的最大 id 若沒超過 44410 就**不發布**（欄位讀錯／語言 slot
+  錯／client 沒更新，三種原因的症狀相同且都是靜默的）。屬性 id 的名稱在同批的 `tclocal_BaseParam.csv`。
+  第四個是 **`tclocal_mkd.json`**（2026-09-30，新月島輔助職業）：`MKDSupportJob`（職業、等級上限、
+  習得等級＋技能 id）＋`MKDTrait`（特性）＋這些技能的 `ActionTransient` 說明與 `Action.Recast100ms`（復唱時間）。「upstream 給不出正確答案」
+  在這一項的形式是**版本超前**：簡中上游已到 7.55，等級上限、技能、特性都比台服 7.25 多 ⇒ 拿它當台服資料
+  會把還沒開放的技能寫成可用。兩張 MKD 表沒有欄名、Lumina.Excel 也沒有型別 ⇒ 以欄序讀（欄序寫在
+  `DumpMkd` 註解，並以「第 4 欄是 `Phantom …` 英文名」當位移哨兵）。說明文案存 macro（`<if([gnum108>=N],…)>`
+  依輔助職業等級選數值，取純文字會把數值吃掉），展開由消費端（occult-crescent `tools/mkd.py`）負責。
+  manifest 記 `mkd`（職業數）與 `mkdSha256`。
+- **名稱層的第四個例外＝`Item` 的可交易性兩欄**（2026-08-23，B-113）：`IsUntradable` 與
+  `ItemSearchCategory`（>0 才可上市場板）。判準同上——**upstream 給不出當版答案**：
+  國際服 7.5 的染料整併把百餘種舊染劑改成不可交易／退出市場板，而**台服停在 7.2 沒有這次改版**
+  ⇒ marketboard 沿用國際服旗標時，`寶石紅染劑` 在站上顯示「不可交易」（Owner 2026-08-23 回報），
+  而畫面、build、測試全綠。⚠️ 這一題 upstream `tc_Item.csv` 雖然答對，但它**停在 7.1**
+  （7.2 的 759 件全空名、4570 還留著舊名「鳳凰之尾」與 `IsUnique/StackSize=1`）⇒ 不能靠它，
+  同 `ItemStats` 那個病灶。⚠️ 消費端**只准覆寫本表有官方名的 id**：台服未開放者在 client 裡是
+  空名＋全零欄位，照抄會把「還沒開放」寫成「不可交易」。
+- **staging → sanity → 整批發布**。各表若分次直接寫進正式目錄，中途失敗會留下
+  「舊檔／新檔／缺檔」三種狀態，而消費端是逐檔判斷 ⇒ 同一次建置混用兩個 client 版本的名稱。
+- **`tclocal_manifest.json` 是採用憑證**，最後才寫。缺它＝那批 dump 不完整，
+  消費端整批忽略、退 upstream（`dump_datamining_tc._local_manifest`）。
+
+## 何時要重跑
+
+**台服每次改版後。** manifest 記了 `clientVersion`，`dump_datamining_tc` 每次讀取時會比對
+本機 `ffxivgame.ver`，不一致就印 warning 提醒重跑——否則就只是把「依賴過期 upstream」
+換成「永遠用過期的本地 dump」，等於問題原地搬家。
+
+重跑後需重建下游：見 `data/item_dict/AGENTS.md`「繁中名優先序」與「重建 SOP」。
+
+## 跨機注意
+
+`Program.cs` 的 `DefaultSqPack` 寫死 `C:\Games\USERJOY GAMES\FINAL FANTASY XIV TC\game\sqpack`
+（已登記於 `docs/runbooks/cross-machine-paths.md`）。換機用 `--sqpack` 或環境變數
+`FFXIV_TC_SQPACK` 覆寫；`dump_datamining_tc.py` 的改版偵測讀同一個環境變數。
+
+## 回滾
+
+刪 `data/item_dict/datamining_tc/tclocal_*` → 下次 fetch 自動退回 upstream。
+**注意這只影響之後的建置**，不會還原已重建的 sqlite；完整回滾順序見 spec「風險與回滾」。

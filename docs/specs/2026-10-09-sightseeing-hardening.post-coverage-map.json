@@ -1,0 +1,6 @@
+[
+  {"source":"hardening-post-fact-1","finding":"F2-zone-map-join-guard","paths":["external/ffxiv-tw-sightseeing/tools/build_data.py","external/ffxiv-tw-sightseeing/tools/build_zones.py","external/ffxiv-tw-sightseeing/tools/README.md"]},
+  {"source":"hardening-post-fact-1","finding":"F4-rescue-doc-recovery-backup","paths":["external/ffxiv-tw-sightseeing/README.md"]},
+  {"source":"hardening-post-fact-1","finding":"AC2_native_same_version","paths":["external/ffxiv-tw-sightseeing/docs/verification/2026-10-09-sightseeing-hardening.json","external/ffxiv-tw-sightseeing/.gitattributes"]},
+  {"source":"hardening-post-blind-1","finding":"B2-consent","paths":["external/ffxiv-tw-sightseeing/modules/ss_progress_ui.js","external/ffxiv-tw-sightseeing/docs/verification/2026-10-09-sightseeing-hardening.json"]}
+]

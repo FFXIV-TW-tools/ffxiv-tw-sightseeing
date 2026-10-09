@@ -1,0 +1,198 @@
+/**
+ * 共用可視地圖 modal — xivapi 底圖 + 座標 pin。
+ * 掉落(source_view) 與 採集(gather_view) 共用。純渲染，無資料抓取。
+ *
+ * 座標→像素公式（對齊 ffxiv-item-search-tc MapModal.tsx，§5）：
+ *   percent = (coord - 1) * sizeFactor / 40.96
+ */
+import { escHtml } from './esc.js';
+
+// ───────── 圖片載入失敗的委派處理（B-104 ②）─────────
+//
+// ⚠️ 這兩段原本是寫在 HTML 字串裡的 `onerror="…"`。移除 CSP 的 `script-src 'unsafe-inline'`
+//    之後，**inline event handler 屬性會被瀏覽器直接拒絕執行** —— 症狀是地圖載不出來時
+//    既不 fallback 到原圖、也不套 `--failed` 樣式，畫面只剩一個破圖框，而 console 只有
+//    一行 CSP 違規（很容易被當成無關雜訊）。
+//
+// `error` 事件**不冒泡**，但會走捕獲階段 ⇒ 在 `document` 上以 capture 委派接得到。
+// 裝一次就好（模組層旗標）：`map_view` 回傳的是 HTML 字串、沒有單一插入點，
+// 逐個呼叫端去 wire 反而會漏。這顆 listener 不隨頁面累積，故不需要 view scope。
+let _imgErrorWired = false;
+function ensureImgErrorHandler() {
+  if (_imgErrorWired || typeof document === 'undefined') return;
+  _imgErrorWired = true;
+  document.addEventListener('error', (e) => {
+    const img = e.target;
+    if (!img || img.tagName !== 'IMG') return;
+    if (img.classList.contains('map-inline-img')) {
+      // 縮圖掛掉 → 先退回原圖；原圖也掛掉才標記整塊失敗（同原本 inline 的兩段式）
+      const full = img.dataset.full;
+      if (full && img.src !== full) { img.src = full; return; }
+      img.closest('.map-inline')?.classList.add('map-inline--failed');
+    } else if (img.classList.contains('map-modal-img')) {
+      img.closest('.map-modal')?.classList.add('map-img-failed');
+    }
+  }, true);   // ← capture：error 不冒泡
+}
+
+
+/** 遊戲座標 → 地圖圖上百分比位置（left/top 共用）。 */
+export function gameCoordToPercent(coord, sf) {
+  return (coord - 1) * sf / 40.96;
+}
+
+/**
+ * xivapi 全尺寸地圖 URL → 本地 384px webp 縮圖路徑（`tools/build_map_thumbs.py` 產）。
+ *
+ * 為什麼（2026-07-27 B-031，實測）：xivapi 的地圖是 2048×2048 / 約 930 KB，而 inline 小地圖
+ * 只顯示 184×184 ⇒ 像素浪費 124 倍。`#/gather` 首屏（未捲動）就下載 13.9 MB、捲到底 47.1 MB。
+ * 不是節點太多（`gather_view` 有 LIMIT=200、`loading="lazy"` 也確實生效），是單張太重；
+ * 上游又沒有小圖可拿（`.00s.jpg` / `?w=256` / beta 端點全部試過，見 build 腳本 docstring）。
+ *
+ * ⚠️ 只給 **inline** 用。點開放大的 modal 仍走原圖 —— 那裡才需要細節，且 384px 放大會糊。
+ * ⚠️ 命名規則與 `build_map_thumbs.py` 的 `thumb_name()` 是**同一條規則的兩份實作**，
+ *    必須一致（`tools/test_build_map_thumbs.py` 有防漂移哨兵）。
+ * 認不出的 URL 原樣回傳（外部資料換 CDN 時退回舊行為，不會變成壞圖）。
+ */
+export function mapThumbUrl(img) {
+  // 兩種上游網址形狀都要認（Teamcraft 2026-07 換 v2）：舊 .../m/s1f2/s1f2.00.jpg、
+  // 新 .../api/asset/map/s1f2/00 —— 兩者推出同一個縮圖檔名，換版不會讓既有縮圖失效。
+  // 只認舊形狀時每張圖都會 fallback 掛原圖（首屏從 1.5MB 變回 13.9MB），而且不報錯。
+  const m = /^https:\/\/xivapi\.com\/m\/[\w./-]*?([\w.-]+)\.jpg$|^https:\/\/v2\.xivapi\.com\/api\/asset\/map\/([\w-]+)\/(\d+)$/.exec(img || '');
+  const name = m ? (m[1] || `${m[2]}.${m[3]}`) : '';
+  return name ? `./public/maps/${name}.webp` : img;
+}
+
+/**
+ * 內嵌小地圖（回 HTML 字串，供卡片內嵌）。xivapi 底圖 + 座標小點。
+ * clickToEnlarge=true 時帶 data-map，點擊可開 openMapModal 放大（由呼叫端 event delegation 綁定）。
+ * @param {{img:string, sf:number, markers:Array<{x:number,y:number,label?:string}>, title?:string, clickToEnlarge?:boolean}} opts
+ * @returns {string}
+ */
+export function renderInlineMap({ img, sf, markers, title, clickToEnlarge, caption, aetherytes, compact }) {
+  ensureImgErrorHandler();
+  if (!img) return '';
+  const sff = sf || 100;
+  // 不掛 title：原生 hover tooltip 樣式不可控、會被誤讀成裁切（user 回報「X:3」）；座標已常駐圖底全寬條
+  const dots = (markers || []).map(m => {
+    const x = Number(m.x), y = Number(m.y);
+    const pos = `left:${gameCoordToPercent(x, sff)}%;top:${gameCoordToPercent(y, sff)}%`;
+    return m.icon
+      ? `<img class="map-pin-img map-pin-img--sm" src="${escHtml(m.icon)}" alt="" loading="lazy" style="${pos}">`
+      : `<span class="codex-map-pin codex-map-pin--sm" style="${pos}"></span>`;
+  }).join('');
+  const single = (markers && markers.length === 1) ? markers[0] : null;
+  const coordOverlay = single
+    ? `<span class="map-inline-coord">X:${Number(single.x)}, Y:${Number(single.y)}</span>`
+    : '';
+  // 傳送點放進 payload（放大 modal 才標圖示，小圖保持乾淨）
+  const data = clickToEnlarge
+    ? ` data-map="${encodeURIComponent(JSON.stringify({ img, sf: sff, title: title || '', markers: markers || [], aetherytes: aetherytes || [] }))}"`
+    : '';
+  const cls = `map-inline${clickToEnlarge ? ' map-inline--clickable' : ''}`;
+  const ttl = clickToEnlarge ? ' data-help="點擊放大（含傳送點）"' : '';
+  // 可放大時讓觸發器鍵盤/SR 可及（a11y A1）：role=button + tabindex；consumer 綁 keydown(Enter/Space)
+  const a11y = clickToEnlarge ? ' role="button" tabindex="0" aria-label="放大地圖（含傳送點）"' : '';
+  // 地名 caption 在圖上方、一行（CSS nowrap ellipsis）
+  const cap = (!compact && caption) ? `<div class="map-inline-cap"><span class="map-cap-place">${escHtml(caption)}</span></div>` : '';
+  const wrapCls = compact ? 'map-inline-wrap map-inline-wrap--compact' : 'map-inline-wrap';
+  return `<div class="${wrapCls}">
+    ${cap}
+    <div class="${cls}"${data}${ttl}${a11y}>
+      <img class="map-inline-img" src="${escHtml(mapThumbUrl(img))}" data-full="${escHtml(img)}"
+           alt="${escHtml(title || '地圖')}" loading="lazy" decoding="async"
+           >
+      ${dots}
+      ${coordOverlay}
+    </div>
+  </div>`;
+}
+
+let _overlay = null;
+let _prevFocus = null;  // 開啟前焦點，關閉時還原（a11y A1，複製 dialog.js 範式）
+
+function _close() {
+  if (_overlay) { _overlay.remove(); _overlay = null; }
+  document.removeEventListener('keydown', _onKey, true);
+  window.removeEventListener('hashchange', _close);
+  if (_prevFocus && typeof _prevFocus.focus === 'function') _prevFocus.focus();
+  _prevFocus = null;
+}
+function _onKey(e) {
+  if (e.key === 'Escape') { _close(); return; }
+  if (e.key === 'Tab' && _overlay) {
+    // 最小焦點圈：Tab 不離開 modal（背景被 overlay 蓋住，焦點跑出去沒意義）
+    const focusables = _overlay.querySelectorAll('button, [tabindex="0"], a[href]');
+    if (!focusables.length) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+}
+
+/**
+ * 開地圖 modal。
+ * @param {{img:string, sf:number, markers:Array<{x:number,y:number,label?:string}>, title?:string}} opts
+ */
+export function openMapModal({ img, sf, markers, title, aetherytes }) {
+  ensureImgErrorHandler();
+  if (!img) return;
+  _close();
+  _prevFocus = document.activeElement;  // 記住觸發元素，關閉後還原焦點
+  const sff = sf || 100;
+  const pins = (markers || []).map(m => {
+    const x = Number(m.x);
+    const y = Number(m.y);
+    const pos = `left:${gameCoordToPercent(x, sff)}%;top:${gameCoordToPercent(y, sff)}%`;
+    const help = m.help || `X:${x}, Y:${y}`;
+    if (m.icon) {
+      return `<img class="map-pin-img" src="${escHtml(m.icon)}" alt="" loading="lazy" style="${pos}" data-help="${escHtml(help)}">`;
+    }
+    // 標記＝共用 `.codex-map-pin`（實心 accent 圓＋深色描邊）。label（如 `Lv50`）直接當內容，
+    // 元件的 `min-width` 會長成一顆小 accent 藥丸——同 treasure 放編號的用法。
+    // ⚠️ **不用 emoji**：📍 的顏色／大小／字重全隨系統字型走，在米色城市地圖上幾乎看不到
+    //    （Owner 2026-07-30 實測指出「很不明顯」），而且無法用 token 調。
+    return `<span class="codex-map-pin" style="${pos}" data-help="${escHtml(help)}">${escHtml(m.label || '')}</span>`;
+  }).join('');
+  // 傳送點圖示（主水晶 060453 / 以太之光 060430，xivapi icon）；v1 圖示 only 無名
+  const aes = (aetherytes || []).map(a => {
+    const ax = Number(a.x), ay = Number(a.y);
+    const isMain = a.t === 0;
+    const icon = isMain ? '060453' : '060430';
+    const sz = isMain ? 22 : 15;
+    return `<img class="map-ae" src="https://xivapi.com/i/060000/${icon}.png" alt="傳送點" width="${sz}" height="${sz}" loading="lazy" style="left:${gameCoordToPercent(ax, sff)}%;top:${gameCoordToPercent(ay, sff)}%" data-help="${isMain ? '主水晶' : '以太之光'}">`;
+  }).join('');
+
+  _overlay = document.createElement('div');
+  _overlay.className = 'map-modal-overlay';
+  _overlay.innerHTML = `
+    <div class="map-modal" role="dialog" aria-modal="true" aria-label="${escHtml(title || '地圖')}">
+      <header class="map-modal-header">
+        <h3 class="codex-h3">${escHtml(title || '地圖')}</h3>
+        <button type="button" class="map-modal-close codex-modal__close" aria-label="關閉地圖">✕</button>
+      </header>
+      <div class="map-modal-canvas">
+        <img class="map-modal-img" src="${escHtml(img)}" alt="${escHtml(title || '地圖')}" loading="lazy"
+             >
+        ${aes}${pins}
+      </div>
+      <div class="map-modal-foot codex-body">
+        ${(markers || []).map(m => {
+          const x = Number(m.x); const y = Number(m.y);
+          const extra = m.help || (m.label ? `${m.label}` : '');
+          return `<span class="map-foot-coord">${extra ? escHtml(extra) : `X:${x}, Y:${y}`}</span>`;
+        }).join('')}
+      </div>
+    </div>`;
+  // 點背景 / 關閉鈕 → 關
+  _overlay.addEventListener('click', (e) => {
+    if (e.target === _overlay || e.target.closest('.map-modal-close')) _close();
+  });
+  document.addEventListener('keydown', _onKey, true);
+  window.addEventListener('hashchange', _close);  // SPA 換頁時關掉 modal（overlay 掛在 body，不隨 #app 重繪消失）
+  document.body.appendChild(_overlay);
+  // 開啟時把焦點移進 modal（關閉鈕），Tab 焦點圈 + Esc 關閉 + 還原焦點皆備（a11y A1）
+  const closeBtn = _overlay.querySelector('.map-modal-close');
+  if (closeBtn) closeBtn.focus();
+}

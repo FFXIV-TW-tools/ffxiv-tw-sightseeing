@@ -1,0 +1,15 @@
+{
+  "v": 1,
+  "cycle": "2026-10-09-page-health-fix",
+  "status": "done",
+  "revision": "47b0186a+page-health-fix-candidate3-rollback",
+  "controls": {"design": false, "plan": false, "assurance": [], "isolation": "none"},
+  "basis": {
+    "design": "Owner 明示直接修正本輪 confirmed 且不需拍板項；保留 UI 與資料契約，待決縮圖/CSP/資料來源/原子交易/CF 閘不執行。",
+    "plan": "單一靜態站本機修復；不發布、不協調部署。報告另附分批修復與待決提案計畫。",
+    "assurance": "使用者 storage key 與 array/legacy object schema 不變、不搬移既有資料；靜態資料重生不是使用者遷移。無公開 API 不相容；僅刪無 consumer helper/export。deploy cleanup 僅移除內部暫存清單，allowlist/複製/信任/暴露/權限不變；_headers 僅註解更正、CSP/header 值不變。不移除有效契約唯一覆蓋；變更可逆。",
+    "isolation": "原工作目錄 C:/FFXIVProject/external/ffxiv-tw-sightseeing；起始 clean，各 worker 固定檔案 ownership；另用 8789 本機 HTTP 驗收，不修改既有 portal 8774。"
+  },
+  "reviews": [],
+  "verify": {"commands": ["node tools/validate-availability.mjs && node tests/run-all.mjs (candidate1；未變路徑沿用)", "node --check modules/weather.js && node --check modules/eorzea-time.js && node --check modules/app.js && sh -n deploy-prepare.sh (candidate1)", "Chromium localhost:8789 dynamic view/storage/feedback/focus/IME/map/mobile smoke (candidate1)", "scratch deploy-prepare dash success/explicit failure/set-e failure cleanup fixture", "scratch original-now regression mutant (expected fail)", "node tests/ss-storage.test.mjs && node --check modules/app.js (candidate3)", "Chromium localhost:8789 failed check/uncheck/corrupt/recovered write/two-tab storage event smoke (candidate3)"], "result": "pass", "evidence": [{"path": "docs/health-reviews/2026-10-09-page-fix-verification.md", "sha256": "5a7fcf9e7c3d967456dfd27375733d278e92efbe10683f04e6cb22ca232c05b0"}]}
+}

@@ -1,0 +1,36 @@
+{
+  "format": 1,
+  "clientVersion": "2026.09.14.0000.0000",
+  "sheets": {
+    "Adventure": {
+      "file": "tc_Adventure.csv",
+      "rows": 340,
+      "sha256": "17dba694ff6e86ebb23eb01579a85b83ab87fa35bf7c3e116cc44b71bdcb31b3"
+    },
+    "Emote": {
+      "file": "tc_Emote.csv",
+      "rows": 321,
+      "sha256": "62dd1118d05e40dd6ec5bff422fbe373c9562958205ba9d2eb364dbf8e546d59"
+    },
+    "TextCommand": {
+      "file": "tc_TextCommand.csv",
+      "rows": 501,
+      "sha256": "1eb9428a18d0cc1f64e24d09d615b11647773a5b0a4f686bca0e41ce4539311f"
+    },
+    "PlaceName": {
+      "file": "tc_PlaceName.csv",
+      "rows": 5501,
+      "sha256": "e26dd0c1ffb4c4f3de2cf0fc2253e46403011c0ae9b3bc2a00186f52b6564301"
+    },
+    "Level": {
+      "file": "tc_Level.csv",
+      "rows": 58731,
+      "sha256": "21765c83d99f50e88ce500084763275d48eb574dda5a9227896a713e6e61ea06"
+    },
+    "Map": {
+      "file": "tc_Map.csv",
+      "rows": 1101,
+      "sha256": "51044a7388a27405b55afffdd59ee52115f5d121d1dda2aedc737ee1cc2ca6d6"
+    }
+  }
+}

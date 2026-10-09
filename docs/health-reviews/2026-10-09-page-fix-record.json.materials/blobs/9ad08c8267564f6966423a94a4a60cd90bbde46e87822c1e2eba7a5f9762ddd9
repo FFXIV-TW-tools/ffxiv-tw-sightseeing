@@ -1,0 +1,61 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readCompleted, updateCompleted } from '../modules/ss_storage.js';
+
+const KEY = 'ffxiv-sightseeing-completed';
+/** @param {string | null} initial @returns {Storage} */
+function storage(initial = null) {
+  const values = new Map(initial === null ? [] : [[KEY, initial]]);
+  return {
+    get length() { return values.size; },
+    key: index => [...values.keys()][index] ?? null,
+    getItem: key => values.get(key) ?? null,
+    setItem: (key, value) => { values.set(key, value); },
+    removeItem: key => { values.delete(key); },
+    clear: () => { values.clear(); },
+  };
+}
+
+test('兩個 stale tab 勾不同 ID 不丟掉彼此的紀錄，取消只移除該 ID', () => {
+  const store = storage('["arr-001"]');
+  const tabA = readCompleted(store, KEY).done;
+  const tabB = readCompleted(store, KEY).done;
+  assert.deepEqual(tabA, tabB);
+  updateCompleted(store, KEY, 'hw-002', true);
+  const saved = updateCompleted(store, KEY, 'sb-003', true);
+  assert.deepEqual([...saved], ['arr-001', 'hw-002', 'sb-003']);
+  updateCompleted(store, KEY, 'arr-001', false);
+  assert.deepEqual([...readCompleted(store, KEY).done], ['hw-002', 'sb-003']);
+  // tabB 的舊 snapshot 沒有 hw/sb；保存仍從共享 store 的最新值開始。
+  assert.deepEqual([...tabB], ['arr-001']);
+});
+
+test('legacy object 保留原格式、其他完成與未完成鍵；只套用 changed ID', () => {
+  const store = storage('{"arr-001":true,"arr-002":false,"hw-001":1}');
+  updateCompleted(store, KEY, 'sb-003', true);
+  updateCompleted(store, KEY, 'arr-001', false);
+  assert.deepEqual(JSON.parse(store.getItem(KEY) || '{}'), { 'arr-002': false, 'hw-001': 1, 'sb-003': true });
+  assert.deepEqual([...readCompleted(store, KEY).done], ['hw-001', 'sb-003']);
+});
+
+test('corrupt/unreadable saved blob 不得覆寫為空 array 或本頁新紀錄', () => {
+  for (const raw of ['{broken', 'null', 'false', '4', '"text"', '[false]']) {
+    const store = storage(raw);
+    assert.throws(() => readCompleted(store, KEY));
+    assert.throws(() => updateCompleted(store, KEY, 'arr-001', true));
+    assert.equal(store.getItem(KEY), raw);
+  }
+  const store = storage('["arr-001"]');
+  const denied = { ...store, getItem: () => { throw new Error('storage denied'); } };
+  assert.throws(() => updateCompleted(denied, KEY, 'hw-002', true), /storage denied/);
+  assert.equal(store.getItem(KEY), '["arr-001"]');
+});
+
+test('write 拒絕會向 UI caller 拋錯，不回傳假保存成功；清除後重新讀是空集合', () => {
+  const store = storage('["arr-001"]');
+  const full = { ...store, setItem: () => { throw new Error('quota'); } };
+  assert.throws(() => updateCompleted(full, KEY, 'hw-002', true), /quota/);
+  assert.equal(store.getItem(KEY), '["arr-001"]');
+  store.clear();
+  assert.equal(readCompleted(store, KEY).done.size, 0);
+});

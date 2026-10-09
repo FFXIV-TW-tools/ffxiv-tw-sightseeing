@@ -1,0 +1,107 @@
+{
+  "v": 2,
+  "kind": "devloop-material-snapshot",
+  "cycle": "2026-10-09-sightseeing-hardening",
+  "phase": "pre",
+  "revision": "health-fix-candidate3+hardening-design1",
+  "controlsSha256": "498c72619dce111375e5a4d081f7c2af8222472b8c963d445b521c6da5a9e7dc",
+  "recordPath": "docs/specs/2026-10-09-sightseeing-hardening.md",
+  "paths": [
+    "_headers",
+    "deploy-prepare.sh",
+    "docs/specs/2026-10-09-sightseeing-hardening.md",
+    "index.html",
+    "modules/app.js",
+    "modules/map_view.js",
+    "modules/ss_storage.js",
+    "tools/build_data.py",
+    "tools/build_zones.py"
+  ],
+  "baselinePaths": [
+    "docs/specs/2026-10-09-sightseeing-hardening.md"
+  ],
+  "files": [
+    {
+      "path": "_headers",
+      "sha256": "bf55371130815c28c362c1d92abbd4b9695a7f598f7c6538eaa28a09b7a93d96",
+      "deliverySha256": "bf55371130815c28c362c1d92abbd4b9695a7f598f7c6538eaa28a09b7a93d96",
+      "blob": {
+        "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/blobs/bf55371130815c28c362c1d92abbd4b9695a7f598f7c6538eaa28a09b7a93d96",
+        "sha256": "bf55371130815c28c362c1d92abbd4b9695a7f598f7c6538eaa28a09b7a93d96"
+      }
+    },
+    {
+      "path": "deploy-prepare.sh",
+      "sha256": "410a193c458671cbabd50de0ff84aa84f18e42f7d546b87d00b576062cd86d6c",
+      "deliverySha256": "410a193c458671cbabd50de0ff84aa84f18e42f7d546b87d00b576062cd86d6c",
+      "blob": {
+        "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/blobs/410a193c458671cbabd50de0ff84aa84f18e42f7d546b87d00b576062cd86d6c",
+        "sha256": "410a193c458671cbabd50de0ff84aa84f18e42f7d546b87d00b576062cd86d6c"
+      }
+    },
+    {
+      "path": "docs/specs/2026-10-09-sightseeing-hardening.md",
+      "sha256": "02e3ae4a2cf953788d019e60e74657efdeb7679f41dac196c5bdef8daea18151",
+      "deliverySha256": "415ad96495cbd45797f25dfd2bfb4eaf997f25568018ae43f1238fcc03e0b064",
+      "blob": {
+        "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/blobs/02e3ae4a2cf953788d019e60e74657efdeb7679f41dac196c5bdef8daea18151",
+        "sha256": "02e3ae4a2cf953788d019e60e74657efdeb7679f41dac196c5bdef8daea18151"
+      }
+    },
+    {
+      "path": "index.html",
+      "sha256": "a12dd207bfe99ef75910a175276c1e0de6295f34930ecdeddf8acbc5f2101b6e",
+      "deliverySha256": "a12dd207bfe99ef75910a175276c1e0de6295f34930ecdeddf8acbc5f2101b6e",
+      "blob": {
+        "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/blobs/a12dd207bfe99ef75910a175276c1e0de6295f34930ecdeddf8acbc5f2101b6e",
+        "sha256": "a12dd207bfe99ef75910a175276c1e0de6295f34930ecdeddf8acbc5f2101b6e"
+      }
+    },
+    {
+      "path": "modules/app.js",
+      "sha256": "5f32bff928819bfd5f90877d3f4f65a81a3da3b183f01eb2ac5a6e2896809139",
+      "deliverySha256": "5f32bff928819bfd5f90877d3f4f65a81a3da3b183f01eb2ac5a6e2896809139",
+      "blob": {
+        "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/blobs/5f32bff928819bfd5f90877d3f4f65a81a3da3b183f01eb2ac5a6e2896809139",
+        "sha256": "5f32bff928819bfd5f90877d3f4f65a81a3da3b183f01eb2ac5a6e2896809139"
+      }
+    },
+    {
+      "path": "modules/map_view.js",
+      "sha256": "6aa9e5dc36e4b167fb9ace2b909b07894bdae10550c21132ef895a51fe2845cf",
+      "deliverySha256": "6aa9e5dc36e4b167fb9ace2b909b07894bdae10550c21132ef895a51fe2845cf",
+      "blob": {
+        "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/blobs/6aa9e5dc36e4b167fb9ace2b909b07894bdae10550c21132ef895a51fe2845cf",
+        "sha256": "6aa9e5dc36e4b167fb9ace2b909b07894bdae10550c21132ef895a51fe2845cf"
+      }
+    },
+    {
+      "path": "modules/ss_storage.js",
+      "sha256": "aaa3d41cec179f238e46e1e168a743cdccab1b9fe45117cc06cebf13177dcf17",
+      "deliverySha256": "aaa3d41cec179f238e46e1e168a743cdccab1b9fe45117cc06cebf13177dcf17",
+      "blob": {
+        "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/blobs/aaa3d41cec179f238e46e1e168a743cdccab1b9fe45117cc06cebf13177dcf17",
+        "sha256": "aaa3d41cec179f238e46e1e168a743cdccab1b9fe45117cc06cebf13177dcf17"
+      }
+    },
+    {
+      "path": "tools/build_data.py",
+      "sha256": "00d5d3b14c573bf27ac25c406eb309c5d42ac33a4ae6abf7b0cd1eb7807c108f",
+      "deliverySha256": "00d5d3b14c573bf27ac25c406eb309c5d42ac33a4ae6abf7b0cd1eb7807c108f",
+      "blob": {
+        "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/blobs/00d5d3b14c573bf27ac25c406eb309c5d42ac33a4ae6abf7b0cd1eb7807c108f",
+        "sha256": "00d5d3b14c573bf27ac25c406eb309c5d42ac33a4ae6abf7b0cd1eb7807c108f"
+      }
+    },
+    {
+      "path": "tools/build_zones.py",
+      "sha256": "08c84857aa54281f6f92baa1e969ab7308f5ba5313a545b214d1b10578783001",
+      "deliverySha256": "08c84857aa54281f6f92baa1e969ab7308f5ba5313a545b214d1b10578783001",
+      "blob": {
+        "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/blobs/08c84857aa54281f6f92baa1e969ab7308f5ba5313a545b214d1b10578783001",
+        "sha256": "08c84857aa54281f6f92baa1e969ab7308f5ba5313a545b214d1b10578783001"
+      }
+    }
+  ],
+  "deliverySha256": "04a05367fcb20fdbdcb0a4b140ed5f4238c080a48c7bbb6a1bad749c2644a5da"
+}

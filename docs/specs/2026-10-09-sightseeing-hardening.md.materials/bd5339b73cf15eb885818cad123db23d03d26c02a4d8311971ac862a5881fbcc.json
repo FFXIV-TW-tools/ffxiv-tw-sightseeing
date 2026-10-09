@@ -1,0 +1,1076 @@
+{
+  "kind": "repository-root-relocation",
+  "cycle": "2026-10-09-sightseeing-hardening",
+  "originalRoot": "C:/FFXIVProject",
+  "repositoryRoot": "C:/FFXIVProject/external/ffxiv-tw-sightseeing",
+  "rule": "Remove external/ffxiv-tw-sightseeing/ namespace; relocate map-filter evidence to docs/verification; preserve source bytes and original immutable manifests/reviewer raw. Parent exporter is a separate committed and pushed delivery, not a file delivered by this child repository.",
+  "upstreamCommit": "b59351cf2254f5e3ed06d458e49dbf453e968bdf",
+  "snapshots": [
+    {
+      "original": {
+        "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/cc05019ddafdd56946ed05f27cde48093cda397d11081b73d9f173f4c7352178.json",
+        "sha256": "cc05019ddafdd56946ed05f27cde48093cda397d11081b73d9f173f4c7352178"
+      },
+      "portable": {
+        "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/d1536e2714efb5bbc4a5def7c091b0f76651ac682b85daf12d50e4beb9670f92.json",
+        "sha256": "d1536e2714efb5bbc4a5def7c091b0f76651ac682b85daf12d50e4beb9670f92"
+      },
+      "preservedChildFiles": [
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/_headers",
+          "path": "_headers",
+          "sha256": "bf55371130815c28c362c1d92abbd4b9695a7f598f7c6538eaa28a09b7a93d96",
+          "deliverySha256": "bf55371130815c28c362c1d92abbd4b9695a7f598f7c6538eaa28a09b7a93d96"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/deploy-prepare.sh",
+          "path": "deploy-prepare.sh",
+          "sha256": "410a193c458671cbabd50de0ff84aa84f18e42f7d546b87d00b576062cd86d6c",
+          "deliverySha256": "410a193c458671cbabd50de0ff84aa84f18e42f7d546b87d00b576062cd86d6c"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/docs/specs/2026-10-09-sightseeing-hardening.md",
+          "path": "docs/specs/2026-10-09-sightseeing-hardening.md",
+          "sha256": "02e3ae4a2cf953788d019e60e74657efdeb7679f41dac196c5bdef8daea18151",
+          "deliverySha256": "415ad96495cbd45797f25dfd2bfb4eaf997f25568018ae43f1238fcc03e0b064"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/index.html",
+          "path": "index.html",
+          "sha256": "a12dd207bfe99ef75910a175276c1e0de6295f34930ecdeddf8acbc5f2101b6e",
+          "deliverySha256": "a12dd207bfe99ef75910a175276c1e0de6295f34930ecdeddf8acbc5f2101b6e"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/modules/app.js",
+          "path": "modules/app.js",
+          "sha256": "5f32bff928819bfd5f90877d3f4f65a81a3da3b183f01eb2ac5a6e2896809139",
+          "deliverySha256": "5f32bff928819bfd5f90877d3f4f65a81a3da3b183f01eb2ac5a6e2896809139"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/modules/map_view.js",
+          "path": "modules/map_view.js",
+          "sha256": "6aa9e5dc36e4b167fb9ace2b909b07894bdae10550c21132ef895a51fe2845cf",
+          "deliverySha256": "6aa9e5dc36e4b167fb9ace2b909b07894bdae10550c21132ef895a51fe2845cf"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/modules/ss_storage.js",
+          "path": "modules/ss_storage.js",
+          "sha256": "aaa3d41cec179f238e46e1e168a743cdccab1b9fe45117cc06cebf13177dcf17",
+          "deliverySha256": "aaa3d41cec179f238e46e1e168a743cdccab1b9fe45117cc06cebf13177dcf17"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/build_data.py",
+          "path": "tools/build_data.py",
+          "sha256": "00d5d3b14c573bf27ac25c406eb309c5d42ac33a4ae6abf7b0cd1eb7807c108f",
+          "deliverySha256": "00d5d3b14c573bf27ac25c406eb309c5d42ac33a4ae6abf7b0cd1eb7807c108f"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/build_zones.py",
+          "path": "tools/build_zones.py",
+          "sha256": "08c84857aa54281f6f92baa1e969ab7308f5ba5313a545b214d1b10578783001",
+          "deliverySha256": "08c84857aa54281f6f92baa1e969ab7308f5ba5313a545b214d1b10578783001"
+        }
+      ],
+      "separateUpstream": [
+        {
+          "path": "external/ffxiv-tw-marketboard/modules/map_view.js",
+          "sha256": "7877dedd576cfb28d8eee811ea7e5de8f85046f3466c08c3153ed4d3d623edca",
+          "blob": {
+            "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/blobs/7877dedd576cfb28d8eee811ea7e5de8f85046f3466c08c3153ed4d3d623edca",
+            "sha256": "7877dedd576cfb28d8eee811ea7e5de8f85046f3466c08c3153ed4d3d623edca"
+          }
+        },
+        {
+          "path": "tools/tc-datamine-dump/Program.cs",
+          "sha256": "c832e117c7866c48c579a68556d73514d8becdc02757abadec9b08ac8ecf0486",
+          "blob": {
+            "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/blobs/c832e117c7866c48c579a68556d73514d8becdc02757abadec9b08ac8ecf0486",
+            "sha256": "c832e117c7866c48c579a68556d73514d8becdc02757abadec9b08ac8ecf0486"
+          }
+        },
+        {
+          "path": "tools/tc-datamine-dump/TcDatamineDump.csproj",
+          "sha256": "a169ff51d52b631ef973722019b6f04806a7cb7b365cace03419a37765c64fb3",
+          "blob": {
+            "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/blobs/a169ff51d52b631ef973722019b6f04806a7cb7b365cace03419a37765c64fb3",
+            "sha256": "a169ff51d52b631ef973722019b6f04806a7cb7b365cace03419a37765c64fb3"
+          }
+        }
+      ]
+    },
+    {
+      "original": {
+        "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/67d74678e477e5e76748c4a4ade14f89a8428654a4df52a283a1650a92c23095.json",
+        "sha256": "67d74678e477e5e76748c4a4ade14f89a8428654a4df52a283a1650a92c23095"
+      },
+      "portable": {
+        "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/870e10e2d4581f42889f6c0e3b66b60106f1357f624d3881d8f257b169ae4a13.json",
+        "sha256": "870e10e2d4581f42889f6c0e3b66b60106f1357f624d3881d8f257b169ae4a13"
+      },
+      "preservedChildFiles": [
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/_headers",
+          "path": "_headers",
+          "sha256": "bf55371130815c28c362c1d92abbd4b9695a7f598f7c6538eaa28a09b7a93d96",
+          "deliverySha256": "bf55371130815c28c362c1d92abbd4b9695a7f598f7c6538eaa28a09b7a93d96"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/deploy-prepare.sh",
+          "path": "deploy-prepare.sh",
+          "sha256": "410a193c458671cbabd50de0ff84aa84f18e42f7d546b87d00b576062cd86d6c",
+          "deliverySha256": "410a193c458671cbabd50de0ff84aa84f18e42f7d546b87d00b576062cd86d6c"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/docs/specs/2026-10-09-sightseeing-hardening.md",
+          "path": "docs/specs/2026-10-09-sightseeing-hardening.md",
+          "sha256": "ce279747722179ef4bc1574e9f7494a2eae04045bcd4aad6701c8fac7273ccaa",
+          "deliverySha256": "b80b56ea62786ad2d5938b7fd899bca16f1935d7fe677563839f83b9e47ca62a"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/docs/specs/2026-10-09-sightseeing-hardening.map-filter-evidence.md",
+          "path": "docs/verification/2026-10-09-sightseeing-map-filter-evidence.md",
+          "sha256": "21f53e0a8603d000e71d31f900c9a2b7df7bbe2d89aa268a2bff81666c8e17a6",
+          "deliverySha256": "21f53e0a8603d000e71d31f900c9a2b7df7bbe2d89aa268a2bff81666c8e17a6"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/index.html",
+          "path": "index.html",
+          "sha256": "a12dd207bfe99ef75910a175276c1e0de6295f34930ecdeddf8acbc5f2101b6e",
+          "deliverySha256": "a12dd207bfe99ef75910a175276c1e0de6295f34930ecdeddf8acbc5f2101b6e"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/modules/app.js",
+          "path": "modules/app.js",
+          "sha256": "5f32bff928819bfd5f90877d3f4f65a81a3da3b183f01eb2ac5a6e2896809139",
+          "deliverySha256": "5f32bff928819bfd5f90877d3f4f65a81a3da3b183f01eb2ac5a6e2896809139"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/modules/map_view.js",
+          "path": "modules/map_view.js",
+          "sha256": "6aa9e5dc36e4b167fb9ace2b909b07894bdae10550c21132ef895a51fe2845cf",
+          "deliverySha256": "6aa9e5dc36e4b167fb9ace2b909b07894bdae10550c21132ef895a51fe2845cf"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/modules/ss_storage.js",
+          "path": "modules/ss_storage.js",
+          "sha256": "aaa3d41cec179f238e46e1e168a743cdccab1b9fe45117cc06cebf13177dcf17",
+          "deliverySha256": "aaa3d41cec179f238e46e1e168a743cdccab1b9fe45117cc06cebf13177dcf17"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/build_data.py",
+          "path": "tools/build_data.py",
+          "sha256": "00d5d3b14c573bf27ac25c406eb309c5d42ac33a4ae6abf7b0cd1eb7807c108f",
+          "deliverySha256": "00d5d3b14c573bf27ac25c406eb309c5d42ac33a4ae6abf7b0cd1eb7807c108f"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/build_zones.py",
+          "path": "tools/build_zones.py",
+          "sha256": "08c84857aa54281f6f92baa1e969ab7308f5ba5313a545b214d1b10578783001",
+          "deliverySha256": "08c84857aa54281f6f92baa1e969ab7308f5ba5313a545b214d1b10578783001"
+        }
+      ],
+      "separateUpstream": [
+        {
+          "path": "external/ffxiv-tw-marketboard/modules/map_view.js",
+          "sha256": "7877dedd576cfb28d8eee811ea7e5de8f85046f3466c08c3153ed4d3d623edca",
+          "blob": {
+            "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/blobs/7877dedd576cfb28d8eee811ea7e5de8f85046f3466c08c3153ed4d3d623edca",
+            "sha256": "7877dedd576cfb28d8eee811ea7e5de8f85046f3466c08c3153ed4d3d623edca"
+          }
+        },
+        {
+          "path": "tools/tc-datamine-dump/Program.cs",
+          "sha256": "c832e117c7866c48c579a68556d73514d8becdc02757abadec9b08ac8ecf0486",
+          "blob": {
+            "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/blobs/c832e117c7866c48c579a68556d73514d8becdc02757abadec9b08ac8ecf0486",
+            "sha256": "c832e117c7866c48c579a68556d73514d8becdc02757abadec9b08ac8ecf0486"
+          }
+        },
+        {
+          "path": "tools/tc-datamine-dump/TcDatamineDump.csproj",
+          "sha256": "a169ff51d52b631ef973722019b6f04806a7cb7b365cace03419a37765c64fb3",
+          "blob": {
+            "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/blobs/a169ff51d52b631ef973722019b6f04806a7cb7b365cace03419a37765c64fb3",
+            "sha256": "a169ff51d52b631ef973722019b6f04806a7cb7b365cace03419a37765c64fb3"
+          }
+        }
+      ]
+    },
+    {
+      "original": {
+        "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/6d65fbab971b205879bd7660f06b5e1e0e009b70293e3df88b1eadb825122d99.json",
+        "sha256": "6d65fbab971b205879bd7660f06b5e1e0e009b70293e3df88b1eadb825122d99"
+      },
+      "portable": {
+        "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/72a774c27f4f48a5aee7fd544d25edf6e305839e17db41609447b733972487e4.json",
+        "sha256": "72a774c27f4f48a5aee7fd544d25edf6e305839e17db41609447b733972487e4"
+      },
+      "preservedChildFiles": [
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/_headers",
+          "path": "_headers",
+          "sha256": "bf55371130815c28c362c1d92abbd4b9695a7f598f7c6538eaa28a09b7a93d96",
+          "deliverySha256": "bf55371130815c28c362c1d92abbd4b9695a7f598f7c6538eaa28a09b7a93d96"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/deploy-prepare.sh",
+          "path": "deploy-prepare.sh",
+          "sha256": "410a193c458671cbabd50de0ff84aa84f18e42f7d546b87d00b576062cd86d6c",
+          "deliverySha256": "410a193c458671cbabd50de0ff84aa84f18e42f7d546b87d00b576062cd86d6c"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/docs/specs/2026-10-09-sightseeing-hardening.md",
+          "path": "docs/specs/2026-10-09-sightseeing-hardening.md",
+          "sha256": "b5e8716f847945b43313d1efbcd51f6ab33320922e920c776e27b354b6804a09",
+          "deliverySha256": "b80b56ea62786ad2d5938b7fd899bca16f1935d7fe677563839f83b9e47ca62a"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/index.html",
+          "path": "index.html",
+          "sha256": "a12dd207bfe99ef75910a175276c1e0de6295f34930ecdeddf8acbc5f2101b6e",
+          "deliverySha256": "a12dd207bfe99ef75910a175276c1e0de6295f34930ecdeddf8acbc5f2101b6e"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/modules/app.js",
+          "path": "modules/app.js",
+          "sha256": "5f32bff928819bfd5f90877d3f4f65a81a3da3b183f01eb2ac5a6e2896809139",
+          "deliverySha256": "5f32bff928819bfd5f90877d3f4f65a81a3da3b183f01eb2ac5a6e2896809139"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/modules/map_view.js",
+          "path": "modules/map_view.js",
+          "sha256": "6aa9e5dc36e4b167fb9ace2b909b07894bdae10550c21132ef895a51fe2845cf",
+          "deliverySha256": "6aa9e5dc36e4b167fb9ace2b909b07894bdae10550c21132ef895a51fe2845cf"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/modules/ss_storage.js",
+          "path": "modules/ss_storage.js",
+          "sha256": "aaa3d41cec179f238e46e1e168a743cdccab1b9fe45117cc06cebf13177dcf17",
+          "deliverySha256": "aaa3d41cec179f238e46e1e168a743cdccab1b9fe45117cc06cebf13177dcf17"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/build_data.py",
+          "path": "tools/build_data.py",
+          "sha256": "00d5d3b14c573bf27ac25c406eb309c5d42ac33a4ae6abf7b0cd1eb7807c108f",
+          "deliverySha256": "00d5d3b14c573bf27ac25c406eb309c5d42ac33a4ae6abf7b0cd1eb7807c108f"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/build_zones.py",
+          "path": "tools/build_zones.py",
+          "sha256": "08c84857aa54281f6f92baa1e969ab7308f5ba5313a545b214d1b10578783001",
+          "deliverySha256": "08c84857aa54281f6f92baa1e969ab7308f5ba5313a545b214d1b10578783001"
+        }
+      ],
+      "separateUpstream": [
+        {
+          "path": "external/ffxiv-tw-marketboard/modules/map_view.js",
+          "sha256": "7877dedd576cfb28d8eee811ea7e5de8f85046f3466c08c3153ed4d3d623edca",
+          "blob": {
+            "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/blobs/7877dedd576cfb28d8eee811ea7e5de8f85046f3466c08c3153ed4d3d623edca",
+            "sha256": "7877dedd576cfb28d8eee811ea7e5de8f85046f3466c08c3153ed4d3d623edca"
+          }
+        },
+        {
+          "path": "tools/tc-datamine-dump/Program.cs",
+          "sha256": "c832e117c7866c48c579a68556d73514d8becdc02757abadec9b08ac8ecf0486",
+          "blob": {
+            "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/blobs/c832e117c7866c48c579a68556d73514d8becdc02757abadec9b08ac8ecf0486",
+            "sha256": "c832e117c7866c48c579a68556d73514d8becdc02757abadec9b08ac8ecf0486"
+          }
+        },
+        {
+          "path": "tools/tc-datamine-dump/TcDatamineDump.csproj",
+          "sha256": "a169ff51d52b631ef973722019b6f04806a7cb7b365cace03419a37765c64fb3",
+          "blob": {
+            "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/blobs/a169ff51d52b631ef973722019b6f04806a7cb7b365cace03419a37765c64fb3",
+            "sha256": "a169ff51d52b631ef973722019b6f04806a7cb7b365cace03419a37765c64fb3"
+          }
+        }
+      ]
+    },
+    {
+      "original": {
+        "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/1f6a8ef6b62f927d3f27099c387a03e2922927180e96dc2a89d253388002b644.json",
+        "sha256": "1f6a8ef6b62f927d3f27099c387a03e2922927180e96dc2a89d253388002b644"
+      },
+      "portable": {
+        "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/4b31b89c02270cf49f93eae352b2c55e4962c731cb2fc73e388619002b461449.json",
+        "sha256": "4b31b89c02270cf49f93eae352b2c55e4962c731cb2fc73e388619002b461449"
+      },
+      "preservedChildFiles": [
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/.node-version",
+          "path": ".node-version",
+          "sha256": "177d20030d4dcc37eae9ef92865ec54dadce60e8f19e9a34a5d4f37502195a36",
+          "deliverySha256": "177d20030d4dcc37eae9ef92865ec54dadce60e8f19e9a34a5d4f37502195a36"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/CHANGELOG.md",
+          "path": "CHANGELOG.md",
+          "sha256": "bbbfc82ac7fcfb61bf91957562db029a38a7ecd6b59ab1c6065dbe538de53768",
+          "deliverySha256": "bbbfc82ac7fcfb61bf91957562db029a38a7ecd6b59ab1c6065dbe538de53768"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/README.md",
+          "path": "README.md",
+          "sha256": "5128f72bbce8ee433baafbc5ddeab831e60204b0c4d29f2148216bce332bfaa9",
+          "deliverySha256": "5128f72bbce8ee433baafbc5ddeab831e60204b0c4d29f2148216bce332bfaa9"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/_headers",
+          "path": "_headers",
+          "sha256": "4f2e400eebfc8ff492d7a492a66437f762997444695459da978f9c11478bd78c",
+          "deliverySha256": "4f2e400eebfc8ff492d7a492a66437f762997444695459da978f9c11478bd78c"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/css/style.css",
+          "path": "css/style.css",
+          "sha256": "90bcc84547eb80dc8506bf4d94fa0cf19d772783ff0619f138c997b6ba71c544",
+          "deliverySha256": "90bcc84547eb80dc8506bf4d94fa0cf19d772783ff0619f138c997b6ba71c544"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/data/schema.md",
+          "path": "data/schema.md",
+          "sha256": "84d8a1280626370ffeecc3727a98bab5e5424571cac7d6004d57633c584cd998",
+          "deliverySha256": "84d8a1280626370ffeecc3727a98bab5e5424571cac7d6004d57633c584cd998"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/data/sightseeing-data.js",
+          "path": "data/sightseeing-data.js",
+          "sha256": "d5e2ce43516cae5dcee3579b8b90d067154fbd343f9e40e15b0a099f14e5288a",
+          "deliverySha256": "d5e2ce43516cae5dcee3579b8b90d067154fbd343f9e40e15b0a099f14e5288a"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/data/zones.js",
+          "path": "data/zones.js",
+          "sha256": "1fdc24a7107ace6f24bfd6e0905cbb5059c2c28dc2a819920a1336ab75acbabc",
+          "deliverySha256": "1fdc24a7107ace6f24bfd6e0905cbb5059c2c28dc2a819920a1336ab75acbabc"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/deploy-allow.txt",
+          "path": "deploy-allow.txt",
+          "sha256": "e04d4e73d560179cf41fa8924f0e10f54b2e64d5c8af3375bd980bfe84595a59",
+          "deliverySha256": "e04d4e73d560179cf41fa8924f0e10f54b2e64d5c8af3375bd980bfe84595a59"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/deploy-deny.txt",
+          "path": "deploy-deny.txt",
+          "sha256": "019a7e8d7b0d58f0cb8b1d776d23043b695fe4c2975e7c280ae8f628669cc9f1",
+          "deliverySha256": "019a7e8d7b0d58f0cb8b1d776d23043b695fe4c2975e7c280ae8f628669cc9f1"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/deploy-prepare.sh",
+          "path": "deploy-prepare.sh",
+          "sha256": "487b9b5508e79a9617b33602fdb13f8f65aecbbb2607845e22dc135ab1cbcf2e",
+          "deliverySha256": "487b9b5508e79a9617b33602fdb13f8f65aecbbb2607845e22dc135ab1cbcf2e"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/docs/rules-rationale.md",
+          "path": "docs/rules-rationale.md",
+          "sha256": "cf12b694643400aea02ffdeb053f6089224b67e63f4f80dba1cedfc72dd68fef",
+          "deliverySha256": "cf12b694643400aea02ffdeb053f6089224b67e63f4f80dba1cedfc72dd68fef"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/docs/specs/2026-10-09-sightseeing-hardening.md",
+          "path": "docs/specs/2026-10-09-sightseeing-hardening.md",
+          "sha256": "d606b2cef1e967bbca748a316e9fd1dca95bf3fc76df06b0fdaa978609a6aec8",
+          "deliverySha256": "b80b56ea62786ad2d5938b7fd899bca16f1935d7fe677563839f83b9e47ca62a"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/docs/verification/2026-10-09-sightseeing-hardening.json",
+          "path": "docs/verification/2026-10-09-sightseeing-hardening.json",
+          "sha256": "7508be77c7c38e34e22a9293d6c2ea5bbd5bef70f429066c1b0040479f262171",
+          "deliverySha256": "7508be77c7c38e34e22a9293d6c2ea5bbd5bef70f429066c1b0040479f262171"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/index.html",
+          "path": "index.html",
+          "sha256": "41df33307ec4dfed6a3ac5d378f19c63de6fe3d064aebdd50626a2da6fd3bca6",
+          "deliverySha256": "41df33307ec4dfed6a3ac5d378f19c63de6fe3d064aebdd50626a2da6fd3bca6"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/modules/app.js",
+          "path": "modules/app.js",
+          "sha256": "a522ca604b9f582ab069637d5e0217900cd5a21e87c94c6b698cb194456ff6de",
+          "deliverySha256": "a522ca604b9f582ab069637d5e0217900cd5a21e87c94c6b698cb194456ff6de"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/modules/eorzea-time.js",
+          "path": "modules/eorzea-time.js",
+          "sha256": "3d988c95b1de4be1dbc4ba22c9af2a180793c0026735576269d70f9aa1de0243",
+          "deliverySha256": "3d988c95b1de4be1dbc4ba22c9af2a180793c0026735576269d70f9aa1de0243"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/modules/esc.js",
+          "path": "modules/esc.js",
+          "sha256": "93cbb43288186866a46fa0f85be7a31455cf6999429b6e2de90e3431777c25c7",
+          "deliverySha256": "93cbb43288186866a46fa0f85be7a31455cf6999429b6e2de90e3431777c25c7"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/modules/map_view.js",
+          "path": "modules/map_view.js",
+          "sha256": "913a23e624da58e9fb6f4ccf9d63af199f45825f8e47995d93dc9d0b9a68c2b3",
+          "deliverySha256": "913a23e624da58e9fb6f4ccf9d63af199f45825f8e47995d93dc9d0b9a68c2b3"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/modules/ss_availability.js",
+          "path": "modules/ss_availability.js",
+          "sha256": "87ac291b4fefb185f236f2834162b5263cfd180062a5d7a7307807744499aab2",
+          "deliverySha256": "87ac291b4fefb185f236f2834162b5263cfd180062a5d7a7307807744499aab2"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/modules/ss_icons.js",
+          "path": "modules/ss_icons.js",
+          "sha256": "40077734087d0fa814cb8d524d2a026d7ef02896b324e643dff433bd15bcadd4",
+          "deliverySha256": "40077734087d0fa814cb8d524d2a026d7ef02896b324e643dff433bd15bcadd4"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/modules/ss_list.js",
+          "path": "modules/ss_list.js",
+          "sha256": "670c55c86176f8a27bd0b74966f3764f328a65cfacd140a311d6a42808d19658",
+          "deliverySha256": "670c55c86176f8a27bd0b74966f3764f328a65cfacd140a311d6a42808d19658"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/modules/ss_progress_data.js",
+          "path": "modules/ss_progress_data.js",
+          "sha256": "c031f2f69a055aec365e0b6de1626bf513586ff29c6cc648f0f5917a7840136d",
+          "deliverySha256": "c031f2f69a055aec365e0b6de1626bf513586ff29c6cc648f0f5917a7840136d"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/modules/ss_progress_ui.js",
+          "path": "modules/ss_progress_ui.js",
+          "sha256": "e464cfc63af74715f26aae247e87585af5e4bc3d2674a0b89abe0bf6d3baa94a",
+          "deliverySha256": "e464cfc63af74715f26aae247e87585af5e4bc3d2674a0b89abe0bf6d3baa94a"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/modules/ss_storage.js",
+          "path": "modules/ss_storage.js",
+          "sha256": "f50cea6e0a03688a595aea74e860e60de004839d2d3211223acbab9d17d38919",
+          "deliverySha256": "f50cea6e0a03688a595aea74e860e60de004839d2d3211223acbab9d17d38919"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/modules/ss_visual.js",
+          "path": "modules/ss_visual.js",
+          "sha256": "09ce7600679ba1af16e46ec153df718b36b4ae36c0e88fea2d9a409a18c1db7a",
+          "deliverySha256": "09ce7600679ba1af16e46ec153df718b36b4ae36c0e88fea2d9a409a18c1db7a"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/modules/weather.js",
+          "path": "modules/weather.js",
+          "sha256": "6215831c3347e05c1b039bf12edd13aef826a145bfcdcc88cbded9ee84095106",
+          "deliverySha256": "6215831c3347e05c1b039bf12edd13aef826a145bfcdcc88cbded9ee84095106"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/styles/90-map.css",
+          "path": "styles/90-map.css",
+          "sha256": "a04da0168b0650c8cec599b0807ed7c496a93ee55c9b4e04cf574896ce8d9b38",
+          "deliverySha256": "a04da0168b0650c8cec599b0807ed7c496a93ee55c9b4e04cf574896ce8d9b38"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tests/csp-image-hosts.test.mjs",
+          "path": "tests/csp-image-hosts.test.mjs",
+          "sha256": "4171acd29c647b52470c34333c1f7b7b4bb7db7eed4fb286643bf2e56af36980",
+          "deliverySha256": "4171acd29c647b52470c34333c1f7b7b4bb7db7eed4fb286643bf2e56af36980"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tests/run-all.mjs",
+          "path": "tests/run-all.mjs",
+          "sha256": "a565efea459c41b1bbc84dd9e4cb3d8cabbc51f28382cb1887d8b7c489c4c2d6",
+          "deliverySha256": "a565efea459c41b1bbc84dd9e4cb3d8cabbc51f28382cb1887d8b7c489c4c2d6"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tests/ss-storage.test.mjs",
+          "path": "tests/ss-storage.test.mjs",
+          "sha256": "89a4c20d253db55e1108c4eec31d7930b6058d8b9a40eed2a033abfa2acfb582",
+          "deliverySha256": "89a4c20d253db55e1108c4eec31d7930b6058d8b9a40eed2a033abfa2acfb582"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/README.md",
+          "path": "tools/README.md",
+          "sha256": "2542240168142d6a94e02f6665150e97424310a8d1a36baa9e2ae94a78617f7e",
+          "deliverySha256": "2542240168142d6a94e02f6665150e97424310a8d1a36baa9e2ae94a78617f7e"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/build_data.py",
+          "path": "tools/build_data.py",
+          "sha256": "93586ca7043d1d74ceb1e455fc2690047b52859a415b4d034a486562ab23cd05",
+          "deliverySha256": "93586ca7043d1d74ceb1e455fc2690047b52859a415b4d034a486562ab23cd05"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/build_zones.py",
+          "path": "tools/build_zones.py",
+          "sha256": "f734ff51ce864baf06b5c44bb56279de5c51daf187862e8135728918550cc2d6",
+          "deliverySha256": "f734ff51ce864baf06b5c44bb56279de5c51daf187862e8135728918550cc2d6"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/extract-sources.mjs",
+          "path": "tools/extract-sources.mjs",
+          "sha256": "368cf99b02d2aa5191db41e5cfc2312affaa7dcc1dbcafb61189e3e3cab6403b",
+          "deliverySha256": "368cf99b02d2aa5191db41e5cfc2312affaa7dcc1dbcafb61189e3e3cab6403b"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/source_snapshot.py",
+          "path": "tools/source_snapshot.py",
+          "sha256": "9086a1bc0acaa4f0c80574045c3ef972975f3b7b0df38e7d3dce3b97805796fa",
+          "deliverySha256": "9086a1bc0acaa4f0c80574045c3ef972975f3b7b0df38e7d3dce3b97805796fa"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/sources/babelin.html",
+          "path": "tools/sources/babelin.html",
+          "sha256": "64ce287e5399db59d0bfc1aaae2d318c586527e251bdc3e61669ae8fccae28e0",
+          "deliverySha256": "64ce287e5399db59d0bfc1aaae2d318c586527e251bdc3e61669ae8fccae28e0"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/sources/cycleapple-arr.js",
+          "path": "tools/sources/cycleapple-arr.js",
+          "sha256": "17803b8f51a4cf628aa9a75ac12d55845b21d7f8fd7cb0d7d3e11e6e9923c378",
+          "deliverySha256": "17803b8f51a4cf628aa9a75ac12d55845b21d7f8fd7cb0d7d3e11e6e9923c378"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/sources/generation-manifest.json",
+          "path": "tools/sources/generation-manifest.json",
+          "sha256": "9da0120d199543b4b699ea92709dc30d63da4648e917547a23217d4eabc80b82",
+          "deliverySha256": "9da0120d199543b4b699ea92709dc30d63da4648e917547a23217d4eabc80b82"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/sources/native-manifest.json",
+          "path": "tools/sources/native-manifest.json",
+          "sha256": "3822883ae305961ec0ce10ac8cbbf7df616e37a3c7666288b956a73f8decf80d",
+          "deliverySha256": "3822883ae305961ec0ce10ac8cbbf7df616e37a3c7666288b956a73f8decf80d"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/sources/tc_Adventure.csv",
+          "path": "tools/sources/tc_Adventure.csv",
+          "sha256": "17dba694ff6e86ebb23eb01579a85b83ab87fa35bf7c3e116cc44b71bdcb31b3",
+          "deliverySha256": "17dba694ff6e86ebb23eb01579a85b83ab87fa35bf7c3e116cc44b71bdcb31b3"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/sources/tc_Emote.csv",
+          "path": "tools/sources/tc_Emote.csv",
+          "sha256": "62dd1118d05e40dd6ec5bff422fbe373c9562958205ba9d2eb364dbf8e546d59",
+          "deliverySha256": "62dd1118d05e40dd6ec5bff422fbe373c9562958205ba9d2eb364dbf8e546d59"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/sources/tc_Level.csv",
+          "path": "tools/sources/tc_Level.csv",
+          "sha256": "21765c83d99f50e88ce500084763275d48eb574dda5a9227896a713e6e61ea06",
+          "deliverySha256": "21765c83d99f50e88ce500084763275d48eb574dda5a9227896a713e6e61ea06"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/sources/tc_Map.csv",
+          "path": "tools/sources/tc_Map.csv",
+          "sha256": "51044a7388a27405b55afffdd59ee52115f5d121d1dda2aedc737ee1cc2ca6d6",
+          "deliverySha256": "51044a7388a27405b55afffdd59ee52115f5d121d1dda2aedc737ee1cc2ca6d6"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/sources/tc_PlaceName.csv",
+          "path": "tools/sources/tc_PlaceName.csv",
+          "sha256": "e26dd0c1ffb4c4f3de2cf0fc2253e46403011c0ae9b3bc2a00186f52b6564301",
+          "deliverySha256": "e26dd0c1ffb4c4f3de2cf0fc2253e46403011c0ae9b3bc2a00186f52b6564301"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/sources/tc_TextCommand.csv",
+          "path": "tools/sources/tc_TextCommand.csv",
+          "sha256": "1eb9428a18d0cc1f64e24d09d615b11647773a5b0a4f686bca0e41ce4539311f",
+          "deliverySha256": "1eb9428a18d0cc1f64e24d09d615b11647773a5b0a4f686bca0e41ce4539311f"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/validate-availability.mjs",
+          "path": "tools/validate-availability.mjs",
+          "sha256": "d257e7aead5fc0ec8b06fe862c0ed75e50abf7f5b257fd1753faaf70763ceb08",
+          "deliverySha256": "d257e7aead5fc0ec8b06fe862c0ed75e50abf7f5b257fd1753faaf70763ceb08"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/validate-csp.mjs",
+          "path": "tools/validate-csp.mjs",
+          "sha256": "1cd705e2f5f696bb9ef2079a85266b22f3aa407d9b48ff4a8bf1c918adcae4e8",
+          "deliverySha256": "1cd705e2f5f696bb9ef2079a85266b22f3aa407d9b48ff4a8bf1c918adcae4e8"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/validate-data.mjs",
+          "path": "tools/validate-data.mjs",
+          "sha256": "4fceacab45dc0221abdf8dfcc0c4549e4e64968b9c258f8b165e7e84669f3c08",
+          "deliverySha256": "4fceacab45dc0221abdf8dfcc0c4549e4e64968b9c258f8b165e7e84669f3c08"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/validate-sources.mjs",
+          "path": "tools/validate-sources.mjs",
+          "sha256": "e55cb521a2e5e1931c5c9de6f5c1447788673532778912031b349161a430d488",
+          "deliverySha256": "e55cb521a2e5e1931c5c9de6f5c1447788673532778912031b349161a430d488"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/validate-weather.mjs",
+          "path": "tools/validate-weather.mjs",
+          "sha256": "924f3cdbfa1ba2488367fbb58a073beca4b77cf02af6987fc4ded8d01518906d",
+          "deliverySha256": "924f3cdbfa1ba2488367fbb58a073beca4b77cf02af6987fc4ded8d01518906d"
+        }
+      ],
+      "separateUpstream": [
+        {
+          "path": "tools/tc-datamine-dump/Program.cs",
+          "sha256": "03024044883f87aad1665da0b3651a6fe51c33aa0c3a25ec957745c4f2f7e8af",
+          "blob": {
+            "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/blobs/03024044883f87aad1665da0b3651a6fe51c33aa0c3a25ec957745c4f2f7e8af",
+            "sha256": "03024044883f87aad1665da0b3651a6fe51c33aa0c3a25ec957745c4f2f7e8af"
+          }
+        },
+        {
+          "path": "tools/tc-datamine-dump/README.md",
+          "sha256": "27bb6a7e98c8fa412877ec155ccef46b0e72001ce897624b38b1776b19aa1979",
+          "blob": {
+            "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/blobs/27bb6a7e98c8fa412877ec155ccef46b0e72001ce897624b38b1776b19aa1979",
+            "sha256": "27bb6a7e98c8fa412877ec155ccef46b0e72001ce897624b38b1776b19aa1979"
+          }
+        },
+        {
+          "path": "tools/tc-datamine-dump/SightseeingDump.cs",
+          "sha256": "4a4a55c400a607db5f98aadef5e39ab32cffac859d50e29b6797ac2d4f086cb5",
+          "blob": {
+            "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/blobs/4a4a55c400a607db5f98aadef5e39ab32cffac859d50e29b6797ac2d4f086cb5",
+            "sha256": "4a4a55c400a607db5f98aadef5e39ab32cffac859d50e29b6797ac2d4f086cb5"
+          }
+        },
+        {
+          "path": "tools/tc-datamine-dump/TcDatamineDump.csproj",
+          "sha256": "a169ff51d52b631ef973722019b6f04806a7cb7b365cace03419a37765c64fb3",
+          "blob": {
+            "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/blobs/a169ff51d52b631ef973722019b6f04806a7cb7b365cace03419a37765c64fb3",
+            "sha256": "a169ff51d52b631ef973722019b6f04806a7cb7b365cace03419a37765c64fb3"
+          }
+        }
+      ]
+    },
+    {
+      "original": {
+        "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/6b9ee2fe1a38a301bf749318acb1bb4358548f5f851c78758cb378f219418369.json",
+        "sha256": "6b9ee2fe1a38a301bf749318acb1bb4358548f5f851c78758cb378f219418369"
+      },
+      "portable": {
+        "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/15c68494efae5125b3dca8e31ab6f9aeac42e7ffb7d1f2c9a0e3f02a1c2e949a.json",
+        "sha256": "15c68494efae5125b3dca8e31ab6f9aeac42e7ffb7d1f2c9a0e3f02a1c2e949a"
+      },
+      "preservedChildFiles": [
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/.gitattributes",
+          "path": ".gitattributes",
+          "sha256": "46f62b9aa643db1fcc46068a4ebba9f0581bd4345a5124bdcbb9ea39a48279cc",
+          "deliverySha256": "46f62b9aa643db1fcc46068a4ebba9f0581bd4345a5124bdcbb9ea39a48279cc"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/.node-version",
+          "path": ".node-version",
+          "sha256": "177d20030d4dcc37eae9ef92865ec54dadce60e8f19e9a34a5d4f37502195a36",
+          "deliverySha256": "177d20030d4dcc37eae9ef92865ec54dadce60e8f19e9a34a5d4f37502195a36"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/CHANGELOG.md",
+          "path": "CHANGELOG.md",
+          "sha256": "bbbfc82ac7fcfb61bf91957562db029a38a7ecd6b59ab1c6065dbe538de53768",
+          "deliverySha256": "bbbfc82ac7fcfb61bf91957562db029a38a7ecd6b59ab1c6065dbe538de53768"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/README.md",
+          "path": "README.md",
+          "sha256": "ef54789c6aea826becb2c6a1f2982af94c84b52103b1fef3b159e7d83cd74e35",
+          "deliverySha256": "ef54789c6aea826becb2c6a1f2982af94c84b52103b1fef3b159e7d83cd74e35"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/_headers",
+          "path": "_headers",
+          "sha256": "4f2e400eebfc8ff492d7a492a66437f762997444695459da978f9c11478bd78c",
+          "deliverySha256": "4f2e400eebfc8ff492d7a492a66437f762997444695459da978f9c11478bd78c"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/css/style.css",
+          "path": "css/style.css",
+          "sha256": "90bcc84547eb80dc8506bf4d94fa0cf19d772783ff0619f138c997b6ba71c544",
+          "deliverySha256": "90bcc84547eb80dc8506bf4d94fa0cf19d772783ff0619f138c997b6ba71c544"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/data/schema.md",
+          "path": "data/schema.md",
+          "sha256": "84d8a1280626370ffeecc3727a98bab5e5424571cac7d6004d57633c584cd998",
+          "deliverySha256": "84d8a1280626370ffeecc3727a98bab5e5424571cac7d6004d57633c584cd998"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/data/sightseeing-data.js",
+          "path": "data/sightseeing-data.js",
+          "sha256": "d5e2ce43516cae5dcee3579b8b90d067154fbd343f9e40e15b0a099f14e5288a",
+          "deliverySha256": "d5e2ce43516cae5dcee3579b8b90d067154fbd343f9e40e15b0a099f14e5288a"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/data/zones.js",
+          "path": "data/zones.js",
+          "sha256": "1fdc24a7107ace6f24bfd6e0905cbb5059c2c28dc2a819920a1336ab75acbabc",
+          "deliverySha256": "1fdc24a7107ace6f24bfd6e0905cbb5059c2c28dc2a819920a1336ab75acbabc"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/deploy-allow.txt",
+          "path": "deploy-allow.txt",
+          "sha256": "e04d4e73d560179cf41fa8924f0e10f54b2e64d5c8af3375bd980bfe84595a59",
+          "deliverySha256": "e04d4e73d560179cf41fa8924f0e10f54b2e64d5c8af3375bd980bfe84595a59"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/deploy-deny.txt",
+          "path": "deploy-deny.txt",
+          "sha256": "019a7e8d7b0d58f0cb8b1d776d23043b695fe4c2975e7c280ae8f628669cc9f1",
+          "deliverySha256": "019a7e8d7b0d58f0cb8b1d776d23043b695fe4c2975e7c280ae8f628669cc9f1"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/deploy-prepare.sh",
+          "path": "deploy-prepare.sh",
+          "sha256": "487b9b5508e79a9617b33602fdb13f8f65aecbbb2607845e22dc135ab1cbcf2e",
+          "deliverySha256": "487b9b5508e79a9617b33602fdb13f8f65aecbbb2607845e22dc135ab1cbcf2e"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/docs/rules-rationale.md",
+          "path": "docs/rules-rationale.md",
+          "sha256": "cf12b694643400aea02ffdeb053f6089224b67e63f4f80dba1cedfc72dd68fef",
+          "deliverySha256": "cf12b694643400aea02ffdeb053f6089224b67e63f4f80dba1cedfc72dd68fef"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/docs/specs/2026-10-09-sightseeing-hardening.md",
+          "path": "docs/specs/2026-10-09-sightseeing-hardening.md",
+          "sha256": "cd64377fef95a6cebdbf65592127aa5cbd80a97a56ca09a6f46cd5cc18043c40",
+          "deliverySha256": "b80b56ea62786ad2d5938b7fd899bca16f1935d7fe677563839f83b9e47ca62a"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/docs/verification/2026-10-09-sightseeing-hardening.json",
+          "path": "docs/verification/2026-10-09-sightseeing-hardening.json",
+          "sha256": "0b19d7f90b614b7a3a7b8ab22a4e8b37af808c283c3f465c9d5dcda9a4f6ae2e",
+          "deliverySha256": "0b19d7f90b614b7a3a7b8ab22a4e8b37af808c283c3f465c9d5dcda9a4f6ae2e"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/index.html",
+          "path": "index.html",
+          "sha256": "41df33307ec4dfed6a3ac5d378f19c63de6fe3d064aebdd50626a2da6fd3bca6",
+          "deliverySha256": "41df33307ec4dfed6a3ac5d378f19c63de6fe3d064aebdd50626a2da6fd3bca6"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/modules/app.js",
+          "path": "modules/app.js",
+          "sha256": "a522ca604b9f582ab069637d5e0217900cd5a21e87c94c6b698cb194456ff6de",
+          "deliverySha256": "a522ca604b9f582ab069637d5e0217900cd5a21e87c94c6b698cb194456ff6de"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/modules/eorzea-time.js",
+          "path": "modules/eorzea-time.js",
+          "sha256": "3d988c95b1de4be1dbc4ba22c9af2a180793c0026735576269d70f9aa1de0243",
+          "deliverySha256": "3d988c95b1de4be1dbc4ba22c9af2a180793c0026735576269d70f9aa1de0243"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/modules/esc.js",
+          "path": "modules/esc.js",
+          "sha256": "93cbb43288186866a46fa0f85be7a31455cf6999429b6e2de90e3431777c25c7",
+          "deliverySha256": "93cbb43288186866a46fa0f85be7a31455cf6999429b6e2de90e3431777c25c7"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/modules/map_view.js",
+          "path": "modules/map_view.js",
+          "sha256": "913a23e624da58e9fb6f4ccf9d63af199f45825f8e47995d93dc9d0b9a68c2b3",
+          "deliverySha256": "913a23e624da58e9fb6f4ccf9d63af199f45825f8e47995d93dc9d0b9a68c2b3"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/modules/ss_availability.js",
+          "path": "modules/ss_availability.js",
+          "sha256": "87ac291b4fefb185f236f2834162b5263cfd180062a5d7a7307807744499aab2",
+          "deliverySha256": "87ac291b4fefb185f236f2834162b5263cfd180062a5d7a7307807744499aab2"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/modules/ss_icons.js",
+          "path": "modules/ss_icons.js",
+          "sha256": "40077734087d0fa814cb8d524d2a026d7ef02896b324e643dff433bd15bcadd4",
+          "deliverySha256": "40077734087d0fa814cb8d524d2a026d7ef02896b324e643dff433bd15bcadd4"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/modules/ss_list.js",
+          "path": "modules/ss_list.js",
+          "sha256": "670c55c86176f8a27bd0b74966f3764f328a65cfacd140a311d6a42808d19658",
+          "deliverySha256": "670c55c86176f8a27bd0b74966f3764f328a65cfacd140a311d6a42808d19658"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/modules/ss_progress_data.js",
+          "path": "modules/ss_progress_data.js",
+          "sha256": "c031f2f69a055aec365e0b6de1626bf513586ff29c6cc648f0f5917a7840136d",
+          "deliverySha256": "c031f2f69a055aec365e0b6de1626bf513586ff29c6cc648f0f5917a7840136d"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/modules/ss_progress_ui.js",
+          "path": "modules/ss_progress_ui.js",
+          "sha256": "43bb0e0944b722f557f1066568a8de528f520a4335a0ef48b75cf294788b21ed",
+          "deliverySha256": "43bb0e0944b722f557f1066568a8de528f520a4335a0ef48b75cf294788b21ed"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/modules/ss_storage.js",
+          "path": "modules/ss_storage.js",
+          "sha256": "f50cea6e0a03688a595aea74e860e60de004839d2d3211223acbab9d17d38919",
+          "deliverySha256": "f50cea6e0a03688a595aea74e860e60de004839d2d3211223acbab9d17d38919"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/modules/ss_visual.js",
+          "path": "modules/ss_visual.js",
+          "sha256": "09ce7600679ba1af16e46ec153df718b36b4ae36c0e88fea2d9a409a18c1db7a",
+          "deliverySha256": "09ce7600679ba1af16e46ec153df718b36b4ae36c0e88fea2d9a409a18c1db7a"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/modules/weather.js",
+          "path": "modules/weather.js",
+          "sha256": "6215831c3347e05c1b039bf12edd13aef826a145bfcdcc88cbded9ee84095106",
+          "deliverySha256": "6215831c3347e05c1b039bf12edd13aef826a145bfcdcc88cbded9ee84095106"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/styles/90-map.css",
+          "path": "styles/90-map.css",
+          "sha256": "a04da0168b0650c8cec599b0807ed7c496a93ee55c9b4e04cf574896ce8d9b38",
+          "deliverySha256": "a04da0168b0650c8cec599b0807ed7c496a93ee55c9b4e04cf574896ce8d9b38"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tests/csp-image-hosts.test.mjs",
+          "path": "tests/csp-image-hosts.test.mjs",
+          "sha256": "4171acd29c647b52470c34333c1f7b7b4bb7db7eed4fb286643bf2e56af36980",
+          "deliverySha256": "4171acd29c647b52470c34333c1f7b7b4bb7db7eed4fb286643bf2e56af36980"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tests/run-all.mjs",
+          "path": "tests/run-all.mjs",
+          "sha256": "a565efea459c41b1bbc84dd9e4cb3d8cabbc51f28382cb1887d8b7c489c4c2d6",
+          "deliverySha256": "a565efea459c41b1bbc84dd9e4cb3d8cabbc51f28382cb1887d8b7c489c4c2d6"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tests/ss-storage.test.mjs",
+          "path": "tests/ss-storage.test.mjs",
+          "sha256": "89a4c20d253db55e1108c4eec31d7930b6058d8b9a40eed2a033abfa2acfb582",
+          "deliverySha256": "89a4c20d253db55e1108c4eec31d7930b6058d8b9a40eed2a033abfa2acfb582"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/README.md",
+          "path": "tools/README.md",
+          "sha256": "8719bb1b5d6ca4fc142afca4ad64499b3ab1e2667d5eb3b1b39432c3cf7de2fa",
+          "deliverySha256": "8719bb1b5d6ca4fc142afca4ad64499b3ab1e2667d5eb3b1b39432c3cf7de2fa"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/build_data.py",
+          "path": "tools/build_data.py",
+          "sha256": "221069502c6172dedb3de58cd6b711417eaaff7b7d0e91a29125d4430311b6be",
+          "deliverySha256": "221069502c6172dedb3de58cd6b711417eaaff7b7d0e91a29125d4430311b6be"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/build_zones.py",
+          "path": "tools/build_zones.py",
+          "sha256": "7de6c9c1a66e00c8762c4426472e34269022b19e4244f6e6a8102000e616f4d7",
+          "deliverySha256": "7de6c9c1a66e00c8762c4426472e34269022b19e4244f6e6a8102000e616f4d7"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/extract-sources.mjs",
+          "path": "tools/extract-sources.mjs",
+          "sha256": "368cf99b02d2aa5191db41e5cfc2312affaa7dcc1dbcafb61189e3e3cab6403b",
+          "deliverySha256": "368cf99b02d2aa5191db41e5cfc2312affaa7dcc1dbcafb61189e3e3cab6403b"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/source_snapshot.py",
+          "path": "tools/source_snapshot.py",
+          "sha256": "9086a1bc0acaa4f0c80574045c3ef972975f3b7b0df38e7d3dce3b97805796fa",
+          "deliverySha256": "9086a1bc0acaa4f0c80574045c3ef972975f3b7b0df38e7d3dce3b97805796fa"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/sources/babelin.html",
+          "path": "tools/sources/babelin.html",
+          "sha256": "64ce287e5399db59d0bfc1aaae2d318c586527e251bdc3e61669ae8fccae28e0",
+          "deliverySha256": "64ce287e5399db59d0bfc1aaae2d318c586527e251bdc3e61669ae8fccae28e0"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/sources/cycleapple-arr.js",
+          "path": "tools/sources/cycleapple-arr.js",
+          "sha256": "17803b8f51a4cf628aa9a75ac12d55845b21d7f8fd7cb0d7d3e11e6e9923c378",
+          "deliverySha256": "17803b8f51a4cf628aa9a75ac12d55845b21d7f8fd7cb0d7d3e11e6e9923c378"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/sources/generation-manifest.json",
+          "path": "tools/sources/generation-manifest.json",
+          "sha256": "9da0120d199543b4b699ea92709dc30d63da4648e917547a23217d4eabc80b82",
+          "deliverySha256": "9da0120d199543b4b699ea92709dc30d63da4648e917547a23217d4eabc80b82"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/sources/native-manifest.json",
+          "path": "tools/sources/native-manifest.json",
+          "sha256": "3822883ae305961ec0ce10ac8cbbf7df616e37a3c7666288b956a73f8decf80d",
+          "deliverySha256": "3822883ae305961ec0ce10ac8cbbf7df616e37a3c7666288b956a73f8decf80d"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/sources/tc_Adventure.csv",
+          "path": "tools/sources/tc_Adventure.csv",
+          "sha256": "17dba694ff6e86ebb23eb01579a85b83ab87fa35bf7c3e116cc44b71bdcb31b3",
+          "deliverySha256": "17dba694ff6e86ebb23eb01579a85b83ab87fa35bf7c3e116cc44b71bdcb31b3"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/sources/tc_Emote.csv",
+          "path": "tools/sources/tc_Emote.csv",
+          "sha256": "62dd1118d05e40dd6ec5bff422fbe373c9562958205ba9d2eb364dbf8e546d59",
+          "deliverySha256": "62dd1118d05e40dd6ec5bff422fbe373c9562958205ba9d2eb364dbf8e546d59"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/sources/tc_Level.csv",
+          "path": "tools/sources/tc_Level.csv",
+          "sha256": "21765c83d99f50e88ce500084763275d48eb574dda5a9227896a713e6e61ea06",
+          "deliverySha256": "21765c83d99f50e88ce500084763275d48eb574dda5a9227896a713e6e61ea06"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/sources/tc_Map.csv",
+          "path": "tools/sources/tc_Map.csv",
+          "sha256": "51044a7388a27405b55afffdd59ee52115f5d121d1dda2aedc737ee1cc2ca6d6",
+          "deliverySha256": "51044a7388a27405b55afffdd59ee52115f5d121d1dda2aedc737ee1cc2ca6d6"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/sources/tc_PlaceName.csv",
+          "path": "tools/sources/tc_PlaceName.csv",
+          "sha256": "e26dd0c1ffb4c4f3de2cf0fc2253e46403011c0ae9b3bc2a00186f52b6564301",
+          "deliverySha256": "e26dd0c1ffb4c4f3de2cf0fc2253e46403011c0ae9b3bc2a00186f52b6564301"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/sources/tc_TextCommand.csv",
+          "path": "tools/sources/tc_TextCommand.csv",
+          "sha256": "1eb9428a18d0cc1f64e24d09d615b11647773a5b0a4f686bca0e41ce4539311f",
+          "deliverySha256": "1eb9428a18d0cc1f64e24d09d615b11647773a5b0a4f686bca0e41ce4539311f"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/validate-availability.mjs",
+          "path": "tools/validate-availability.mjs",
+          "sha256": "d257e7aead5fc0ec8b06fe862c0ed75e50abf7f5b257fd1753faaf70763ceb08",
+          "deliverySha256": "d257e7aead5fc0ec8b06fe862c0ed75e50abf7f5b257fd1753faaf70763ceb08"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/validate-csp.mjs",
+          "path": "tools/validate-csp.mjs",
+          "sha256": "1cd705e2f5f696bb9ef2079a85266b22f3aa407d9b48ff4a8bf1c918adcae4e8",
+          "deliverySha256": "1cd705e2f5f696bb9ef2079a85266b22f3aa407d9b48ff4a8bf1c918adcae4e8"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/validate-data.mjs",
+          "path": "tools/validate-data.mjs",
+          "sha256": "4fceacab45dc0221abdf8dfcc0c4549e4e64968b9c258f8b165e7e84669f3c08",
+          "deliverySha256": "4fceacab45dc0221abdf8dfcc0c4549e4e64968b9c258f8b165e7e84669f3c08"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/validate-sources.mjs",
+          "path": "tools/validate-sources.mjs",
+          "sha256": "e55cb521a2e5e1931c5c9de6f5c1447788673532778912031b349161a430d488",
+          "deliverySha256": "e55cb521a2e5e1931c5c9de6f5c1447788673532778912031b349161a430d488"
+        },
+        {
+          "originalPath": "external/ffxiv-tw-sightseeing/tools/validate-weather.mjs",
+          "path": "tools/validate-weather.mjs",
+          "sha256": "924f3cdbfa1ba2488367fbb58a073beca4b77cf02af6987fc4ded8d01518906d",
+          "deliverySha256": "924f3cdbfa1ba2488367fbb58a073beca4b77cf02af6987fc4ded8d01518906d"
+        }
+      ],
+      "separateUpstream": [
+        {
+          "path": "tools/tc-datamine-dump/Program.cs",
+          "sha256": "03024044883f87aad1665da0b3651a6fe51c33aa0c3a25ec957745c4f2f7e8af",
+          "blob": {
+            "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/blobs/03024044883f87aad1665da0b3651a6fe51c33aa0c3a25ec957745c4f2f7e8af",
+            "sha256": "03024044883f87aad1665da0b3651a6fe51c33aa0c3a25ec957745c4f2f7e8af"
+          }
+        },
+        {
+          "path": "tools/tc-datamine-dump/README.md",
+          "sha256": "27bb6a7e98c8fa412877ec155ccef46b0e72001ce897624b38b1776b19aa1979",
+          "blob": {
+            "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/blobs/27bb6a7e98c8fa412877ec155ccef46b0e72001ce897624b38b1776b19aa1979",
+            "sha256": "27bb6a7e98c8fa412877ec155ccef46b0e72001ce897624b38b1776b19aa1979"
+          }
+        },
+        {
+          "path": "tools/tc-datamine-dump/SightseeingDump.cs",
+          "sha256": "4a4a55c400a607db5f98aadef5e39ab32cffac859d50e29b6797ac2d4f086cb5",
+          "blob": {
+            "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/blobs/4a4a55c400a607db5f98aadef5e39ab32cffac859d50e29b6797ac2d4f086cb5",
+            "sha256": "4a4a55c400a607db5f98aadef5e39ab32cffac859d50e29b6797ac2d4f086cb5"
+          }
+        },
+        {
+          "path": "tools/tc-datamine-dump/TcDatamineDump.csproj",
+          "sha256": "a169ff51d52b631ef973722019b6f04806a7cb7b365cace03419a37765c64fb3",
+          "blob": {
+            "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/blobs/a169ff51d52b631ef973722019b6f04806a7cb7b365cace03419a37765c64fb3",
+            "sha256": "a169ff51d52b631ef973722019b6f04806a7cb7b365cace03419a37765c64fb3"
+          }
+        }
+      ]
+    }
+  ],
+  "coverages": [
+    {
+      "original": {
+        "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/edefcdc1b37c7bde607bcbe3fdd893c67e7bbe299843aba1efaad6ebc0d072df.json",
+        "sha256": "edefcdc1b37c7bde607bcbe3fdd893c67e7bbe299843aba1efaad6ebc0d072df"
+      },
+      "portable": {
+        "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/39d73caf1432a5fcc06dbe19f7b5b3fa16293942fc5b4b2a9e6fdd40a1a99971.json",
+        "sha256": "39d73caf1432a5fcc06dbe19f7b5b3fa16293942fc5b4b2a9e6fdd40a1a99971"
+      }
+    },
+    {
+      "original": {
+        "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/020ecea2173209b5586178358372517d616f3abe97b48b9e4d563354fbcb2c6d.json",
+        "sha256": "020ecea2173209b5586178358372517d616f3abe97b48b9e4d563354fbcb2c6d"
+      },
+      "portable": {
+        "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/2d6263da382aac408a154aea53b27202894a4bb3ca6593cce9c8c47c2f6c9b50.json",
+        "sha256": "2d6263da382aac408a154aea53b27202894a4bb3ca6593cce9c8c47c2f6c9b50"
+      }
+    },
+    {
+      "original": {
+        "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/7166ecacf03e298ea0e01a2a013e511618a52659a41a26b7b9dd9cc63b6c4b7c.json",
+        "sha256": "7166ecacf03e298ea0e01a2a013e511618a52659a41a26b7b9dd9cc63b6c4b7c"
+      },
+      "portable": {
+        "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/a137aa478c4f40a047141f3270b3e4d63959e100a20065eaf38c1df158bcd2d2.json",
+        "sha256": "a137aa478c4f40a047141f3270b3e4d63959e100a20065eaf38c1df158bcd2d2"
+      }
+    }
+  ],
+  "upstream": [
+    {
+      "path": "tools/tc-datamine-dump/Program.cs",
+      "reviewedSha256": "03024044883f87aad1665da0b3651a6fe51c33aa0c3a25ec957745c4f2f7e8af",
+      "committedSha256": "c2d337fe31c1919206fd2c41550d57d62c267fe3afeeb7cd967f4c83e4cceca7",
+      "bytesIdentical": false,
+      "lfNormalizedIdentical": true
+    },
+    {
+      "path": "tools/tc-datamine-dump/README.md",
+      "reviewedSha256": "27bb6a7e98c8fa412877ec155ccef46b0e72001ce897624b38b1776b19aa1979",
+      "committedSha256": "27bb6a7e98c8fa412877ec155ccef46b0e72001ce897624b38b1776b19aa1979",
+      "bytesIdentical": true,
+      "lfNormalizedIdentical": true
+    },
+    {
+      "path": "tools/tc-datamine-dump/SightseeingDump.cs",
+      "reviewedSha256": "4a4a55c400a607db5f98aadef5e39ab32cffac859d50e29b6797ac2d4f086cb5",
+      "committedSha256": "6042c485250cdf4960ae4a8450df64f84671086a929988b0dcc448fc044e818f",
+      "bytesIdentical": false,
+      "lfNormalizedIdentical": true
+    },
+    {
+      "path": "tools/tc-datamine-dump/TcDatamineDump.csproj",
+      "reviewedSha256": "a169ff51d52b631ef973722019b6f04806a7cb7b365cace03419a37765c64fb3",
+      "committedSha256": "cc30c289fedd4be369a0ebfc34e164ae8affb07d1ae5c543ed3f879e5da5f981",
+      "bytesIdentical": false,
+      "lfNormalizedIdentical": true
+    }
+  ],
+  "verification": {
+    "result": "pass",
+    "checks": [
+      "Original frozen materials loaded and hash-validated through the native material reader",
+      "Every child source text, sha256 and deliverySha256 exactly equals the original reviewed source after bijective path relocation",
+      "All three relocated coverage graphs validated with native checkCoverage",
+      "All four upstream sources match pushed b59351c after Git line-ending normalization"
+    ],
+    "noReviewerRawModified": true,
+    "noGateDisabled": true,
+    "noProductCodeChanged": true
+  }
+}

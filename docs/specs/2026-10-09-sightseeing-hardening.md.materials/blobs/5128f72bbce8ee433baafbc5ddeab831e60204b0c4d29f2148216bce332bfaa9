@@ -1,0 +1,93 @@
+# ffxiv-tw-sightseeing — FFXIV 繁中服 探索筆記工具
+
+FFXIV 繁中服（陸行鳥 DC）「探索筆記（Sightseeing Log）」收集工具。收錄 **2.0~7.0 全 340 個探索日誌**，
+每筆附**地圖底圖 + 座標點渲染**（marketboard 那套）、艾奧傑亞時間、天氣條件、表情提示與完成追蹤。
+
+- **Pages URL**：https://sight.xivtc.com/
+- **Portal**：FFXIV-TW-tools 生態工具站之一（tokens/header 走 portal CDN）
+- 主頁為 vanilla JS + 原生 ES module，無框架與前端 build；`functions/settings-api/` 以 Pages Function service binding 代理共用設定後端。
+
+## 資料來源
+- 名稱、時間窗、表情、指令、X/Y、地區與地圖 metadata：`tools/sources/` 的六張同版官方繁中 sheet，manifest 綁定 client version 與 bytes SHA-256。
+- ARR 天氣取 cycleapple；HW–DT 高度 z 與引導等補充取社群來源，不作地區／座標權威。
+- `python tools/build_data.py` 一次生成兩份資料與 generation manifest；standalone checkout 只需 Python 與 Node，沒有 monorepo／本機 dump fallback。詳 [建置流程](tools/README.md)。
+- 繁中正名一律對同版 PlaceName（例：拉札漢非拉札罕、克扎瑪烏卡非克札瑪烏卡）。
+
+## 檔案
+```
+index.html              骨架 + portal bootstrap + element ID 契約
+css/style.css           卡片/分頁/篩選樣式
+modules/app.js          主程式（分頁/篩選/卡片/完成追蹤/地圖委派）
+modules/ss_storage.js   IndexedDB 原子交易、legacy 遷移與原文備份
+modules/ss_progress_ui.js  損毀警告、下載與確認重置
+modules/eorzea-time.js  艾奧傑亞時間（移植 cycleapple）
+modules/weather.js      天氣預測（移植 cycleapple，bit-exact 對標 canonical）
+modules/map_view.js     地圖渲染（vendored from marketboard，上游同步）
+modules/esc.js          escHtml（vendored，map_view 依賴）
+styles/90-map.css       地圖樣式（vendored from marketboard）
+data/zones.js           地區→地圖底圖/sizeFactor/天氣鍵（AUTO-GEN，勿手改）
+data/sightseeing-data.js 340 筆探索日誌（純資料）
+data/schema.md          資料契約
+```
+
+## 本機 dev
+```bash
+svc start portal            # 需 portal :8774 才吃得到 tokens/header CDN
+python -m http.server 8xxx  # 或掛進 svc；index.html dev-mode 會抓 localhost:8774
+```
+
+## 完成紀錄與恢復
+
+- 完成集合保存於 IndexedDB `ffxiv-sightseeing`（version 1）→ object store `progress` → key `completed`。同時勾選不同 ID 以 transaction 序列合併；同 ID 以後一筆交易為準，不承諾跨裝置／斷電零遺失。
+- 首次成功交易遷移 `localStorage.ffxiv-sightseeing-completed` 的字串陣列或 truthy-key object，保留未知 ID、JSON 原文與 legacy key；之後只寫 IndexedDB。檢視偏好仍在 `ffxiv-sightseeing-prefs`。
+- 舊版分頁改動 legacy key 時持續警告，不自動合併；先備份、關閉舊版分頁，再重新整理。資料庫不可用時不能勾選，不當成損毀重置。
+- 損毀時只提供原文備份；下載開始不代表已保存。必須勾選「我已確認備份檔案保存完成」，再於獨立確認框清空完成集合。取消不寫入；備份後資料改變會拒絕重置。JSON 無法完整表示的值禁止下載／重置，原值仍留在 DB。
+- 重置保留 migration marker、legacy 原文與偏好，並在同一交易保存最後一次原文至 `progress` → `recovery-backup`；不會自動猜回損毀內容。
+
+### DevTools 人工救援（不是回寫 legacy key）
+
+只在你明確要覆寫本機完成集合時操作：關閉全部本站新舊分頁，再只開一個分頁；期間不要勾選。先在 Console 取得並另存**當前**完整原文，無法完整備份就停止：
+
+```js
+const progress = (await import('/modules/ss_storage.js')).createProgressStore();
+copy((await progress.backup()).json); // DevTools copy；貼到本機檔案並確認保存
+```
+
+再貼入已保存的下載備份。下例只接受可完整驗證的 record／legacy，不猜修損毀字串或忽略非法 ID：
+
+```js
+const backup = JSON.parse(prompt('貼上下載備份 JSON'));
+if (backup.database?.name !== 'ffxiv-sightseeing' || backup.database?.store !== 'progress'
+    || backup.database?.key !== 'completed' || backup.snapshot?.format !== 1
+    || typeof backup.snapshot.recordExists !== 'boolean'
+    || !(backup.snapshot.legacyRaw === null || typeof backup.snapshot.legacyRaw === 'string')) {
+  throw new Error('不是本站完整原文備份');
+}
+const { completedRecord, parseLegacyProgress } = await import('/modules/ss_progress_data.js');
+const ids = backup.snapshot.recordExists
+  ? completedRecord(backup.snapshot.record).ids
+  : parseLegacyProgress(backup.snapshot.legacyRaw);
+if (!confirm(`覆寫此瀏覽器 progress/completed 為已驗證的 ${ids.length} 個 ID？已另存當前原文才確認。`)) {
+  throw new Error('已取消，未覆寫');
+}
+const raw = localStorage.getItem('ffxiv-sightseeing-completed');
+await new Promise((resolve, reject) => {
+  const request = indexedDB.open('ffxiv-sightseeing', 1);
+  request.onerror = () => reject(request.error);
+  request.onsuccess = () => {
+    const db = request.result;
+    const tx = db.transaction('progress', 'readwrite');
+    tx.objectStore('progress').put({ ids, legacyRaw: raw }, 'completed');
+    tx.oncomplete = () => { db.close(); resolve(); };
+    tx.onabort = () => { db.close(); reject(tx.error); };
+  };
+});
+location.reload();
+```
+
+如果 `record` 損毀但備份中的 legacy 原文有效，可明確改用 `parseLegacyProgress(backup.snapshot.legacyRaw)` 取 ID；先檢視結果再覆寫。重寫 legacy key **不是** IndexedDB rollback。
+
+## 出貨驗證
+
+`sh deploy-prepare.sh` 在清除 `_site` 前執行資料／天氣／可進行時間／圖片主機／script CSP hash／native 與 generation manifest 檢查。任一驗證失敗保留前一個本機 `_site`；後續複製仍是 single-writer，不承諾任意 packaging I/O 失敗的本機回滾。CF Node 由 `.node-version` 固定；不需 Python、.NET 或 portal sibling。部署仍由允許清單與 tracked 檔控制；CF build 失敗不替換既有部署。
+

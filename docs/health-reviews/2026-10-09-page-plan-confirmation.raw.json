@@ -1,0 +1,101 @@
+{
+  "confirmation": {
+    "scope": "修正確認只看 F1–F7 的採納變更，沒有開新題，也沒有跑測試或整庫複審。用到的材料是 after manifest dac9dff5…（33 檔）、coverage.json、triage.json，以及 after blob 中的 plan（a063bb…）、record（3e1a64…）、verification.md（ec288f…）、_headers（bf5537…）。",
+    "overall": "PASS",
+    "summary": "F1–F7 全部確認採納，沒有阻擋項。我接受 F3 中「自動觸發 ④」那一點被駁回：我原本寫「deploy-prepare.sh 有改就觸發 ④」確實推論過頭。依 DEVLOOP §1:25，字樣或檔名本身不是 trigger，要看語意，而這次只是清理固定的內部暫存檔，allowlist、複製範圍、信任、暴露面、權限都沒有改變。另有 3 個 Low/Info 殘留（R1–R3），不阻擋。"
+  },
+  "items": [
+    {
+      "id": "F1",
+      "result": "PASS",
+      "evidence": "after plan 在「須修改」段首已拿掉批次 1 的「獨立修復 commit」宣稱，改寫成「以下是健檢分工批次，不是可獨立提交的單元」，並列出整合順序：weather nowMs API → 純 availability/storage＋app callers＋回歸測試 → index/CSS → icons/modulepreload 重生 → canonical 與 UI 驗收。也寫明互相依賴的 code、測試、preload 要放在同一個完整修復 commit。verification.md 的 scratch 突變（拿掉傳入的 now 後 ss-availability.test 轉紅，3 PASS／1 FAIL）證實這條依賴存在，也證實測試攔得住。"
+    },
+    {
+      "id": "F2",
+      "result": "PASS",
+      "evidence": "after plan 批次 2 的驗證已加上「對照修前 parsed snapshot，逐欄限制語意差異」，白名單只有 2 個 emoteCmd 和 3 個地名分隔號；名稱、座標、圖片 URL、size factor 若有其他變更，一律回到來源政策決策。verification.md 記錄了實際選源 `tclocal_PlaceName.csv` 與 6 個輸入的 SHA-256。我做了抽查（非 snapshot）：一週前的 _site/data/zones.js:7,14,287 有 3 個 tc 用 `·`（limsa_upper、limsa_lower、amh_araeng）；after 的 zones.js blob 裡，tc 值已經沒有 `·`，只剩第 3 行檔頭註解有。limsa_upper／limsa_lower 的 image 前後一致（s1t1/01、s1t2/01）。build_zones.py:126 把 tc 改成 `・`，babelin 的來源別名仍保留 `·`。以上和 Main 的說法一致。這 3 個名稱變更已經公開、有範圍限制，而且依據的是既有的 local-first 政策，不算悄悄改產物。"
+    },
+    {
+      "id": "F3",
+      "result": "PASS（附殘留 R1、R2）",
+      "evidence": "after manifest 對原本 22 檔逐檔比對 sha256：只有 plan（0e1394→a063bb）和 record（6e2c11→3e1a64）不同，其餘 20 檔與 before 完全相同，所以 runtime code 在 candidate1 到 candidate2 之間沒有再變。新增的 11 檔 scope 涵蓋我原本點名的全部檔案（tools/README、AGENTS、devloop.json、README、BACKLOG、rules-rationale、data/schema.md、ss_icons.js），另外多了 CHANGELOG、_headers、verification.md。plan 已列出 deploy-prepare cleanup 目標與 proxy test-only export 移除；record basis.assurance 也已逐項寫明。deploy-prepare.sh 的 sha 前後都是 410a19…，從 snapshot 看得到的改動只有 `trap 'rm -f \"$LIST\"' 0`／`trap 'exit 1' HUP INT TERM`，清的是固定路徑 `.deploy-filelist.tmp`；UNKNOWN 和 LEAK 兩道閘仍然是明確的 `exit 1`，allowlist、複製邏輯、symlink guard 都沒變。駁回 ④ 自動觸發成立。"
+    },
+    {
+      "id": "F4",
+      "result": "PASS（附 R3）",
+      "evidence": "after _headers 與第一輪讀到的修前工作樹逐字比對：第 18 行 CSP 完全相同，第 34／37 行 Link preload 完全相同，只有第 27–28 行註解改了。CSP 和 Link 的行號都沒有位移，表示上方沒有增刪行。portal header 在背景仍會使用 settings-client，這點依據 verification.md 記錄的 Chromium 觀察，由 Main 回報，我沒有重現。"
+    },
+    {
+      "id": "F5",
+      "result": "PASS",
+      "evidence": "after plan 已新增「待 Owner 決策 6. 損毀進度恢復」：本輪保留原始 blob、不自動重置，代價有寫明，並列出方案 A（先備份再明示確認重置）和方案 B（維持警告加人工救援）。"
+    },
+    {
+      "id": "F6",
+      "result": "PASS",
+      "evidence": "after plan 批次 2 已改成「`modules/eorzea-time.js` 刪除已查無 consumer 的錯誤 `isTimeInRange`」，從 weather.js 那一項拆了出來。"
+    },
+    {
+      "id": "F7",
+      "result": "PASS",
+      "evidence": "after plan 的執行備註只寫「控制判定與具體依據只以 Record 為當前權威；此檔是健檢要求的修復清單…不是另一份 DEVLOOP 控制宣告」，原本重複的 assurance 結論已移除。"
+    }
+  ],
+  "rejected_item_review": {
+    "id": "F3-security-trigger",
+    "reviewer_position": "接受駁回。",
+    "reason": "DEVLOOP §1:25 明定「security…本身不是 trigger」，④ 要看安全邊界的語意有沒有改變。trap 只刪除一個固定的內部暫存路徑，不會改變發佈內容，也不會改變 fail-closed 閘的判斷，所以不構成 ④。條件見 R2。"
+  },
+  "residual": [
+    {
+      "id": "R1",
+      "severity": "Low",
+      "related": "F3",
+      "file_line": "after manifest dac9dff5….json files[docs/BACKLOG.md]",
+      "evidence": "BACKLOG 凍結的 sha256 是 1154fd…，deliverySha256 卻是 e82122…，而且它不在 baselinePaths（baselinePaths 只有 record）。凍結的 blob 沒有 CRLF，`.gitattributes` 是 `* text=auto eol=lf`，看起來不像行尾差異。",
+      "impact": "實際交付的 BACKLOG 內容和受審的 blob 不一致。",
+      "minimal_fix": "重新凍結 BACKLOG，或把它宣告進 baselinePaths 並說明差在哪裡。"
+    },
+    {
+      "id": "R2",
+      "severity": "Low",
+      "related": "F3",
+      "file_line": "deploy-prepare.sh（trap 行）；verification.md「命令（git-bash）」與 deploy cleanup 那一條",
+      "evidence": "deploy-prepare.sh 檔頭的踩坑 #1 寫明 CF 的 sh 是 dash。cleanup fixture 是在 git-bash 下跑的；[INFERENCE] Git for Windows 的 sh 實際上是 bash 的 POSIX 模式，所以 dash 底下「跑完 EXIT trap 後 exit status 是否保留」沒有在目標 runtime 驗過。依 POSIX，明確寫的 `exit 1`（UNKNOWN、LEAK、cp 失敗）應該勝出 [INFERENCE]；但 `set -e` 造成的隱式失敗沒有涵蓋。",
+      "impact": "預期影響低。只有在 dash 讓 EXIT trap 吞掉非零 exit status 時，fail-closed 閘才會被抵銷。",
+      "minimal_fix": "有 dash 可用的話（例如 WSL），重跑一次失敗 fixture；否則在 verification 標明「dash 未實跑」。"
+    },
+    {
+      "id": "R3",
+      "severity": "Info",
+      "related": "F2/F4",
+      "file_line": "verification.md 第 3 行；record revision",
+      "evidence": "verification.md 標的候選是 candidate1，record 的 revision 卻是 candidate2-docs。這段期間 _headers 的註解有改，而 tests/csp-image-hosts.test.mjs 會讀 _headers（依 AGENTS.md:58）。另外，F2 的逐欄 parsed diff 原始 JSON（ui-smoke.json，b7805a…）不在 materials 裡，我只能抽查 3 個名稱和 2 個 image。",
+      "impact": "改的只是註解，結果應該不變；但依 DEVLOOP「對最終候選內容驗一次」，有一段可追溯性缺口。",
+      "minimal_fix": "在 record 註明 canonicalTest 有沒有在 candidate2 重跑，或寫明 comment-only 變更沿用 candidate1 驗證的理由。"
+    }
+  ],
+  "not_covered": [
+    "沒有重算任何 sha256，直接採信 manifest 的值。",
+    "沒有 BASE git diff；deploy-prepare.sh 相對 BASE 的確切 hunk 是根據 Main 的描述和 snapshot 內容推定的。",
+    "Chromium 觀察、parsed diff、6 個輸入 hash、fixture 結果都是 Main 回報的 runtime 證據，我沒有重現。",
+    "after _headers 第 1–16 行沒和修前比對，第一輪沒擷取到這幾行；只能從行號沒位移推定沒有增刪行。",
+    "沒有重新載入原 raw.json；沒有讀其他 reviewer 的結論；沒有讀 triage 以外的 pipeline 結果。"
+  ],
+  "runtime_metadata": {
+    "provider": "anthropic",
+    "model": "anthropic/claude-opus-5-5（取自宿主 system context）",
+    "family": "Claude Opus",
+    "effort_requested": "hi",
+    "effort_actual": "unknown",
+    "agentId": "unknown（triage.json 裡的 \"HealthPlanReview\" 是 Main 給的標籤，不是 runtime 觀測值）",
+    "sessionId": "unknown",
+    "attemptId": "unknown",
+    "start_time": "unknown",
+    "end_time": "unknown",
+    "tool_uses_this_round": "yield 前 13 次（glob 1、read 9、grep 3），加上本次 yield 共 14 次",
+    "tool_uses_cumulative": "第一輪 63 次（含 yield）加本輪 14 次，共 77 次",
+    "formal_control_review": false,
+    "isolation_note": "clean-context，但和宿主共用 system，不是 OS 隔離；全程唯讀，沒有改檔，也沒有 commit/push/deploy 或跑 build/test。"
+  }
+}

@@ -1,0 +1,514 @@
+{
+  "format": 1,
+  "capturedAt": "2026-10-09T13:19:30.969Z",
+  "scope": "2026-10-09-sightseeing-hardening owned fixture verification; no deployment or Owner data writes",
+  "rawLogSha256": {
+    "canonical": "1b8e678bf6d56d3fc92377e6b8ac265011c95e1a9f493240d91bb91205c1f54f",
+    "ownedSmoke": "be08e1b8faa9459af1ae94fda4562390edbb15b639171fae871df314c4d530d5"
+  },
+  "localRawLogs": "~/.claude/devloop-state/verify-logs/2026-10-09-sightseeing-hardening/",
+  "nativeExporter": [
+    {
+      "scenario": "reproducible-native",
+      "exit": 0,
+      "keyOutput": [
+        "Adventure: 340 rows, 17dba694ff6e86ebb23eb01579a85b83ab87fa35bf7c3e116cc44b71bdcb31b3\r",
+        "Emote: 321 rows, 62dd1118d05e40dd6ec5bff422fbe373c9562958205ba9d2eb364dbf8e546d59\r",
+        "TextCommand: 501 rows, 1eb9428a18d0cc1f64e24d09d615b11647773a5b0a4f686bca0e41ce4539311f\r",
+        "PlaceName: 5501 rows, e26dd0c1ffb4c4f3de2cf0fc2253e46403011c0ae9b3bc2a00186f52b6564301\r"
+      ],
+      "error": [
+        ""
+      ]
+    },
+    {
+      "scenario": "explicit-output-required",
+      "exit": 2,
+      "keyOutput": [
+        ""
+      ],
+      "error": [
+        "--sightseeing 必須明確指定 --out；不使用名稱層預設目錄"
+      ]
+    },
+    {
+      "scenario": "unknown-version-rejected",
+      "exit": 1,
+      "keyOutput": [
+        ""
+      ],
+      "error": [
+        "sightseeing 失敗：Empty or unknown client version"
+      ]
+    }
+  ],
+  "nativeComparison": {
+    "entryCount": 340,
+    "zoneCount": 60,
+    "entryDiffs": [
+      {
+        "entry": "arr#11",
+        "field": "emoteCmd",
+        "before": "sit",
+        "after": "lounge"
+      },
+      {
+        "entry": "arr#36",
+        "field": "emoteCmd",
+        "before": "sit",
+        "after": "lounge"
+      },
+      {
+        "entry": "dt#7",
+        "field": "name",
+        "before": "米普露馬黛茶園",
+        "after": "米普露瑪黛茶園"
+      },
+      {
+        "entry": "dt#31",
+        "field": "name",
+        "before": "錦磚咖啡",
+        "after": "馬賽克咖啡"
+      }
+    ],
+    "zoneDiffs": [],
+    "commands": [
+      [
+        "張望",
+        "lookout"
+      ],
+      [
+        "祈禱",
+        "pray"
+      ],
+      [
+        "坐下",
+        "lounge"
+      ],
+      [
+        "敬禮",
+        "salute"
+      ],
+      [
+        "安慰",
+        "comfort"
+      ],
+      [
+        "坐下到地上",
+        "groundsit"
+      ],
+      [
+        "指向",
+        "point"
+      ],
+      [
+        "激勵",
+        "psych"
+      ],
+      [
+        "打盹",
+        "doze"
+      ],
+      [
+        "鼓勵",
+        "rally"
+      ],
+      [
+        "展示",
+        "me"
+      ]
+    ]
+  },
+  "atomic": {
+    "concurrentSnapshot": {
+      "kind": "ready",
+      "uniqueIds": 82,
+      "preservedOriginalIds": true,
+      "missingConcurrentIds": [],
+      "legacyRaw": " [\"arr-001\",\"future-999\",\"arr-001\"] "
+    },
+    "peerSync": {
+      "checkbox": true,
+      "count": "2"
+    },
+    "sameId": {
+      "lastFalse": true,
+      "preserved": 83
+    },
+    "pending": {
+      "checked": true,
+      "disabled": true,
+      "busy": "true",
+      "count": "2",
+      "cardRemains": true
+    },
+    "abort": {
+      "missing": true,
+      "checked": false,
+      "disabled": false,
+      "count": "3",
+      "message": "完成紀錄交易失敗，本次變更未提交：完成紀錄交易未完成：Owned quota failure"
+    },
+    "readRace": {
+      "count": "4",
+      "cardHidden": true
+    },
+    "errorRace": {
+      "count": "—",
+      "disabled": true,
+      "status": "完成紀錄無法讀取，已停止寫入；這不是可確認重置的損毀狀態。Failed to execute 'objectStore' on 'IDBTransaction': The transaction has finished."
+    },
+    "legacyDrift": {
+      "drift": true,
+      "original": " [\"arr-001\",\"future-999\",\"arr-001\"] ",
+      "newRaw": "{\"old-tab-extra\":true}",
+      "noMerge": true,
+      "resetHidden": true,
+      "count": "4"
+    },
+    "objectMigration": {
+      "kind": "ready",
+      "ids": [
+        "arr-001",
+        "future-888"
+      ],
+      "legacyDrift": false,
+      "exists": true,
+      "value": {
+        "ids": [
+          "arr-001",
+          "future-888"
+        ],
+        "legacyRaw": "{\"arr-001\":true,\"arr-002\":false,\"future-888\":1,\"hw-001\":null}"
+      },
+      "legacyRaw": "{\"arr-001\":true,\"arr-002\":false,\"future-888\":1,\"hw-001\":null}",
+      "message": ""
+    },
+    "initialLoading": {
+      "cards": 0,
+      "count": "—",
+      "badge": "—/340",
+      "firstHidden": true,
+      "status": "正在整理探索筆記…若持續無法載入，請重新整理頁面。請啟用 JavaScript 並重新整理頁面。",
+      "warningHidden": true
+    },
+    "reload": {
+      "checked": true,
+      "count": "4"
+    },
+    "versionChange": {
+      "message": "完成紀錄無法讀取，已停止寫入；這不是可確認重置的損毀狀態。資料庫版本已變更，請重新整理頁面。",
+      "count": "—",
+      "disabled": true,
+      "resetHidden": true,
+      "violations": []
+    },
+    "interruptedMigration": {
+      "snapshot": {
+        "kind": "ready",
+        "ids": [
+          "arr-006",
+          "future-777"
+        ],
+        "legacyDrift": false,
+        "exists": true,
+        "value": {
+          "ids": [
+            "arr-006",
+            "future-777"
+          ],
+          "legacyRaw": " [\"arr-006\",\"future-777\"] "
+        },
+        "legacyRaw": " [\"arr-006\",\"future-777\"] ",
+        "message": ""
+      },
+      "injectedPutConsumed": true
+    }
+  },
+  "recovery": {
+    "cancel": {
+      "snapshot": {
+        "kind": "corrupt",
+        "ids": [],
+        "legacyDrift": false,
+        "exists": false,
+        "legacyRaw": "{broken\n原文",
+        "message": "Expected property name or '}' in JSON at position 1 (line 1 column 2)"
+      },
+      "prefs": "{\"exp\":\"hw\",\"hide\":true}",
+      "dialog": false
+    },
+    "stale": {
+      "snapshot": {
+        "kind": "corrupt",
+        "ids": [],
+        "legacyDrift": false,
+        "exists": false,
+        "legacyRaw": "{new-corrupt-raw",
+        "message": "Expected property name or '}' in JSON at position 1 (line 1 column 2)"
+      },
+      "resetDisabled": true,
+      "message": "未重置完成紀錄：其他分頁已修改原始進度，請重新下載備份後再確認。"
+    },
+    "reset": {
+      "snapshot": {
+        "kind": "ready",
+        "ids": [],
+        "legacyDrift": false,
+        "exists": true,
+        "value": {
+          "ids": [],
+          "legacyRaw": "{new-corrupt-raw"
+        },
+        "legacyRaw": "{new-corrupt-raw",
+        "message": ""
+      },
+      "backup": {
+        "recordExists": false,
+        "record": null,
+        "legacyRaw": "{new-corrupt-raw"
+      },
+      "prefs": "{\"exp\":\"hw\",\"hide\":true}"
+    },
+    "corruptDB": {
+      "recordExists": true,
+      "record": {
+        "ids": [
+          null
+        ],
+        "legacyRaw": "migration raw",
+        "extra": {
+          "preserved": "原始欄位"
+        }
+      },
+      "legacyRaw": "{new-corrupt-raw"
+    },
+    "unrepresentable": {
+      "exists": true,
+      "kind": "corrupt",
+      "undefinedPreserved": true,
+      "resetDisabled": true,
+      "message": "無法完整備份，不允許重置；原始資料仍保留：原始資料含 JSON 無法完整表示的值，無法安全備份或重置"
+    },
+    "unavailable": {
+      "count": "—",
+      "disabled": true,
+      "resetHidden": true,
+      "message": "完成紀錄無法讀取，已停止寫入；這不是可確認重置的損毀狀態。此瀏覽器無法使用 IndexedDB，不能保存完成紀錄。"
+    },
+    "mobile": {
+      "width": 390,
+      "scrollWidth": 380,
+      "resetDisabled": true
+    },
+    "manualRescue": {
+      "kind": "ready",
+      "ids": [
+        "arr-001",
+        "future-888"
+      ],
+      "legacyDrift": false,
+      "exists": true,
+      "value": {
+        "ids": [
+          "arr-001",
+          "future-888"
+        ],
+        "legacyRaw": null
+      },
+      "legacyRaw": null,
+      "message": ""
+    }
+  },
+  "cfBuild": {
+    "node": "v24.15.0",
+    "evidence": [
+      {
+        "scenario": "good tracked checkout",
+        "status": 0,
+        "files": 27
+      },
+      {
+        "scenario": "data/zones.js",
+        "status": 1,
+        "previousOutputPreserved": true
+      },
+      {
+        "scenario": "index.html",
+        "status": 1,
+        "previousOutputPreserved": true
+      },
+      {
+        "scenario": "tools/sources/tc_Level.csv",
+        "status": 1,
+        "previousOutputPreserved": true
+      },
+      {
+        "scenario": "tools/sources/babelin.html",
+        "status": 1,
+        "previousOutputPreserved": true
+      },
+      {
+        "scenario": "data/sightseeing-data.js",
+        "status": 1,
+        "previousOutputPreserved": true
+      }
+    ]
+  },
+  "csp": {
+    "staticPortalAudit": [
+      {
+        "name": "header.js",
+        "bytes": 42589,
+        "attributeCandidates": [],
+        "propertyHandlers": 8
+      },
+      {
+        "name": "settings-client.js",
+        "bytes": 44470,
+        "attributeCandidates": [],
+        "propertyHandlers": 2
+      },
+      {
+        "name": "usage.js",
+        "bytes": 3599,
+        "attributeCandidates": [],
+        "propertyHandlers": 0
+      }
+    ],
+    "observedRuntime": {
+      "normalCards": 340,
+      "normalSecurityViolations": 0,
+      "normalConsoleErrors": 0,
+      "modalImageNaturalWidth": 2048,
+      "forced404": [
+        "map-img-failed",
+        "map-inline--failed"
+      ],
+      "policy": "_headers unmodified exact policy, sightseeing.localhost owned profile, production xivtc.com bootstrap; no localhost allowance"
+    },
+    "fallback404": {
+      "source": "<!DOCTYPE html>\n<html lang=\"zh-Hant-TW\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n<meta name=\"robots\" content=\"noindex\">\n<title>找不到這個頁面</title>\n<!-- 這頁刻意**不載入任何外部資產**（不接 portal CDN、無 JS、無圖）。\n     它存在的理由就是「未知路徑不要再回 200 + index.html」——若它自己又拉一串資源，\n     等於把省下來的請求原地花掉，而爬蟲踩到的每一條假路徑都會再乘一次。\n     色值一律 var(--color-*, 同值 fallback)：tokens.css 沒載入時走 fallback（就是現在的常態），\n     哪天這頁被納入設計系統也不必回頭改。fallback 值＝tokens.css 當時的實值。 -->\n<style>\n  :root { color-scheme: dark; }\n  body { margin:0; min-height:100vh; display:grid; place-items:center;\n         background:var(--color-bg, #080c13); color:var(--color-text, #f5f5f5);\n         font-family:\"Noto Sans TC\",\"Microsoft JhengHei\",system-ui,sans-serif; }\n  main { text-align:center; padding:2rem; }\n  h1 { font-size:clamp(1.5rem,5vw,2rem); margin:0 0 .75rem; }\n  p { margin:0 0 1.5rem; color:var(--color-text-muted, #c0c9da); line-height:1.7; }\n  a { display:inline-block; padding:.6rem 1.4rem; border-radius:.5rem;\n      background:var(--color-surface, #101824); color:var(--color-text, #f5f5f5);\n      border:1px solid var(--color-border, #2b3f56); text-decoration:none; }\n  a:hover { background:var(--color-surface-hover, #18222f); }\n</style>\n</head>\n<body>\n<main>\n  <h1>找不到這個頁面</h1>\n  <p>網址可能打錯了，或這個頁面已經搬走。</p>\n  <a href=\"/\">回首頁</a>\n</main>\n</body>\n</html>",
+      "observedScriptCount": 0,
+      "observedHtmlHandlers": [],
+      "observedTitle": "找不到這個頁面"
+    }
+  },
+  "canonical": {
+    "command": "node tools/validate-availability.mjs && node tests/run-all.mjs",
+    "exitCode": 0,
+    "testFiles": "9/9",
+    "predictions": 8812,
+    "falsePositives": 0,
+    "unknown": 0,
+    "finalObservedRun": {
+      "exitCode": 0,
+      "testFiles": "9/9",
+      "predictions": 8822,
+      "falsePositives": 0,
+      "unknown": 0
+    }
+  },
+  "lsp": {
+    "file": "modules/*.js",
+    "result": "12 modules: no issues"
+  },
+  "limitations": [
+    "CF entry exercised on Windows Git Bash sh and Node v24.15.0; no CF deployment/dashboard changes",
+    "Native and browser proof are owned fixtures; no reset of Owner data",
+    "Same-ID last serialized transaction wins; no cross-device or power-loss zero-loss promise",
+    "onblocked branch reviewed, not synthetically exercised",
+    "Legacy localStorage cannot atomically join IndexedDB: writes after the reset comparison remain in the unchanged legacy key and are reported as drift on refresh; close old tabs before reset. No legacy source is deleted."
+  ],
+  "generator": {
+    "command": "python C:/dev-tmp/scratch/sight-hardening/map-join-smoke.py --reject && python C:/dev-tmp/scratch/sight-hardening/native-smoke.py",
+    "exit": 0,
+    "standalone": "outside monorepo: two JS outputs and generation manifest bytes-identical",
+    "failures": [
+      "missing Level 4876856",
+      "non-finite X",
+      "wrong Level bytes SHA",
+      "second output rename rollback",
+      "mismatched native map SizeFactor/Offset geometry"
+    ],
+    "allFailedWithoutChangingGoodOutputs": true,
+    "mapJoinBefore": {
+      "exit": 0,
+      "changedGoodOutputs": true
+    },
+    "mapJoinAfter": {
+      "exit": 1,
+      "goodOutputsPreserved": true
+    },
+    "rawLogSha256": {
+      "before": "d150b61dacb87ee0789b483a071fbcf4e35e95bb224c95cc2b7985e2a590e516",
+      "after": "a830644ef7d8a50ec8419e28e9093f2578c80f9d42e512612ddc4a59f2196329"
+    },
+    "regression": "owned throwaway Python fixture; no new permanent Python dependency in Node suite"
+  },
+  "archiveRescue": {
+    "readOnly": {
+      "database": {
+        "name": "ffxiv-sightseeing",
+        "store": "progress",
+        "key": "completed"
+      },
+      "snapshot": {
+        "format": 1,
+        "recordExists": true,
+        "record": {
+          "ids": [
+            null
+          ],
+          "legacyRaw": "migration raw",
+          "extra": {
+            "preserved": "原始欄位"
+          }
+        },
+        "legacyRaw": "{new-corrupt-raw"
+      }
+    },
+    "currentRecordAfter": {
+      "exists": true,
+      "valueType": "undefined"
+    },
+    "missingDatabase": {
+      "error": {
+        "name": "AbortError",
+        "message": "Version change transaction was aborted in upgradeneeded event handler."
+      },
+      "databases": []
+    }
+  },
+  "lspPython": "tools/*.py: three generators no issues after map geometry fix",
+  "consent": [
+    {
+      "scenario": "before",
+      "injection": "withdraw saved checkbox while confirmation open",
+      "snapshot": {
+        "format": 1,
+        "recordExists": true,
+        "record": {
+          "ids": [],
+          "legacyRaw": "{corrupt-consent"
+        },
+        "legacyRaw": "{corrupt-consent"
+      },
+      "saved": false,
+      "warningVisible": false
+    },
+    {
+      "scenario": "after",
+      "injection": "withdraw saved checkbox while confirmation open",
+      "snapshot": {
+        "format": 1,
+        "recordExists": false,
+        "record": null,
+        "legacyRaw": "{corrupt-consent"
+      },
+      "saved": false,
+      "warningVisible": true
+    }
+  ],
+  "materialEncoding": "Content-addressed blobs retain source bytes (-text); two CRLF native blobs restored byte-identically after normalization, source unchanged."
+}

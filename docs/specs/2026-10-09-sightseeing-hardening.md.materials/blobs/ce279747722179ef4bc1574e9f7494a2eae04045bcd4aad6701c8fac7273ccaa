@@ -1,0 +1,431 @@
+---
+status: approved
+type: feature
+cycle: 2026-10-09-sightseeing-hardening
+date: 2026-10-09
+devloop: 2
+---
+
+# 探索筆記核准改善
+
+## 授權與範圍
+
+Owner 核准前輪健檢的 CSP、同版資料、原子進度、CF 驗證閘、損毀恢復五項建議。縮圖沒有本站延遲證據，保持全尺寸小圖與放大圖；不新增縮圖資產。沒有 commit／push／部署、dashboard 修改或重置 Owner 實際資料的授權。前輪完整健檢與驗收保持歷史，不重跑。
+
+## 決策與契約
+
+### CSP
+
+marketboard 的 map_view 已以 document capture error listener 處理圖片失敗，沒有 inline onerror；本站移植這一既有修正，不一併引入它的縮圖／新 pin 外觀／data-full fallback。listener 在建立圖片前註冊，沿用既有失敗 class。保留 parser-inserted document.write bootstrap；script-src 保留既有 host、移除 unsafe-inline，只授權實際可執行 inline bootstrap 的 SHA-256；不加 strict-dynamic。JSON-LD 是不可執行資料，不納入必要 hash；script-src-attr 'none'。style-src 保持 unsafe-inline，因 map 座標與 portal 動態 style 契約需要。新增可重現 hash 更新／check，出貨前檢查頁面與政策同步；不新增第三方 host。
+
+### 同版資料
+
+現有 native manifest 只有名稱層，沒有 Adventure／Emote／Level／Map；把混版檔案貼同一版本標籤不是解法。本機 client 2026.09.14.0000.0000 與 .NET 10／Lumina 7.6.1、Lumina.Excel 7.5.0 已存在。擴充既有 tc-datamine-dump 的獨立 sightseeing 模式，強制明確 --out，不用 DefaultOutDir／Publish；只解包 Adventure、Emote、TextCommand、PlaceName、Level、Map，使用獨立 staging／manifest／發布函式，不動 monorepo 名稱層 dump。版本為空／unknown 或解包前後版本改變時非零退出，不發布。正常 exporter 模式不變。
+
+實機 checksum probe：TextCommand／PlaceName／Level／Map 與 typed schema 相符；Adventure（native BE0F5D9A，typed C57BF748）與 Emote（native F3AFDED2，typed AFF5D14E）不符。後兩張不能關閉 checksum 後硬套 typed row；改用 RawRow，先逐欄 hard-check 全部 native type／offset／欄數與已核對的既有繁中 CSV layout 相符，再讀必要欄。已確認 oracle：Adventure 2162688＝梭魚碼頭、Level 4876856、Emote 22、08:00–11:59；Emote 22＝張望、TextCommand 423。四张 typed sheet 保持 checksum hard gate；任何 schema／join／有效座標／340 筆基線失敗均不發布。
+
+新模式輸出標準 UTF-8 無 BOM、LF CSV：一列具名 header，reader 用欄名，不保留舊 SE dump 的固定位置／3–4 列表頭假設。exporter 明設 LF 再算 SHA；既有 .gitattributes 的全域 LF 與 HTML LF 規則沿用，Node 檢查拒絕 CRLF 漂移。六張 CSV 全部有 bytes SHA-256／列數與同一 clientVersion；manifest 不放非決定論 timestamp。
+
+生成器只讀版控 snapshot，不再讀 local-first／monorepo／upstream 路徑。zoneKey 由 Adventure.Level→Level.Map→Map.PlaceName→官方 PlaceName 對照既有 ZONES 主表；城市依 Map.PlaceName 區分上下層，不用社群 region／zone 作權威。選圖仍收圖碼符合 ^[a-z]\d[ft]\d$ 的主場景、排除事件／region／default，跨同名 PlaceName 取最小 map ID；使用 native Map.Id 組既有 https://v2.xivapi.com/api/asset/map/{Id}，不換圖片 host。必要 Level／Map／zone／image／sf／emote／TextCommand 缺失一律失敗，不回社群座標／空圖／100。emoteCmd 從同版 TextCommand.Command（英文）取值；現行 11 組逐一對帳，不再手寫 EMOTEID_CMD。
+
+社群僅保留 ARR 天氣、HW–DT 高度與引導等補充，分開標明來源。兩個生成器改為先建記憶體結果，由同一 CLI 完整解析／驗證兩份資料，寫暫存後發布；失敗前不開正式產物，rename 的 I/O 失敗回復本批已換檔，不承諾兩檔跨斷電原子性。generator-owned generation manifest 綁定 native manifest SHA／clientVersion、補充來源 SHA 與兩個產物 bytes SHA；CF Node 閘同時核對，抓缺重跑與手改產物。對照現有 340 筆逐欄差異；官方合法變更明列，不能無聲改座標／精度／圖片主機。
+
+### IndexedDB 與遷移
+
+以單一 object store 上的 readwrite transaction 內讀取、套用本次一個 ID、寫回完成集合；不在 transaction 外預組整份集合。所有寫入只在 transaction complete 後呈現成功；transaction 內不跨 await／網路等待。不同 ID 的同時寫入都保留；同 ID 衝突按 transaction 序列後者生效。不承諾跨裝置同步、磁碟毀損或斷電零遺失。
+
+首次成功 transaction 才从 ffxiv-sightseeing-completed 遷移。接受字串 array 與 truthy-key object，不過濾未知 ID；保存原始 JSON 原文／null，保留 legacy key 不改寫不刪除。完成 record 存在即 migration marker，與集合在同一 transaction；兩 tab 同時初始化只遷移一次，中斷可重入。reset 寫入空集合的有效 record，不刪 marker，避免再遷回舊進度。切換後只用 IDB 寫進度，無 localStorage 寫入 fallback；偏好原鍵不變。每次讀取及 legacy storage 事件偵測原文與遷移原文不同，持續警告舊版分頁另有修改，提供備份並要求刷新；不靜默合併或忽略。
+
+BroadcastChannel 提交通知加 visibility/pageshow refresh，通知只提示重讀 DB，不傳整份集合。所有 snapshot 重讀使用共同遞增 request token，只有最後發出的讀取可以更新 UI，包括錯誤狀態；不以「重讀 canonical」冒充順序保證。初次讀取完成前維持整理中／首屏 min-height，不以空集合顯示 badges／first-visit。寫入中的 ID 保存 pending 值並 disabled／aria-busy，render／tick 不翻回舊勾選；complete 後重讀 canonical，失敗移除 pending 並回滾。DB unavailable 明示不能保存、禁用完成寫入，不當損毀重置。db.onversionchange 關連線並提示刷新；onblocked 明示阻擋。
+
+### 損毀恢復
+
+損毀 legacy 或 IDB 格式顯示持續可見 codex 警告並禁止完成寫入；不是 toast 一閃而過。legacy 損毀且無 DB record 時，不寫 marker／空集合。以 cursor 區分不存在與存在但 value 為 undefined；讀取錯誤不當不存在。備份取得當下 record 存在狀態／record 原值／legacy raw，下載不外送；下載開始仍須使用者勾選確認檔案已保存，再開獨立 danger 確認框。取消／未備份／不可忠實生成 JSON 備份時不重置、不覆寫。不可 JSON 表示的 structured-clone 值仍原樣保留 DB，明示無法完整下載、禁止重置，不猜資料。
+
+重置在同一 readwrite transaction 比對當下 snapshot 與已下載備份的精確 JSON 指紋；任何 DB 或 legacy raw 改變都拒絕、要求重備份。確認後只寫完成集合為空、保留 marker 與 legacy 原文；同一 transaction 把原 record／legacy 原文 structured-clone 保存於 bounded 的最後一次 recovery-backup key，不清偏好或 legacy key。下載檔保留全部原文，不承諾猜回損毀內容。文件提供實際新 DB／store／key 的 DevTools transaction 人工救援步驟：停用所有新舊 tab、先另存當前原文，僅還原備份中可完整驗證的完成 ID，不把回寫 legacy key 說成 rollback。沒有新增維護頁／自動匯入，本輪不操作 Owner 資料。
+
+| 狀態 | 讀取／寫入規則 |
+|---|---|
+| 無 DB record＋有效 legacy | transaction 精確遷移；之後只讀寫 DB |
+| 無 DB record＋損毀 legacy | 原文保留、無 marker、寫入禁用；僅備份／確認重置 |
+| 有效 DB record | DB 權威；legacy 漂移警告，不回寫／重遷 |
+| 損毀 DB record | 原 record 保留、寫入禁用；僅完整備份／確認重置 |
+| DB 不可讀／不可用 | 明示無法保存；不冒充損毀，不重置 |
+
+### CF build
+
+deploy-prepare.sh 在清除／建立 _site 前執行 repo 自足 Node validators：資料、天氣、availability、圖片 CSP host、inline script CSP hash、source／generation manifest，並拒絕空 zone.image。固定 .node-version 為官方 CF 支援版本且列 deploy-deny.txt；不要求 Python、.NET、portal sibling 或新 npm 套件。任一 Node validator 失敗非零退出、保留前一個本機 _site；後續 packaging 仍沿現有 S 型單 writer，不新增暫存目錄 cutover 或宣稱任意 I/O 失敗都保留本機 _site。CF 失敗本來就保留前一版部署。tracked allowlist／symlink／洩漏驗收閘不變，只改 repo，不操作 dashboard／部署。
+
+### 實測方式與依賴
+
+- CSP smoke：owned localhost server 送出 _headers 原樣政策；瀏覽器以非 localhost 主機別名走正式 bootstrap base，載入正式 xivtc.com portal；不得加 localhost 放寬出貨政策。實際查看 bootstrap／header／設定／地圖成功與失敗、console securitypolicyviolation；一般本機無 CSP smoke 不抵這項。
+- 實作前 portal bootstrap 三支與 root JS 的 HTML handler／javascript URL／eval 靜態盤點，正式 runtime 再驗證動態依賴；JS .onerror 屬性賦值本身不是被 CSP 阻擋的 HTML attribute。若實際 portal incompatibility 阻擋，先查具體來源，不放寬 CSP、不宣稱支援。
+- API 根據：[IDBTransaction 的 active callback／complete／序列化](https://developer.mozilla.org/en-US/docs/Web/API/IDBTransaction)、[CF build image／.node-version](https://developers.cloudflare.com/pages/configuration/build-image/)。這些是本輪實作事實參考，不是另創設計系統。
+
+## 執行計畫
+
+- [ ] 完成必要 pre fact＋blind；獨立材料不互供其他 reviewer 意見。
+- [ ] CSP 既有上游修正同步，來源與 hash check；驗證 CSP 下正常圖片及失敗回饋。
+- [ ] scoped native exporter 與同版 snapshot，生成器 clean cutover；逐欄對帳及 fail-build／保留產物。
+- [ ] IndexedDB 遷移／同時交易與恢復 UX 整合；只在 owned localhost profile 行使 destructive 測試。
+- [ ] CF 自足驗證與 packaging 成功／失敗；不對本站未提交檔假裝 tracked 出貨。
+- [ ] 真實 UI、必要完整驗證與 post fact＋blind；更新現行文件／CHANGELOG。
+
+## 完成条件
+
+- [ ] script-src 無 unsafe-inline／無 inline handler，正常啟動、portal／地圖與圖片錯誤皆能運作；樣式契約不退化。
+- [ ] 所有遊戲 sheet 來自同一 native client version，manifest 驗 bytes；獨立 checkout 無 monorepo 也可生成，缺必要資料 build 非零且不改好產物。
+- [ ] array／object 精確遷移與原文保留、並行不同 ID 不遺失、同 ID 後者生效、失敗回滾、跨 tab reload 同步。
+- [ ] 損毀原文可下載；取消／未備份不刪除，備份後確認可重置，其他 tab 變更會使舊備份失效；偏好不清除。
+- [ ] CF build entry 真正執行自足 checks；好輸入輸出完整，注入失敗保留前一產物，無內部檔出貨。
+
+```devloop-record
+{
+  "v": 1,
+  "cycle": "2026-10-09-sightseeing-hardening",
+  "revision": "health-fix-candidate3+hardening-design2",
+  "controls": {
+    "design": true,
+    "plan": true,
+    "assurance": [
+      "data-migration",
+      "security-boundary"
+    ],
+    "isolation": "none"
+  },
+  "basis": {
+    "design": "Owner明示核准五項公開行為與來源/儲存策略；缩圖保留。",
+    "plan": "安全政策與caller、native exporter/snapshot/generator、DB遷移與UI需依序cutover；不部署，失敗保留資料與產物。",
+    "assurance": "CSP移除script unsafe-inline改安全邊界；localStorage進度轉IndexedDB是既存資料遷移，保留原文並有備份/確認重置。觸发④與③，因此pre/post fact+blind。無其他公開API不相容/唯一覆蓋停用或對外不可逆操作。",
+    "isolation": "在既有原工作目錄承接前輪未提交修復，不覆盖或revert；UI另開owned localhost profile，不用Owner瀏覽器、不改既有portal服務。"
+  },
+  "reviews": [
+    {
+      "id": "hardening-pre-fact-1",
+      "role": "fact",
+      "phase": "pre",
+      "kind": "initial",
+      "transport": "omp-native",
+      "actual": {
+        "provider": "anthropic",
+        "model": "claude-opus-5-5",
+        "family": "anthropic",
+        "effort": "high",
+        "agentId": "HardeningPreFact",
+        "sessionId": "01a12046-9594-77c4-9e3c-f88b252f336a",
+        "attemptId": "1e5be140"
+      },
+      "requested": {
+        "effort": "med"
+      },
+      "startedAt": "2026-10-09T10:47:39.278Z",
+      "endedAt": "2026-10-09T10:54:12.557Z",
+      "status": "completed",
+      "revision": "health-fix-candidate3+hardening-design1",
+      "controlsSha256": "498c72619dce111375e5a4d081f7c2af8222472b8c963d445b521c6da5a9e7dc",
+      "materials": [
+        {
+          "path": "external/ffxiv-tw-sightseeing/docs/specs/2026-10-09-sightseeing-hardening.md.materials/cc05019ddafdd56946ed05f27cde48093cda397d11081b73d9f173f4c7352178.json",
+          "sha256": "cc05019ddafdd56946ed05f27cde48093cda397d11081b73d9f173f4c7352178"
+        }
+      ],
+      "raw": {
+        "path": "external/ffxiv-tw-sightseeing/docs/specs/2026-10-09-sightseeing-hardening.md.reviews.md",
+        "key": "hardening-pre-fact-1",
+        "sha256": "476e57ce50c37d5b8273117e5288df543eb4d49f32c27e5f227b7432e9ea4778"
+      },
+      "triage": {
+        "accepted": [
+          {
+            "id": "F1",
+            "change": "所有 snapshot 重讀共用 latest-request token，包括錯誤回覆，拒絕倒灌。",
+            "confirmation": true
+          },
+          {
+            "id": "F2",
+            "change": "實測四張 typed checksum；Adventure/Emote 改先驗完整 native type/offset/欄數再讀 RawRow，附既有 oracle。",
+            "confirmation": true
+          },
+          {
+            "id": "F3",
+            "change": "native UTF-8 無 BOM/LF 後算 SHA，沿既有全域/HTML LF，Node 拒 CRLF。",
+            "confirmation": true
+          },
+          {
+            "id": "F4",
+            "change": "新模式拒空/unknown 版本，解包前後版本不一致也拒發。",
+            "confirmation": true
+          },
+          {
+            "id": "F5",
+            "change": "強制 --out，獨立 staging/manifest/publish，不用名稱層預設路徑及 Publish。",
+            "confirmation": true
+          },
+          {
+            "id": "F6",
+            "change": "zoneKey 走 Level.Map/Map.PlaceName，明定主場景正則/最小 ID/既有 v2 圖片 URL。",
+            "confirmation": true
+          },
+          {
+            "id": "F7",
+            "change": "具名一列 CSV；兩份結果先驗證，單一 CLI 暫存發布/失敗回復，不宣稱兩檔斷電原子。",
+            "confirmation": true
+          },
+          {
+            "id": "F8",
+            "change": "generation manifest 綁 native manifest/補充來源 SHA 及兩份產物 SHA，Node 一併查。",
+            "confirmation": true
+          },
+          {
+            "id": "F9",
+            "change": "首讀維持 loading，pending ID 保存值並 disabled/aria-busy，失敗回滾。",
+            "confirmation": true
+          },
+          {
+            "id": "F10",
+            "change": "讀取及 storage 事件偵測 legacy 原文漂移，持續警告/備份/刷新，不無聲忽略。",
+            "confirmation": true
+          },
+          {
+            "id": "F11",
+            "change": "補狀態表、cursor 存在性、精確備份比對、bounded 原值 archive；不可忠實 JSON 備份則禁止重置。",
+            "confirmation": true
+          },
+          {
+            "id": "F12",
+            "change": "owned server 送原政策，非 localhost 主機別名走正式 portal，不能拿無 CSP 本機綠燈充數。",
+            "confirmation": true
+          },
+          {
+            "id": "F13",
+            "change": "盤點 portal bootstrap/root JS，區分 property handler 與 HTML attr；正式 enforced runtime 必驗，不放寬政策。",
+            "confirmation": true
+          },
+          {
+            "id": "F14",
+            "change": ".node-version 歸 deny，保留 _site 明確限定 Node validator 失敗；S 型 packaging 不擴改。",
+            "confirmation": true
+          },
+          {
+            "id": "F15",
+            "change": "取同版 TextCommand.Command 英文，對帳既有 11 組指令，不手寫來源。",
+            "confirmation": true
+          },
+          {
+            "id": "F16",
+            "change": "只要求 executable inline hash，不為 JSON-LD data block 製造必要 hash。",
+            "confirmation": true
+          },
+          {
+            "id": "F17",
+            "change": "versionchange 關連線/提示刷新，blocked 明示，不無限假載入。",
+            "confirmation": true
+          }
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "id": "hardening-pre-blind-1",
+      "role": "blind",
+      "phase": "pre",
+      "kind": "initial",
+      "transport": "omp-native",
+      "actual": {
+        "provider": "cursor",
+        "model": "grok-4.7",
+        "family": "xai",
+        "effort": "medium",
+        "agentId": "HardeningPreBlind",
+        "sessionId": "01a12046-95a1-724a-9063-531cdcc091dc",
+        "attemptId": "327d57fe"
+      },
+      "requested": {
+        "effort": "med"
+      },
+      "startedAt": "2026-10-09T10:47:39.259Z",
+      "endedAt": "2026-10-09T11:03:01.094Z",
+      "status": "completed",
+      "revision": "health-fix-candidate3+hardening-design1",
+      "controlsSha256": "498c72619dce111375e5a4d081f7c2af8222472b8c963d445b521c6da5a9e7dc",
+      "materials": [
+        {
+          "path": "external/ffxiv-tw-sightseeing/docs/specs/2026-10-09-sightseeing-hardening.md.materials/cc05019ddafdd56946ed05f27cde48093cda397d11081b73d9f173f4c7352178.json",
+          "sha256": "cc05019ddafdd56946ed05f27cde48093cda397d11081b73d9f173f4c7352178"
+        }
+      ],
+      "raw": {
+        "path": "external/ffxiv-tw-sightseeing/docs/specs/2026-10-09-sightseeing-hardening.md.reviews.md",
+        "key": "hardening-pre-blind-1",
+        "sha256": "e5457e878126bbf20eb129b90401c30856834ea5a74da6d727656f22a3da0d2c"
+      },
+      "triage": {
+        "accepted": [
+          {
+            "id": "B2",
+            "change": "依原 findings 順序識別；明确 listener 在圖片前註冊，只保留失敗 class，不搬縮圖/data-full。",
+            "confirmation": true
+          },
+          {
+            "id": "B3",
+            "change": "完整 native schema/SHA/version gate、獨立發布、CSV 欄名、同版 TextCommand，與 F2-F5/F15 同修。",
+            "confirmation": true
+          },
+          {
+            "id": "B4",
+            "change": "native PlaceName zone、主場景篩選/最小 ID/v2 URL、空圖失敗與兩份生成先驗證。",
+            "confirmation": true
+          },
+          {
+            "id": "B5",
+            "change": "原 note 已要求 tx 內讀改寫，並未允許外部預組；補 reset 不刪 marker、request token、legacy 漂移警告。",
+            "confirmation": true
+          },
+          {
+            "id": "B6",
+            "change": "Node pin 歸 deny；manifest/產物 SHA/空圖閘；保留本機 _site 限 validator 失敗，不擴成 S 型 atomic packaging。",
+            "confirmation": true
+          }
+        ],
+        "rejected": [
+          {
+            "id": "B1",
+            "reason": "frozen note/政策沒有 strict-dynamic，且原契約不擴第三方 host；此觸發是額外假設，不是既有缺口。現已明寫保留 host/不加 strict-dynamic，CSP enforced smoke 依 F12 採納。"
+          }
+        ]
+      }
+    },
+    {
+      "id": "hardening-pre-fact-confirm-1",
+      "role": "fact",
+      "phase": "pre",
+      "kind": "confirmation",
+      "transport": "omp-native",
+      "actual": {
+        "agentId": "HardeningPreFact",
+        "sessionId": "01a12046-9594-77c4-9e3c-f88b252f336a",
+        "attemptId": "6e060983",
+        "provider": "anthropic",
+        "model": "claude-opus-5-5",
+        "family": "anthropic",
+        "effort": "high"
+      },
+      "startedAt": "2026-10-09T11:15:47.803Z",
+      "endedAt": "2026-10-09T11:17:20.727Z",
+      "status": "completed",
+      "revision": "health-fix-candidate3+hardening-design2",
+      "controlsSha256": "498c72619dce111375e5a4d081f7c2af8222472b8c963d445b521c6da5a9e7dc",
+      "source": "hardening-pre-fact-1",
+      "findings": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5",
+        "F6",
+        "F7",
+        "F8",
+        "F9",
+        "F10",
+        "F11",
+        "F12",
+        "F13",
+        "F14",
+        "F15",
+        "F16",
+        "F17"
+      ],
+      "materials": [
+        {
+          "path": "external/ffxiv-tw-sightseeing/docs/specs/2026-10-09-sightseeing-hardening.md.materials/cc05019ddafdd56946ed05f27cde48093cda397d11081b73d9f173f4c7352178.json",
+          "sha256": "cc05019ddafdd56946ed05f27cde48093cda397d11081b73d9f173f4c7352178"
+        },
+        {
+          "path": "external/ffxiv-tw-sightseeing/docs/specs/2026-10-09-sightseeing-hardening.md.reviews.md",
+          "key": "hardening-pre-fact-1",
+          "sha256": "476e57ce50c37d5b8273117e5288df543eb4d49f32c27e5f227b7432e9ea4778"
+        },
+        {
+          "path": "external/ffxiv-tw-sightseeing/docs/specs/2026-10-09-sightseeing-hardening.md.materials/6d65fbab971b205879bd7660f06b5e1e0e009b70293e3df88b1eadb825122d99.json",
+          "sha256": "6d65fbab971b205879bd7660f06b5e1e0e009b70293e3df88b1eadb825122d99"
+        },
+        {
+          "path": "external/ffxiv-tw-sightseeing/docs/specs/2026-10-09-sightseeing-hardening.md.materials/020ecea2173209b5586178358372517d616f3abe97b48b9e4d563354fbcb2c6d.json",
+          "sha256": "020ecea2173209b5586178358372517d616f3abe97b48b9e4d563354fbcb2c6d"
+        }
+      ],
+      "raw": {
+        "path": "external/ffxiv-tw-sightseeing/docs/specs/2026-10-09-sightseeing-hardening.md.reviews.md",
+        "key": "hardening-pre-fact-confirm-1",
+        "sha256": "6c14602a51a18be8812e7c0ef5465c85b7aec1e3566cb9b96ea25efe23f02e84"
+      },
+      "triage": {
+        "accepted": [],
+        "rejected": []
+      }
+    },
+    {
+      "id": "hardening-pre-blind-confirm-1",
+      "role": "blind",
+      "phase": "pre",
+      "kind": "confirmation",
+      "transport": "omp-native",
+      "actual": {
+        "agentId": "HardeningPreBlind",
+        "sessionId": "01a12046-95a1-724a-9063-531cdcc091dc",
+        "attemptId": "386e9e46",
+        "provider": "cursor",
+        "model": "grok-4.7",
+        "family": "xai",
+        "effort": "medium"
+      },
+      "startedAt": "2026-10-09T11:15:47.850Z",
+      "endedAt": "2026-10-09T11:20:11.203Z",
+      "status": "failed",
+      "revision": "health-fix-candidate3+hardening-design2",
+      "controlsSha256": "498c72619dce111375e5a4d081f7c2af8222472b8c963d445b521c6da5a9e7dc",
+      "source": "hardening-pre-blind-1",
+      "findings": [
+        "B2",
+        "B3",
+        "B4",
+        "B5",
+        "B6"
+      ],
+      "materials": [
+        {
+          "path": "external/ffxiv-tw-sightseeing/docs/specs/2026-10-09-sightseeing-hardening.md.materials/cc05019ddafdd56946ed05f27cde48093cda397d11081b73d9f173f4c7352178.json",
+          "sha256": "cc05019ddafdd56946ed05f27cde48093cda397d11081b73d9f173f4c7352178"
+        },
+        {
+          "path": "external/ffxiv-tw-sightseeing/docs/specs/2026-10-09-sightseeing-hardening.md.reviews.md",
+          "key": "hardening-pre-blind-1",
+          "sha256": "e5457e878126bbf20eb129b90401c30856834ea5a74da6d727656f22a3da0d2c"
+        },
+        {
+          "path": "external/ffxiv-tw-sightseeing/docs/specs/2026-10-09-sightseeing-hardening.md.materials/6d65fbab971b205879bd7660f06b5e1e0e009b70293e3df88b1eadb825122d99.json",
+          "sha256": "6d65fbab971b205879bd7660f06b5e1e0e009b70293e3df88b1eadb825122d99"
+        },
+        {
+          "path": "external/ffxiv-tw-sightseeing/docs/specs/2026-10-09-sightseeing-hardening.md.materials/020ecea2173209b5586178358372517d616f3abe97b48b9e4d563354fbcb2c6d.json",
+          "sha256": "020ecea2173209b5586178358372517d616f3abe97b48b9e4d563354fbcb2c6d"
+        }
+      ],
+      "raw": {
+        "path": "external/ffxiv-tw-sightseeing/docs/specs/2026-10-09-sightseeing-hardening.md.reviews.md",
+        "key": "hardening-pre-blind-confirm-1",
+        "sha256": "0fc5532602cde86bbd90fe602c31b2a087a3bf4e5e0b42f2c3422d62711e5641"
+      },
+      "triage": {
+        "accepted": [],
+        "rejected": []
+      }
+    }
+  ],
+  "verify": {
+    "commands": [],
+    "result": "not-run",
+    "evidence": []
+  }
+}
+```

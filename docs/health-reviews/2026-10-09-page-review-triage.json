@@ -1,0 +1,74 @@
+{
+  "accepted": [
+    {
+      "id": "F1",
+      "change": "移除獨立批次commit宣稱，明確整合API/core/callers/preload依賴順序。"
+    },
+    {
+      "id": "F2",
+      "change": "計畫加入parsed snapshot逐欄差異限制；既有Main實證仅2commands+3權威地名，新增選源file/hash。"
+    },
+    {
+      "id": "F3",
+      "change": "補全scope文件與icons等材料，補cleanup與proxy目標；拒絕僅按檔名升級安全邊界。"
+    },
+    {
+      "id": "F4",
+      "change": "實際settings背景script/resource證明保留preload有consumer；僅更正_headers註解，不改值。"
+    },
+    {
+      "id": "F5",
+      "change": "列損毀恢復UX為Owner取捨，現階段保留raw blob，不自動清除。"
+    },
+    {
+      "id": "F6",
+      "change": "修正helper刪減歸屬ET.isTimeInRange。"
+    },
+    {
+      "id": "F7",
+      "change": "計畫controls結論只引用唯一Record。"
+    }
+  ],
+  "rejected": [
+    {
+      "id": "F3-security-trigger",
+      "reason": "DEVLOOP §1 明定字樣/檔案數不是trigger；cleanup只移除內部.tmp，沒有變更allowlist/複製/信任/暴露面/權限。_headers僅註解，不改CSP/header值；不觸發④。"
+    }
+  ],
+  "metadata": {
+    "provider": "anthropic",
+    "model": "anthropic/claude-opus-5-5",
+    "effort": "unknown",
+    "tool_uses": 62,
+    "agentLabel": "HealthPlanReview",
+    "agentId": "unknown",
+    "sessionId": "unknown",
+    "attemptId": "unknown"
+  },
+  "formalControlReview": false,
+  "limitation": "原生session/attempt identity不可得，這是有工具取證的clean-context計畫gate，不冒稱formal pre/post controls review。",
+  "planConfirmation": {
+    "result": "PASS",
+    "raw": "2026-10-09-page-plan-confirmation.raw.json",
+    "toolUses": 13,
+    "residualTriage": [
+      {"id":"R1","result":"refuted","reason":"Main逐位元組對照live BACKLOG與after blob完全相同；兩者raw SHA均1154fd0af807f3c60dcdcd59bc9cb098af199089de8e60dec291d70317008797。deliverySha是保護投影，不是raw SHA。"},
+      {"id":"R2","result":"verified","reason":"本機dash已實跑：成功3檔；顯式cp失敗exit1、set-e隱式git index讀取失敗exit128，均移除暫存清單。PATH限定/bin與/mingw64/bin避Windows find，不改系統。"},
+      {"id":"R3","result":"clarified","reason":"candidate2僅docs與_headers兩行註解；原22scope逐deliverySHA只有plan/record改，runtime code無變。header值/CSP不變，沿用candidate1 canonical/UI，不為記帳重跑。"}
+    ]
+  },
+  "fixReview": {
+    "agentLabel": "HealthFixReview",
+    "modelReportedByReviewer": "Grok 4.7",
+    "provider": "unknown",
+    "effort": "unknown",
+    "formalControlReview": false,
+    "initialResult": "incorrect",
+    "initialRaw": "2026-10-09-page-fix-review.raw.json",
+    "findings": [{"id":"FR-1","severity":"low","result":"fixed-and-smoke-verified","reason":"Main實機先重現失敗完成未落盤仍顯示勾選；移除樂觀state mutate，寫成功才assign，失敗立即還原。失敗勾選/取消、恢復寫入、損毀原文與跨tab storage event均驗證。"}],
+    "confirmationResult": "correct",
+    "confirmationRaw": "2026-10-09-page-fix-confirmation.raw.json",
+    "confirmationScope": "原handle僅核對FR-1兩處相關code；未重跑build/lint/tests，無新缺陷。完整canonical及UI由Main另行取證；此低能力自願review不冒稱DEVLOOP formal fact/blind。",
+    "metadataLimitation": "provider/effort/session/attempt不可得；model為reviewer回傳，不冒稱harness獨立取證。"
+  }
+}

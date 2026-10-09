@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>tc-datamine-dump</AssemblyName>
+    <RootNamespace>TcDatamineDump</RootNamespace>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <!-- 版本必須配對：Lumina.Excel 7.5.0 要求 Lumina >= 7.6.0；Lumina 7.6.x 只支援 net10.0。
+       不可改用 Dalamud Injector 目錄的 Lumina.dll — standalone 執行時 assembly binding
+       找不到 Lumina, Version=6.0.0.0。 -->
+  <ItemGroup>
+    <PackageReference Include="Lumina" Version="7.6.1" />
+    <PackageReference Include="Lumina.Excel" Version="7.5.0" />
+  </ItemGroup>
+
+</Project>

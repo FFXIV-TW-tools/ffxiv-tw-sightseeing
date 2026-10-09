@@ -1,0 +1,95 @@
+"""Native PlaceName/Map zone rendering; build_data.py publishes both outputs together."""
+import json
+import math
+import re
+
+# zoneKey, official TC name, weather engine key, expansion.
+ZONES = [
+    ('limsa_upper', '利姆薩・羅敏薩上層甲板', 'Limsa Lominsa', 'arr'),
+    ('limsa_lower', '利姆薩・羅敏薩下層甲板', 'Limsa Lominsa', 'arr'),
+    ('middle_la', '中拉諾西亞', 'Middle La Noscea', 'arr'),
+    ('lower_la', '拉諾西亞低地', 'Lower La Noscea', 'arr'),
+    ('eastern_la', '東拉諾西亞', 'Eastern La Noscea', 'arr'),
+    ('western_la', '西拉諾西亞', 'Western La Noscea', 'arr'),
+    ('upper_la', '拉諾西亞高地', 'Upper La Noscea', 'arr'),
+    ('outer_la', '拉諾西亞外地', 'Outer La Noscea', 'arr'),
+    ('new_gridania', '格里達尼亞新街', 'Gridania', 'arr'),
+    ('old_gridania', '格里達尼亞舊街', 'Gridania', 'arr'),
+    ('central_shroud', '黑衣森林中央林區', 'Central Shroud', 'arr'),
+    ('east_shroud', '黑衣森林東部林區', 'East Shroud', 'arr'),
+    ('south_shroud', '黑衣森林南部林區', 'South Shroud', 'arr'),
+    ('north_shroud', '黑衣森林北部林區', 'North Shroud', 'arr'),
+    ('uldah_thal', '烏爾達哈來生回廊', "Ul'dah", 'arr'),
+    ('western_thanalan', '西薩納蘭', 'Western Thanalan', 'arr'),
+    ('central_thanalan', '中薩納蘭', 'Central Thanalan', 'arr'),
+    ('eastern_thanalan', '東薩納蘭', 'Eastern Thanalan', 'arr'),
+    ('southern_thanalan', '南薩納蘭', 'Southern Thanalan', 'arr'),
+    ('northern_thanalan', '北薩納蘭', 'Northern Thanalan', 'arr'),
+    ('coerthas_central', '庫爾札斯中央高地', 'Coerthas Central Highlands', 'arr'),
+    ('mor_dhona', '摩杜納', 'Mor Dhona', 'arr'),
+    ('coerthas_west', '庫爾札斯西部高地', 'Coerthas Western Highlands', 'hw'),
+    ('dravania_forelands', '德拉瓦尼亞山麓地', 'The Dravanian Forelands', 'hw'),
+    ('dravania_hinterlands', '德拉瓦尼亞河谷地', 'The Dravanian Hinterlands', 'hw'),
+    ('churning_mists', '德拉瓦尼亞雲海', 'The Churning Mists', 'hw'),
+    ('sea_of_clouds', '阿巴拉提亞雲海', 'The Sea of Clouds', 'hw'),
+    ('azys_lla', '魔大陸阿濟茲拉', 'Azys Lla', 'hw'),
+    ('fringes', '基拉巴尼亞邊區', 'The Fringes', 'sb'),
+    ('peaks', '基拉巴尼亞山區', 'The Peaks', 'sb'),
+    ('lochs', '基拉巴尼亞湖區', 'The Lochs', 'sb'),
+    ('ruby_sea', '紅玉海', 'The Ruby Sea', 'sb'),
+    ('yanxia', '延夏', 'Yanxia', 'sb'),
+    ('azim_steppe', '太陽神草原', 'The Azim Steppe', 'sb'),
+    ('kugane', '黃金港', 'Kugane', 'sb'),
+    ('gyr_reach', '神拳痕', "Rhalgr's Reach", 'sb'),
+    ('crystarium', '水晶都', 'The Crystarium', 'shb'),
+    ('eulmore', '遊末邦', 'Eulmore', 'shb'),
+    ('lakeland', '雷克蘭德', 'Lakeland', 'shb'),
+    ('kholusia', '珂露西亞島', 'Kholusia', 'shb'),
+    ('amh_araeng', '安穆・艾蘭', 'Amh Araeng', 'shb'),
+    ('il_mheg', '伊爾美格', 'Il Mheg', 'shb'),
+    ('raktika', '拉凱提卡大森林', "The Rak'tika Greatwood", 'shb'),
+    ('tempest', '黑風海', 'The Tempest', 'shb'),
+    ('old_sharlayan', '舊薩雷安', 'Old Sharlayan', 'ew'),
+    ('radz_at_han', '拉札漢', 'Radz-at-Han', 'ew'),
+    ('labyrinthos', '迷津', 'Labyrinthos', 'ew'),
+    ('thavnair', '薩維奈島', 'Thavnair', 'ew'),
+    ('garlemald', '加雷馬', 'Garlemald', 'ew'),
+    ('mare_lamentorum', '嘆息海', 'Mare Lamentorum', 'ew'),
+    ('elpis', '厄爾庇斯', 'Elpis', 'ew'),
+    ('ultima_thule', '天外天垓', 'Ultima Thule', 'ew'),
+    ('tuliyollal', '圖萊尤拉', '', 'dt'),
+    ('solution_nine', '九號解決方案', '', 'dt'),
+    ('urqopacha', '奧闊帕恰山', '', 'dt'),
+    ('kozamauka', '克扎瑪烏卡濕地', '', 'dt'),
+    ('yak_tel', '亞克特爾樹海', '', 'dt'),
+    ('shaaloani', '夏勞尼荒野', '', 'dt'),
+    ('heritage_found', '遺產之地', '', 'dt'),
+    ('living_memory', '憶想之地', '', 'dt'),
+]
+
+
+def build_zones(sheets):
+    places = sheets["PlaceName"]
+    candidates = {}
+    for key, row in sheets["Map"].items():
+        if not re.fullmatch(r"[a-z]\d[ft]\d/\d{2}", row["Id"]):
+            continue
+        name = places[int(row["PlaceName"])]["Name"]
+        sf = float(row["SizeFactor"])
+        if not math.isfinite(sf) or sf <= 0:
+            raise ValueError(f"Map {key}: invalid size factor")
+        if name and (name not in candidates or key < candidates[name][0]):
+            candidates[name] = (key, row["Id"], sf)
+    zones = {}
+    for key, tc, weather, expansion in ZONES:
+        if tc not in candidates:
+            raise ValueError(f"{key}: no native field/town map for {tc}")
+        _, image_id, sf = candidates[tc]
+        zones[key] = {"tc": tc, "image": f"https://v2.xivapi.com/api/asset/map/{image_id}",
+                      "sf": sf, "weatherZone": weather, "exp": expansion}
+    return zones
+
+
+def render_zones(zones):
+    return ("/** zones.js — AUTO-GEN by tools/build_data.py; native same-version PlaceName/Map. */\n"
+            + "window.SIGHTSEEING_ZONES = " + json.dumps(zones, ensure_ascii=False, indent=2) + ";\n")

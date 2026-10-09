@@ -1,0 +1,79 @@
+# 探索筆記健檢修復驗收
+
+Cycle：`2026-10-09-page-health-fix`；候選 `47b0186a+page-health-fix-candidate1`。未 commit／push／部署。原始輸出保存在本機 `~/.claude/devloop-state/verify-logs/2026-10-09-page-health-fix/`；此檔只承載摘要。
+
+## 命令（git-bash）
+
+- `node tools/extract-sources.mjs && python tools/build_zones.py && python tools/build_data.py && node ../ffxiv-tw-tools-portal/tools/gen-site-icons.mjs --config tools/icons.config.json && node tools/gen-modulepreload.mjs`：exit 0。初次生成發現 3 個官方地名分隔號漂移導致空圖；依 tclocal_PlaceName 的原文更正 generator 後再生成，60/60 地图解析、340 條、無警告。生成資料語意差異僅兩個 emoteCmd（hw#043 `/rally`、#046 `/me`）及三個 zone 正名 `·`→`・`；座標、地圖 URL／size factor、其餘條目不變。
+- `node tools/validate-availability.mjs && node tests/run-all.mjs && node --check modules/weather.js && node --check modules/eorzea-time.js && node --check modules/app.js && sh -n deploy-prepare.sh`：exit 0。availability 49 組活體天氣皆可預測；80 條雙閘×120 相位，8834 次有效預測到點可進行，誤報 0、未知 0。資料／天氣與自動探索 tests 合計 9/9 檔 PASS；天氣 61 zones/aliases×1549 固定點＋seed＋全量表 bit-exact。三支 JS syntax、POSIX shell syntax 無輸出且鏈式成功。
+- canonical 原始 stdout SHA-256：`d26a62441e2f06d7dee062a06ca4062cffd4ba6b66614333cade00a2264d6e3c`（`canonical.log`）。
+- scratch 忠實突變：僅去掉 `findNextWeather` 的傳入 now，重新引入本輪確認的原缺陷；`node tests/ss-availability.test.mjs` exit 1，3 PASS／1 FAIL，指定 now→到點可進行 assertion 轉紅。正式候選已由上方 canonical PASS 證明；scratch 不進 repo。
+- 部署 cleanup 在獨立 scratch Git fixture 行使實際 `sh deploy-prepare.sh`：成功輸出 3 檔、暫存清單不存在；再移除一個 tracked CSS，複製失敗 exit 1、暫存清單仍移除。允許清單／symlink guard／出貨驗收不變。沒有打包或部署本站。
+
+## Chromium 實際頁面（本機 HTTP 8789，portal 8774）
+
+| 路徑 | 觀察 |
+|---|---|
+| 時間篩選跨週期 | 固定 now=4200000000，only 卡片 266→262；推進天氣週期後 DOM membership 等於真引擎當刻結果 |
+| 動態排序 | 340 卡，推進下一週期後實際 DOM 重新排序，與真引擎 nextMs 順序一致 |
+| DOM／焦點穩定 | 同 membership 的 hint 按鈕、card 在 1.2 秒後 identity 相同，焦點留在原 hint |
+| IME 與空結果 | 組字 input＋tick 保留 340 卡；compositionend 過濾為 0；清除回到 340 |
+| 雙 tab | A 完成 arr-001，B 收 storage event；B 完成 arr-002 後兩者保留；A 取消 arr-001，B 與持久資料只剩 arr-002 |
+| 損毀資料 | `{corrupt` 原樣保留；勾選回饋「未覆寫、僅本頁生效」，portal toast 缺席仍可見 |
+| 寫入拒絕 | 模擬 QuotaExceededError，持久資料保持 null；本頁變更明示未儲存，fallback 可見 |
+| 複製 | clipboard 缺席可見失敗；成功複製实际座標，原 contextual aria-label 恢復 |
+| 鍵盤與完成移焦 | hide-completed 勾選移除 arr-001，焦點移至 arr-002；首訪提示同步隐藏 |
+| reduced-motion | hint 跳轉焦點到 arr-004，scroll behavior=auto |
+| 地圖 modal | Enter 開啟、focus close、Escape 關閉、還原 map focus；實際底圖可見 |
+| 桌面／行動 | 1366／390／320px 實際截圖；340 卡、無整頁橫向 overflow；body padding-top=64px |
+| live region | grid 無 aria-live，操作回饋在獨立 role=status 區 |
+
+UI＋生成語意原始 JSON SHA-256：`b7805ab809c836293559f333e63b8ad1acc164ef38ac12caa772f4350e08fb57`（`ui-smoke.json`）。瀏覽器驗收後清除本次 managed tab 的測試進度／偏好，不觸及使用者瀏覽器。
+
+## 未涵蓋
+
+未測實際螢幕閱讀器語音、WAN／低階裝置效能、真正同時跨 process 原子寫入、CF dashboard 或新部署。本站無獨立 npm build/lint/audit 指令，沒有把不存在的命令記成 PASS。本機 portal announcements 資源 ERR_FAILED 與基線相同；瀏覽器沒有本站 JS exception。此次沒有重新打分，報告分數仍是修前快照。
+
+## 選源身份與文件補證
+
+實跑 `_tc_csv("PlaceName", ROOT)` 選到 `C:/FFXIVProject/data/item_dict/datamining_tc/tclocal_PlaceName.csv`。未改選源政策；以下是本輪實際輸入 SHA-256，不宣稱它們是同一遊戲版本：
+
+| 輸入 | SHA-256 |
+|---|---|
+| tclocal_PlaceName.csv | c45c7a84e12d0b812d08bd2b39721feebdf9e5f03771a580d62b3daadfb77468 |
+| tc_Level.csv | 14808220af503cda1a8dc3826b0ca691c0ff4e008eb38632ea1c258ae5bc5d82 |
+| tc_Map.csv | a5d189d4621a74357bee95b7ab9d01575f707c52203d4a91b36215109a06f2ba |
+| lspl/maps.json | 84968cd002cbb6c1ea4f0fd4f5073a7a53593be216d9ad1ecec8835e104a4231 |
+| tools/sources/tc_Adventure.csv | b3b65f7c96b57e58703eca0141e787d32c8136abfd1544f120d755098b6a4018 |
+| tools/sources/tc_Emote.csv | 2c81c602abade44aa80e9aa50ac3d7a093422641af7483fe5e565e289bc8fc9c |
+
+移除本站顯式 settings-client 注入後，實際頁面仍有 portal 背景載入的 settings-client script 與 resource entry；保留 HTTP preload，`_headers` 只修正兩行註解，所有 header 值／CSP 不變。
+
+`check-devloop-artifacts.mjs --repo .` exit 0（舊 2026-09-28 CHANGELOG 段落長度 warning，歷史不回寫）；`external-gate --verify <record> --stage record` exit 0，明示 evidence-only、不冒稱候選投影已比對。完整受審 scope 以保存的 materials manifest 為準，不把文件讀取擴充成整庫複審。
+
+## 獨立計畫 gate 後的限定補證
+
+- 計畫初審與原 handle 一次修正確認：F1–F7 PASS。原文分別保存在 `2026-10-09-page-plan-review.raw.json`／`2026-10-09-page-plan-confirmation.raw.json`，不改寫 reviewer 原文。
+- BACKLOG 的 live bytes 與 after snapshot blob 完全相同，raw SHA-256 都是 `1154fd0af807f3c60dcdcd59bc9cb098af199089de8e60dec291d70317008797`；`deliverySha256` 是排除 checkbox 等記帳狀態的保護投影，不能把兩種 digest 不同推論成內容漂移。
+- Git for Windows 提供的 `dash.exe` 實際行使 fixture：成功輸出 3 檔；缺 tracked CSS 顯式失敗 exit 1；以 fixture-only 壞 index 路徑造成 `git ls-files` 隱式 `set -e` 失敗 exit 128。三種皆移除暫存清單，非零 exit 沒被 EXIT trap 吞掉。命令只為該次 dash 呼叫加 `PATH=/bin:/mingw64/bin:…`，避免 Windows system32 `find`；不修改系統、Git metadata 或本站部署。
+- candidate2-docs 對原 22 檔受審 scope 的機械 SHA 比對只有 plan／Record 差異，runtime code 不變；追加 11 個材料檔補全 scope。`_headers` 新差異只有兩行註解，CSP 與所有 header 值逐字不變。依 DEVLOOP「同內容與設定已驗不重跑」沿用 candidate1 canonical／UI 證據，不為 docs／記帳再跑整套。
+
+## candidate3：複審 FR-1 失敗回滾
+
+修復 diff 的獨立 reviewer 初審為 incorrect，只有一個 low FR-1；原始完整輸出保存於 `2026-10-09-page-fix-review.raw.json`。Main 在真實 Chromium 重現「QuotaExceeded 勾選仍 true、磁碟 null → 下一次成功後前一勾選 false」，不是依 reviewer 敘述直接接受。
+
+最小變更只有 `modules/app.js` change handler：移除寫入前的 `state.done` mutate，只有 `updateCompleted` 成功才 assign；失敗文案改為「本次變更未套用」，既有 render 即按舊 state 還原 checkbox。storage schema、key、合併契約與所有其他 runtime code 不變。
+
+| 真實頁面情境 | 結果 |
+|---|---|
+| 完成寫入拒絕 | arr-001 立即未勾選、磁碟 null、顯示未套用 |
+| 下一筆成功 | 只有 arr-002 勾選並保存，arr-001 不會先假完成再消失 |
+| 取消寫入拒絕 | arr-002 仍勾選，磁碟仍 `["arr-002"]` |
+| 損毀 JSON 讀取 | `{corrupt` 原文保留、arr-001 未套用、既有 arr-002 畫面狀態未破壞 |
+| 第二實際 tab 寫入 | 第一 tab 同步成只有 arr-003，沒有未落盤完成狀態 |
+
+`node tests/ss-storage.test.mjs && node --check modules/app.js` exit 0，storage 4/4 PASS。另觀察新的卡片 screenshot，未儲存的 arr-001 保持未勾選。原始 smoke 保存於本機 `~/.claude/devloop-state/verify-logs/2026-10-09-page-health-fix/rollback-smoke.json`，SHA-256 `807cb7c74e7245b4279ddc082e7c18a499bd819b72698b41cd69ced23cbc3b14`。
+
+candidate3 與 candidate2 的 runtime 差異限定上述 handler；用 focused test 與實際失敗／恢復路徑覆蓋新變更，其餘沿用已完成的 canonical／UI 證據，不宣稱 candidate3 重跑整套。未建立只測 source 字樣或假 mock echo 的永久測試。
+
+FR-1 原 handle 限定修正確認 **correct／resolved，無新缺陷**；只讀 handler 與 storage 的錯誤傳播，不重跑 tests、不重讀 render；UI 還原由 Main 的實際頁面補證。完整原文 `2026-10-09-page-fix-confirmation.raw.json`，初審原文保持 incorrect，不倒改。Reviewer 回傳 model **Grok 4.7**，provider／effort／原生 session identity 不可得；這是自願限定複審，不冒稱正式 assurance fact／blind 閘。計畫 gate 使用 anthropic/claude-opus-5-5，原 handle 一次修正確認 PASS。

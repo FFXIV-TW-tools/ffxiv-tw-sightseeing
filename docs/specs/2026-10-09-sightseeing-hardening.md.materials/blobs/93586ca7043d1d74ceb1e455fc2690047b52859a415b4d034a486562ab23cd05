@@ -1,0 +1,150 @@
+"""Publish both sightseeing outputs from one versioned native snapshot."""
+import json
+import math
+import os
+import re
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+from build_zones import build_zones, render_zones
+from source_snapshot import load_snapshot, sha256
+
+HERE = Path(__file__).resolve().parent
+REPO = HERE.parent
+BOUNDS = [("arr", 0, 80), ("hw", 80, 142), ("sb", 142, 204),
+          ("shb", 204, 249), ("ew", 249, 295), ("dt", 295, 340)]
+SUPPLEMENTS = ["tools/sources/cycleapple-arr.js", "tools/sources/babelin.html"]
+
+
+def time_of(row):
+    start, end = int(row["MinTime"]), int(row["MaxTime"])
+    if start == 0 and end == 0:
+        return None, None
+    if not 0 <= start <= 2300 or start % 100 != 0 or not 59 <= end <= 2359 or end % 100 != 59:
+        raise ValueError(f"Adventure {row['key']}: unsupported non-hour native window {start}-{end}")
+    return start // 100, end // 100 + 1
+
+
+def coordinate(world, offset, sf):
+    values = float(world), float(offset), float(sf)
+    if not all(math.isfinite(value) for value in values) or values[2] <= 0:
+        raise ValueError("native coordinates/size factor must be finite and positive")
+    scale = values[2] / 100
+    result = round((41 / scale) * (((values[0] + values[1]) * scale + 1024) / 2048) + 1, 1)
+    if not 1 <= result <= 42:
+        raise ValueError(f"native coordinate outside map: {result}")
+    return result
+
+
+def build_entries(sheets, zones, supplements):
+    adventures = [row for _, row in sorted(sheets["Adventure"].items()) if row["Name"]]
+    if len(adventures) != 340:
+        raise ValueError("Adventure baseline must contain 340 names")
+    zone_by_name = {zone["tc"]: key for key, zone in zones.items()}
+    arr_by_id = {int(row["adventureId"]): row for row in supplements["cycleapple_arr"]}
+    if len(arr_by_id) != 80:
+        raise ValueError("ARR supplement baseline must contain 80 unique adventure IDs")
+    data = {}
+    for expansion, start, end in BOUNDS:
+        entries = []
+        for index in range(start, end):
+            row = adventures[index]
+            no = index - start + 1
+            level = sheets["Level"][int(row["Level"])]
+            native_map = sheets["Map"][int(level["Map"])]
+            place = sheets["PlaceName"][int(native_map["PlaceName"])]["Name"]
+            if place not in zone_by_name or not re.fullmatch(r"[a-z]\d[ft]\d/\d{2}", native_map["Id"]):
+                raise ValueError(f"Adventure {row['key']}: required native map/zone missing")
+            zone_key = zone_by_name[place]
+            if zones[zone_key]["exp"] != expansion:
+                raise ValueError(f"Adventure {row['key']}: native zone expansion mismatch")
+            emote = sheets["Emote"][int(row["Emote"])]
+            command = sheets["TextCommand"][int(emote["TextCommand"])]["Command"]
+            match = re.fullmatch(r"/([a-z][a-z0-9]*)", command)
+            if not emote["Name"] or not match:
+                raise ValueError(f"Adventure {row['key']}: native emote/command missing")
+            time_start, time_end = time_of(row)
+            entry = {"no": no, "name": row["Name"], "zoneKey": zone_key,
+                     "x": coordinate(level["X"], native_map["OffsetX"], native_map["SizeFactor"]),
+                     "y": coordinate(level["Z"], native_map["OffsetY"], native_map["SizeFactor"])}
+            if expansion == "arr":
+                extra = arr_by_id[int(row["key"])]
+                weathers = extra["weather"]
+                if not isinstance(weathers, list) or not weathers or not all(isinstance(w, str) and w for w in weathers):
+                    raise ValueError(f"ARR {no}: weather supplement missing")
+                if time_start is None or not zones[zone_key]["weatherZone"]:
+                    raise ValueError(f"ARR {no}: required weather/time zone missing")
+                entry["weathers"] = list(weathers)
+            else:
+                late = supplements["babelin"][expansion]
+                if len(late) != end - start:
+                    raise ValueError(f"{expansion}: height supplement count mismatch")
+                extra = late[no - 1]
+                if extra.get("z") is not None:
+                    if not isinstance(extra["z"], (int, float)) or not math.isfinite(extra["z"]):
+                        raise ValueError(f"{expansion} {no}: invalid height supplement")
+                    entry["z"] = extra["z"]
+                entry["weathers"] = []
+            entry.update(timeStart=time_start, timeEnd=time_end, emote=emote["Name"], emoteCmd=match[1])
+            if time_start is not None and time_end is not None and (time_end - time_start) % 24 <= 1:
+                entry["note"] = "⚠ 時間窗極短（1 遊戲小時）"
+            entries.append(entry)
+        data[expansion] = entries
+    return data
+
+
+def render_entries(data):
+    return ("/** sightseeing-data.js — AUTO-GEN by tools/build_data.py; native same-version names/time/emote/XY; community weather/height only. */\n"
+            + "window.SIGHTSEEING_DATA = " + json.dumps(data, ensure_ascii=False, indent=1) + ";\n")
+
+
+def publish(outputs):
+    prior = {path: path.read_bytes() if path.exists() else None for path in outputs}
+    moved = []
+    with tempfile.TemporaryDirectory(prefix=".sightseeing-build-", dir=REPO / "data") as temporary:
+        staged = {}
+        for index, (path, data) in enumerate(outputs.items()):
+            scratch = Path(temporary) / str(index)
+            scratch.write_bytes(data)
+            staged[path] = scratch
+        try:
+            for path, scratch in staged.items():
+                os.replace(scratch, path)
+                moved.append(path)
+        except OSError:
+            for path in reversed(moved):
+                old = prior[path]
+                if old is None:
+                    path.unlink()
+                else:
+                    path.write_bytes(old)
+            raise
+
+
+def main():
+    if len(sys.argv) > 1:
+        raise ValueError("usage: python tools/build_data.py")
+    sheets, version, native_hash = load_snapshot(HERE / "sources")
+    zones = build_zones(sheets)
+    # Always re-extract from the two versioned raw supplements; never trust an old ignored intermediate.
+    subprocess.run(["node", str(HERE / "extract-sources.mjs")], check=True)
+    supplements = json.loads((HERE / "sources" / "extracted.json").read_bytes())
+    entries = build_entries(sheets, zones, supplements)
+    zone_bytes = render_zones(zones).encode("utf-8")
+    data_bytes = render_entries(entries).encode("utf-8")
+    manifest = {"format": 1, "clientVersion": version, "nativeManifestSha256": native_hash,
+                "supplements": {path: sha256((REPO / path).read_bytes()) for path in SUPPLEMENTS},
+                "outputs": {"data/zones.js": sha256(zone_bytes), "data/sightseeing-data.js": sha256(data_bytes)}}
+    manifest_bytes = (json.dumps(manifest, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+    publish({REPO / "data" / "zones.js": zone_bytes, REPO / "data" / "sightseeing-data.js": data_bytes,
+             HERE / "sources" / "generation-manifest.json": manifest_bytes})
+    print(f"✓ same-version generation: {version}, {len(zones)} zones, 340 adventures")
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except (OSError, ValueError, KeyError, TypeError, subprocess.CalledProcessError) as error:
+        print(f"generation failed; official outputs not published: {error}", file=sys.stderr)
+        sys.exit(1)

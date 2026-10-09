@@ -1,0 +1,50 @@
+# tools/ — 資料建置 pipeline（可重現、可稽核）
+
+`data/zones.js` 與 `data/sightseeing-data.js` 皆 **AUTO-GEN**，勿手改產物。改資料 → 改本目錄腳本／`sources/` 重跑。
+
+## 前置
+- **standalone checkout 可重建**：Python 3 與 Node，無第三方 Python 套件；生成器只讀本 repo `tools/sources/` 的版控快照，不需 monorepo／遊戲 client。
+- 六張官方 CSV：Adventure、Emote、TextCommand、PlaceName、Level、Map；`native-manifest.json` 綁定同一 `clientVersion`、逐檔 bytes SHA-256 與列數。UTF-8 無 BOM、LF、具名 header；拒絕混版／缺檔／schema／checksum 漂移。
+- 社群快照 `cycleapple-arr.js` 僅提供 ARR 天氣，`babelin.html` 僅提供 HW–DT 高度等補充；引擎移植對照為 `cycleapple-{weather,eorzea-time}.js`。
+
+## 建置順序
+```bash
+# 從 repo root 跑；唯一發布入口，同時產生兩份資料與 generation manifest
+python tools/build_data.py
+node tools/validate-sources.mjs         # 六張 sheet、補充來源與生成產物 SHA binding
+node tools/validate-data.mjs
+node tools/validate-weather.mjs
+node tools/validate-availability.mjs && node tests/run-all.mjs
+```
+`build_data.py` 每次重新執行 `extract-sources.mjs`，不信任舊的 ignored `extracted.json`；`build_zones.py` 只提供純建置／render 函式，不再是獨立發布 CLI。全部解析與驗證成功才寫暫存並發布；一般 rename I/O 失敗回復本批已換檔，沒有跨檔斷電原子性的承諾。同來源重跑兩份 JS 與 `generation-manifest.json` 必須 bytes-identical。
+
+### 更新 native snapshot（本機維護）
+
+使用既有 monorepo `tc-datamine-dump` 的獨立 `--sightseeing` 模式，搭配 `--sqpack <game/sqpack 路徑>` 與明確 `--out <本站 tools/sources 絕對路徑>`；不走一般名稱層 DefaultOutDir／Publish。目前快照 client version 為 `2026.09.14.0000.0000`。解包需要本機 client、.NET 10、Lumina 7.6.1／Lumina.Excel 7.5.0；**部署與 standalone 重建不需要**。
+
+Adventure／Emote 的 native checksum 與目前 typed schema 不同，exporter 以 RawRow hard-check 全部欄位 type／offset／欄數後讀取；其餘四張保持 typed checksum gate。必要 relation／有限座標／Map／SizeFactor／340 筆基線／解包前後版本皆必驗，失敗不發布。版本不能為空或 unknown。六張 CSV 與 manifest 先 staging，通常 I/O 失敗逆序回復；不承諾跨斷電原子性。
+
+## 權威與正名
+- 名稱／時間／表情／英文指令／X/Y／地區與 map metadata 全部走同版 native sheet。必要 Level／Map／zone／image／sf／emote／TextCommand 缺失直接 fail-build，不退回社群座標、空圖或預設 sf。地圖候選只取場景圖碼，排除事件／region／default；同名 PlaceName 取最小 map ID，圖片仍使用既有 v2.xivapi.com host。
+- 表情指令依 Emote 的 `TextCommand` relation 對官方英文 `TextCommand.Command`，不是用繁中名稱猜譯。[權威 sheet 查證](https://v2.xivapi.com/api/sheet/Emote?rows=23,34&fields=Name,TextCommand.Command)：23 展示 → TextCommand 424 → `/me`；34 鼓勵 → TextCommand 435 → `/rally`。`/showleft` 屬於 Emote 242，不能用於 23。`validate-data.mjs` 獨立固定這兩組對照，不從 generator source text 產生 expected 值。
+- 官方 Lodestone 指令說明：[ `/me` — Motion to yourself](https://na.finalfantasyxiv.com/lodestone/playguide/db/text_command/e6571131914/)；[ `/rally` — Give encouragement](https://na.finalfantasyxiv.com/lodestone/playguide/db/text_command/a338b32e140/)。
+- 繁中正名來自同版 PlaceName／Emote，既有正名修正保留：拉札**漢**、克**扎**瑪烏卡、指向、坐下到地上。`validate-data.mjs` 有禁詞守門。
+- 本次 340 筆對帳只有四項官方差異：ARR #11／#36「坐下」指令從 `/sit` 改同版 TextCommand 451 的 `/lounge`；DT #7「米普露馬黛茶園」→「米普露瑪黛茶園」；DT #31「錦磚咖啡」→「馬賽克咖啡」。X/Y、圖 URL、sf 與圖片 host 均無變動。
+
+## 檔案
+| 檔 | 職責 |
+|---|---|
+| `extract-sources.mjs` | cycleapple/babelin JS/HTML → `tools/sources/extracted.json` |
+| `source_snapshot.py` | 六張 CSV 的版本／hash／LF／header／列數驗證 |
+| `build_zones.py` | 同版 PlaceName／Map → 地區與圖片；純建置函式 |
+| `build_data.py` | 完整建置、驗證與發布兩份 JS 及 generation manifest |
+| `validate-data.mjs` | 資料契約 + 繁中禁詞 + authoritative emote 指令對照 |
+| `validate-weather.mjs` | 必驗 seed/golden，並對 vendored canonical 的全量天氣表/aliases + 固定時間點 |
+| `validate-sources.mjs` | CF 自足 Node provenance gate：native／補充來源／兩份產物 bytes binding |
+| `validate-csp.mjs` | inline script bytes → CSP SHA-256；`--write` 更新、預設檢查 |
+| `sources/` | 版控 native／社群／引擎快照及 manifests；`extracted.json` 為 ignored 中間產物 |
+
+## CF build 閘
+
+`deploy-prepare.sh` 在碰 `_site` 前直接跑資料、天氣、availability、圖片主機、CSP hash、source／generation 檢查；全部 Node-only、無 sibling／Python／.NET。修改 inline bootstrap 後執行 `node tools/validate-csp.mjs --write`，不能放寬 script-src 回 unsafe-inline。新來源或產物必須先重建 manifest，不能手改 SHA 來跳過生成。
+

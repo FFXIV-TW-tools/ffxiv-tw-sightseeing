@@ -1,0 +1,70 @@
+{
+  "before": {
+    "path": "docs/health-reviews/2026-10-09-page-fix-record.json.materials/ae8958f4f371161885925fc3f0683c91a0ac7616ada1a2d7f75de108ad542482.json",
+    "sha256": "ae8958f4f371161885925fc3f0683c91a0ac7616ada1a2d7f75de108ad542482"
+  },
+  "after": {
+    "path": "docs/health-reviews/2026-10-09-page-fix-record.json.materials/dac9dff50be786b44ba32a965096c9e578dfc9c8432b61820a5a5e8d3f409e46.json",
+    "sha256": "dac9dff50be786b44ba32a965096c9e578dfc9c8432b61820a5a5e8d3f409e46"
+  },
+  "mechanical": {
+    "changedExisting": [
+      "docs/health-reviews/2026-10-09-page-fix-plan.md",
+      "docs/health-reviews/2026-10-09-page-fix-record.json"
+    ],
+    "scopeAdded": [
+      "AGENTS.md",
+      "CHANGELOG.md",
+      "README.md",
+      "_headers",
+      "data/schema.md",
+      "devloop.json",
+      "docs/BACKLOG.md",
+      "docs/health-reviews/2026-10-09-page-fix-verification.md",
+      "docs/rules-rationale.md",
+      "modules/ss_icons.js",
+      "tools/README.md"
+    ],
+    "scopeRemoved": []
+  },
+  "mapping": [
+    {
+      "source": "HealthPlanReview",
+      "finding": "F1,F2,F3,F4,F5,F6,F7",
+      "paths": [
+        "docs/health-reviews/2026-10-09-page-fix-plan.md"
+      ]
+    },
+    {
+      "source": "HealthPlanReview",
+      "finding": "F3",
+      "paths": [
+        "docs/health-reviews/2026-10-09-page-fix-record.json",
+        "AGENTS.md",
+        "CHANGELOG.md",
+        "README.md",
+        "data/schema.md",
+        "devloop.json",
+        "docs/BACKLOG.md",
+        "docs/rules-rationale.md",
+        "modules/ss_icons.js",
+        "tools/README.md"
+      ]
+    },
+    {
+      "source": "HealthPlanReview",
+      "finding": "F4",
+      "paths": [
+        "_headers"
+      ]
+    },
+    {
+      "source": "HealthPlanReview",
+      "finding": "F2,F3,F4",
+      "paths": [
+        "docs/health-reviews/2026-10-09-page-fix-verification.md"
+      ]
+    }
+  ],
+  "note": "獨立計畫gate澄清與材料補全；不是external-gate正式confirmation Record。新增scope不表示所有檔案是本輪新增程式變更。"
+}

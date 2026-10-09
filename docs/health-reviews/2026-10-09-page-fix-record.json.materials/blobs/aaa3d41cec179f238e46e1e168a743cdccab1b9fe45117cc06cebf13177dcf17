@@ -1,0 +1,33 @@
+/**
+ * @param {Storage} storage
+ * @param {string} key
+ * @returns {{done: Set<string>, value: string[] | Record<string, unknown>}}
+ * @throws 儲存不可讀或 snapshot 損毀時交由 UI 呈現，不可當成空資料覆寫。
+ */
+export function readCompleted(storage, key) {
+  const raw = storage.getItem(key);
+  const value = raw === null ? [] : JSON.parse(raw);
+  if (!value || typeof value !== 'object' || (Array.isArray(value) && !value.every(id => typeof id === 'string'))) {
+    throw new Error('完成紀錄格式無法讀取');
+  }
+  return { done: new Set(Array.isArray(value) ? value : Object.keys(value).filter(id => value[id])), value };
+}
+
+/**
+ * 最新 snapshot 上僅套用本次 ID，保留 array／legacy object 格式及其他 tab 的變更。
+ * @param {Storage} storage
+ * @param {string} key
+ * @param {string} id
+ * @param {boolean} checked
+ * @returns {Set<string>}
+ */
+export function updateCompleted(storage, key, id, checked) {
+  const snapshot = readCompleted(storage, key);
+  if (checked) snapshot.done.add(id); else snapshot.done.delete(id);
+  if (Array.isArray(snapshot.value)) storage.setItem(key, JSON.stringify(Array.from(snapshot.done)));
+  else {
+    if (checked) snapshot.value[id] = true; else delete snapshot.value[id];
+    storage.setItem(key, JSON.stringify(snapshot.value));
+  }
+  return snapshot.done;
+}

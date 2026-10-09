@@ -1,0 +1,707 @@
+// 台服 client（USERJOY 代理版）EXD 名稱層解包 → SE Excel CSV 相容格式。
+//
+// 為什麼存在：upstream miaki3457/ffxiv-datamining-tc 落後兩個大改版（見
+// docs/specs/2026-07-29-B038-tc-client-datamine-design.md），7.2 新物品的繁中名
+// 只能退 OpenCC 機轉簡中 → 產出陸服譯名（儀仗 vs 台服官方 典禮）。
+//
+// 主體是「名稱欄」（spec 的 A 範圍）：欄名由 Lumina typed sheets 提供，零外部 schema 依賴。
+// 結構層 sheet（GilShopItem / ENpcBase / Level / Map / TerritoryType）刻意不在此
+// —— 它們需要完整欄位，續讀 upstream。
+//
+// 兩個例外（兩者都是「upstream 給不出正確答案」才自己出，不是範圍擴張）：
+//   ① SpecialShop（2026-07-30 B-039）：幣種要當版 client 才對。
+//   ② ItemStats（2026-08-21）：upstream `tc_Item.csv` 的 BaseParamValue **只到 item 44410**，
+//      新裝有欄位、沒數字、不報錯；本機 client 到 48192。
+//   ③ GatheringBonus（2026-08-22）：採集點的隱藏加成門檻。它的文案兩張表
+//      （GatheringCondition／GatheringPointBonusType）看起來是名稱層，但**帶數值佔位符**
+//      ——只取純文字會得到「鑑別力 ≥ 」這種半句話，數字該插回哪裡的資訊已經丟了。
+//      ⇒ 連同引用它們的結構（GatheringPoint → GatheringPointBonus → GatheringPointBase）
+//      一起解，在這裡就把「哪個節點有哪些加成」算完，下游不必認識任何一張 sheet。
+using Lumina;
+using Lumina.Data;
+using Lumina.Excel;
+using Lumina.Excel.Sheets;
+
+namespace TcDatamineDump;
+
+internal static class Program
+{
+    // 台服 client 的繁中文本在 Lumina 的第 9 個 enum；標準 8 語（含同名易混的
+    // ChineseTraditional）在台服 client 上全部拋 UnsupportedLanguageException。
+    private const Language TcLanguage = Language.TraditionalChinese;
+
+    private const string DefaultSqPack =
+        @"C:\Games\USERJOY GAMES\FINAL FANTASY XIV TC\game\sqpack";
+
+    private static int Main(string[] args)
+    {
+        Console.OutputEncoding = System.Text.Encoding.UTF8;
+
+        var sqpack = Arg(args, "--sqpack")
+                     ?? Environment.GetEnvironmentVariable("FFXIV_TC_SQPACK")
+                     ?? DefaultSqPack;
+        var outDir = Arg(args, "--out") ?? DefaultOutDir();
+
+        if (!Directory.Exists(sqpack))
+        {
+            Console.Error.WriteLine($"找不到 sqpack：{sqpack}（用 --sqpack 或 FFXIV_TC_SQPACK 指定）");
+            return 2;
+        }
+        Directory.CreateDirectory(outDir);
+
+        var gd = new GameData(sqpack, new LuminaOptions
+        {
+            PanicOnSheetChecksumMismatch = false,
+            DefaultExcelLanguage = TcLanguage,
+        });
+
+        var clientVersion = ReadClientVersion(sqpack);
+        Console.WriteLine($"sqpack = {sqpack}");
+        Console.WriteLine($"out    = {outDir}");
+        Console.WriteLine($"client = {clientVersion}");
+        Console.WriteLine();
+
+        // 先全部寫進 staging，sanity 過了才整批發布：各表分次寫進正式目錄的話，
+        // 中途失敗會留下「舊檔／新檔／缺檔」三種狀態，而 fetch() 是逐檔判斷
+        // ⇒ 同一次建置會靜默混用兩個 client 版本的名稱。
+        var staging = Path.Combine(outDir, ".tclocal-staging");
+        if (Directory.Exists(staging)) Directory.Delete(staging, true);
+        Directory.CreateDirectory(staging);
+
+        var counts = new Dictionary<string, int>
+        {
+            // 名稱 ＋ **可交易性兩欄**（2026-08-23）。後者是第 ④ 個「upstream 給不出正確答案」
+            // 的例外：國際服 7.5 的染料整併把 101 種舊染劑改成不可交易／退出市場板，而台服
+            // 停在 7.2 仍可上市 ⇒ 沿用 global 旗標會對台服玩家說謊（寶石紅染劑顯示「不可交易」，
+            // Owner 2026-08-23 回報）。upstream `tc_Item.csv` 雖然答對這一題，但它**停在 7.1**
+            // （7.2 的 759 件全是空名，且 4570 鳳凰之尾 還寫著 IsUnique/StackSize=1 的舊值）
+            // ⇒ 同 ItemStats，這兩欄也只能由本機 client 出。
+            ["Item"] = Dump<Item>(gd, "Item", staging, r => r.RowId,
+                ("Name", r => r.Name.ToString()),
+                ("IsUntradable", r => r.IsUntradable ? "True" : "False"),
+                ("ItemSearchCategory", r => r.ItemSearchCategory.RowId.ToString())),
+            ["Action"] = Dump<Lumina.Excel.Sheets.Action>(gd, "Action", staging, r => r.RowId,
+                ("Name", r => r.Name.ToString())),
+            ["Status"] = Dump<Status>(gd, "Status", staging, r => r.RowId,
+                ("Name", r => r.Name.ToString())),
+            ["CraftAction"] = Dump<CraftAction>(gd, "CraftAction", staging, r => r.RowId,
+                ("Name", r => r.Name.ToString())),
+            ["ContentFinderCondition"] = Dump<ContentFinderCondition>(gd, "ContentFinderCondition", staging, r => r.RowId,
+                ("Name", r => r.Name.ToString())),
+            ["Fate"] = Dump<Fate>(gd, "Fate", staging, r => r.RowId,
+                ("Name", r => r.Name.ToString())),
+            ["Quest"] = Dump<Quest>(gd, "Quest", staging, r => r.RowId,
+                ("Name", r => r.Name.ToString())),
+            ["BNpcName"] = Dump<BNpcName>(gd, "BNpcName", staging, r => r.RowId,
+                ("Singular", r => r.Singular.ToString())),
+            ["ENpcResident"] = Dump<ENpcResident>(gd, "ENpcResident", staging, r => r.RowId,
+                ("Singular", r => r.Singular.ToString()),
+                ("Title", r => r.Title.ToString())),
+            ["PlaceName"] = Dump<PlaceName>(gd, "PlaceName", staging, r => r.RowId,
+                ("Name", r => r.Name.ToString())),
+            // 新月島攻略站（2026-09-30）：緊急遭遇戰、調查筆記、特殊天氣的台服名。上游 datamining-tc
+            // 停在 7.2，沒有這些列 ⇒ 不自己出就只能用簡中機轉暫譯。
+            ["DynamicEvent"] = Dump<DynamicEvent>(gd, "DynamicEvent", staging, r => r.RowId,
+                ("Name", r => r.Name.ToString())),
+            ["MKDLore"] = Dump<MKDLore>(gd, "MKDLore", staging, r => r.RowId,
+                ("Name", r => r.Name.ToString())),
+            ["Weather"] = Dump<Weather>(gd, "Weather", staging, r => r.RowId,
+                ("Name", r => r.Name.ToString())),
+            // 以下三張供 macro-builder 疊繁中名：它用數字欄位索引讀 datamining-cn 取
+            // 結構與 icon（與語言無關），只有名稱需要台服正名，故此處同樣只出名稱欄。
+            ["Completion"] = Dump<Completion>(gd, "Completion", staging, r => r.RowId,
+                ("Text", r => r.Text.ToString()),
+                ("GroupTitle", r => r.GroupTitle.ToString())),
+            ["GeneralAction"] = Dump<GeneralAction>(gd, "GeneralAction", staging, r => r.RowId,
+                ("Name", r => r.Name.ToString())),
+            ["Marker"] = Dump<Marker>(gd, "Marker", staging, r => r.RowId,
+                ("Name", r => r.Name.ToString())),
+            // 採集點的「地點性質」官方名（礦脈／石場／良材／草場／魚影／漁場，及
+            // 未知的／限時的／傳說的三種前綴）。marketboard 的採集地圖以前是自創譯名
+            // （礦場／樹林／刺魚點…），2026-08-20 改用本表；下游哨兵＝該 repo
+            // `tools/test_gathering_point_names.py`（比對它 build 端的對照表）。
+            ["GatheringPointName"] = Dump<GatheringPointName>(gd, "GatheringPointName", staging, r => r.RowId,
+                ("Singular", r => r.Singular.ToString())),
+            // 裝備素質的**屬性名稱**（力量／耐力／暴擊／直擊／信念…）。數值本來就在
+            // `tclocal_Item.csv` 的 BaseParam[0..5] 裡，缺的只有 id → 名稱這一張約 80 列的表
+            // ⇒ marketboard 要顯示裝備素質時，不必也不得拿簡中机转（那會產出陸服用語）。
+            ["BaseParam"] = Dump<BaseParam>(gd, "BaseParam", staging, r => r.RowId,
+                ("Name", r => r.Name.ToString())),
+        };
+
+        Console.WriteLine($"\n合計 {counts.Values.Sum()} 列");
+
+        // SpecialShop 是**結構層**（cycle 2026-07-30-B039）：走獨立 JSON 而非 tclocal_*.csv，
+        // 因為它不是「id → 名稱」而是「兌換方案」，套不進 read_csv_file 的名稱層路徑。
+        var specialShop = DumpSpecialShop(gd, staging, clientVersion);
+
+        // 裝備素質也是**結構層**（2026-08-21）。原設計「結構層續讀 upstream」在這一項上已經
+        // 不成立：upstream `tc_Item.csv` 的 BaseParamValue **只到 item 44410**（停在舊改版），
+        // 而市場板上最需要看素質的正是它之後的新裝 —— 拿它去 build 出來的東西會「有欄位、
+        // 沒數字」，而且**不報錯**。我們自己的 client 兩者都有 ⇒ 這一張自己出。
+        var itemStats = DumpItemStats(gd, staging);
+
+        // 採集加成同樣是**結構層**（2026-08-22）。upstream 的 xivapi/ffxiv-datamining 是
+        // **國際服**、版本與台服脫鉤 ⇒ 門檻數值不保證是台服當版的。而這批數字的唯一用途
+        // 就是回答「我現在的鑑別力／獲得力／GP 夠不夠」，錯了會直接給出錯誤的配裝建議，
+        // 且畫面完全正常、沒有任何訊號。
+        var gatheringBonus = DumpGatheringBonus(gd, staging);
+
+        // 新月島輔助職業同樣是**結構層**（2026-09-30）。簡中上游已到 7.55（等級上限、技能、特性都比
+        // 台服 7.25 多），拿它當台服資料會把還沒開放的技能寫成可用 ⇒ 等級上限、技能與說明只能由本機 client 出。
+        var mkd = DumpMkd(gd, staging);
+
+        // sanity 在**發布前**跑：對不上就不要污染正式目錄。
+        if (Sanity(gd) != 0)
+        {
+            Console.Error.WriteLine("sanity 未過 → 不發布，staging 保留供檢查：" + staging);
+            return 1;
+        }
+        foreach (var (sheet, n) in counts)
+        {
+            if (n <= 0)
+            {
+                Console.Error.WriteLine($"{sheet} 零列 → 不發布（staging：{staging}）");
+                return 1;
+            }
+        }
+
+        if (itemStats <= 0)
+        {
+            Console.Error.WriteLine($"ItemStats 零列 → 不發布（staging：{staging}）");
+            return 1;
+        }
+
+        if (gatheringBonus <= 0)
+        {
+            Console.Error.WriteLine($"GatheringBonus 零節點 → 不發布（staging：{staging}）");
+            return 1;
+        }
+
+        if (mkd <= 0)
+        {
+            Console.Error.WriteLine($"MKD 零個輔助職業 → 不發布（staging：{staging}）");
+            return 1;
+        }
+
+        Publish(staging, outDir, clientVersion, counts, specialShop, itemStats, gatheringBonus, mkd);
+        return 0;
+    }
+
+    // CostType=3（票券）的 ItemCost 是索引不是 item id，而 client 內**沒有可 join 的對照表**
+    // （已逐一排除 CurrencyScripConvert／SpecialShopItemCategory／TomestoneConvert／GCScripShop*，
+    // 且 CollectablesShopRewardScrip.Currency 共用同一索引空間 ⇒ 是硬編邏輯）。
+    // 這四筆由 **client 內部的兩個獨立 oracle** 定案（2026-07-30，client 2026.07.22）：
+    //   ① 使用該索引的 shop `Name` 含哪個票世代（紫票／橙票）
+    //   ② `CollectablesShopRewardScrip.Currency` 同索引的收藏品是可製作還是採集（→ 巧手／大地）
+    // 兩軸交叉即唯一determine。Teamcraft「同 qty 反推」只用於**找候選**，不作為證據——它拿要被
+    // 取代的源證明自己，且實測單幣 scrip trade 有 93% 的 qty 跨票券碰撞。
+    // ①已升級為發布前硬閘（VerifyScripMapping）；②與幣名族比對在 tests/test_special_shop_tc.py。
+    private static readonly Dictionary<uint, (uint Item, string Gen)> ScripCurrency = new()
+    {
+        [2] = (33913, "紫票"),  // 巧手紫票
+        [4] = (33914, "紫票"),  // 大地紫票
+        [6] = (41784, "橙票"),  // 巧手橙票
+        [7] = (41785, "橙票"),  // 大地橙票
+    };
+    private static readonly string[] ScripGenerations = { "紫票", "橙票" };
+
+    /// <summary>裝備素質（EquipSlotCategory != 0 的列）→ tclocal_ItemStats.csv。</summary>
+    /// <remarks>
+    /// 只出**裝備**：非裝備列的這些欄恆為 0，全表輸出等於把 22,500 列的零塞給下游。
+    /// 屬性 id 的名稱在 <c>tclocal_BaseParam.csv</c>（同一次 dump 產出，必然同版）。
+    /// </remarks>
+    private static int DumpItemStats(GameData gd, string outDir)
+    {
+        var path = Path.Combine(outDir, "tclocal_ItemStats.csv");
+        using var w = new StreamWriter(path, false, new System.Text.UTF8Encoding(false));
+        w.WriteLine("key,ilv,elv,slot,dmgPhys,dmgMag,delayMs,defPhys,defMag,block,blockRate,"
+                    + "materiaSlots,advMeld,bp,bpSpecial");
+        w.WriteLine("# id,物品等級,裝備等級,部位,物理基本性能,魔法基本性能,攻擊間隔,物理防禦力,魔法防禦力,"
+                    + "格擋性能,格擋發動力,魔晶石孔數,可高階鑲嵌,屬性(id:值|…),上限突破屬性(id:值|…)");
+
+        var n = 0;
+        uint maxIdWithStats = 0;
+        foreach (var item in gd.Excel.GetSheet<Item>())
+        {
+            if (item.EquipSlotCategory.RowId == 0) continue;
+
+            // 兩組屬性各自成一欄的 `id:值|id:值`：欄位固定 6 組會產出 12 個空欄，
+            // 而**絕大多數裝備只用到 2–4 組** —— 空欄多到讓檔案變成一片逗號。
+            static string Pairs(IEnumerable<(uint Id, short Val)> src) =>
+                string.Join("|", src.Where(p => p.Id != 0 && p.Val != 0)
+                                    .Select(p => $"{p.Id}:{p.Val}"));
+
+            var bp = Pairs(Enumerable.Range(0, item.BaseParam.Count)
+                .Select(i => (item.BaseParam[i].RowId, item.BaseParamValue[i])));
+            var sp = Pairs(Enumerable.Range(0, item.BaseParamSpecial.Count)
+                .Select(i => (item.BaseParamSpecial[i].RowId, item.BaseParamValueSpecial[i])));
+
+            w.WriteLine(string.Join(",",
+                item.RowId, item.LevelItem.RowId, item.LevelEquip, item.EquipSlotCategory.RowId,
+                item.DamagePhys, item.DamageMag, item.Delayms, item.DefensePhys, item.DefenseMag,
+                item.Block, item.BlockRate, item.MateriaSlotCount,
+                item.IsAdvancedMeldingPermitted ? 1 : 0, bp, sp));
+            if (bp.Length > 0 && item.RowId > maxIdWithStats) maxIdWithStats = item.RowId;
+            n++;
+        }
+
+        // 這一張存在的**唯一理由**就是 upstream 的素質值停在 item 44410（見呼叫端註解）。
+        // 若哪天我們自己的輸出也退化成「只有舊裝有數字」，症狀會完全一樣：欄位齊、
+        // 新裝空白、下游照樣 build 成功 ⇒ 在這裡當場擋掉，不要發布。
+        const uint UpstreamLastStatId = 44410;
+        if (maxIdWithStats <= UpstreamLastStatId)
+            throw new InvalidDataException(
+                $"ItemStats 最大有屬性值的 id = {maxIdWithStats}，未超過 upstream 的 {UpstreamLastStatId}"
+                + "（欄位讀錯／語言 slot 錯／client 未更新？）");
+
+        Console.WriteLine($"[{"ItemStats",-24}] {n,6} 列 → tclocal_ItemStats.csv"
+                          + $"（有屬性值的最大 id {maxIdWithStats}，upstream 停在 {UpstreamLastStatId}）");
+        return n;
+    }
+
+    /// <summary>採集點的隱藏加成 → tclocal_gathering_bonus.json。</summary>
+    /// <remarks>
+    /// 語意是「這個採集點**可能**出現的加成」，不是固定值：同一個 GatheringPointBase 在地圖上
+    /// 會生成數個 GatheringPoint 實體，各自帶不同加成或沒有加成（實測 Lv100 某礦脈六個實體＝
+    /// 獲得力≥4216 採集數量+1／最大GP≥830 採集回數+1／鑑別力≥3307 獲得力發動率+20%～／三個無加成）
+    /// ⇒ 以 base 為單位收集**去重後的集合**，與 Teamcraft／Garland 的 Bonuses 列表同口徑。
+    ///
+    /// 輸出 key＝GatheringPointBase.RowId，因為下游（marketboard `nodes.json`／`sources.json`）
+    /// 的節點 id 就是它（1425 筆逐筆核對，等級與物品全對）。
+    ///
+    /// 文案存成 macro 形式（`<num(...)>` 佔位符原樣保留），數字由下游插回原位——
+    /// 取純文字會得到「鑑別力 」，插值位置就此消失。
+    ///
+    /// 每個節點＝`{"n": 變體總數, "b": [[條件id, 條件值, 效果id, 效果值, 旗標, 帶此加成的變體數], …]}`。
+    /// ⚠️ **`n` 與最後那個數字是分母與分子，但它們不是機率**：資料裡沒有任何欄位說哪個變體會出現、
+    /// 多常出現（`GatheringPoint.Count` 欄連名字都沒有，語意未證），拿變體數去算百分比等於自己
+    /// 塞一個「均勻抽一個」的假設進去。能講的只有「分子＝分母 ⇒ 這個區域每個變體都帶它」，
+    /// 那才是確定的事；其餘一律只能說「這一區有幾種變體、其中幾種帶」。下游據此分「必定／隨機」。
+    ///
+    /// **旗標＝macro 裡的 `lnum2`**：
+    /// 條件 20（`<sheet(Item,lnum1,0)><if(lnum2,裝備時,未裝備時)>`）與效果 3
+    /// （`<if(lnum2,可獲得,獲得率 <num(lnum1)>%)>`）都用它選分支，實測恆為 1 且只有這一對
+    /// 用得到（24 個節點＝龍詩／天詩系採集工具解鎖的雲海節點）。⚠️ 這一對的「條件值」是
+    /// **item id 不是數值**，下游拿它去 `<num>` 會印出 29642 這種東西 —— 判別靠條件 id，
+    /// 不要看值的大小猜。
+    /// </remarks>
+    private static int DumpGatheringBonus(GameData gd, string outDir)
+    {
+        // 只出**被引用到的**文案列：兩張表都有大量空文字的保留列，全出等於把噪音塞給下游。
+        var usedCond = new SortedSet<uint>();
+        var usedBonus = new SortedSet<uint>();
+        // baseId → (該區域的節點變體總數, 每個加成出現在幾個變體上)
+        var total = new SortedDictionary<uint, int>();
+        var hits = new Dictionary<uint, Dictionary<(uint C, uint CV, uint B, uint BV, uint F), int>>();
+
+        foreach (var p in gd.Excel.GetSheet<GatheringPoint>())
+        {
+            var baseId = p.GatheringPointBase.RowId;
+            if (baseId == 0) continue;
+            total[baseId] = total.GetValueOrDefault(baseId) + 1;
+            // 同一個變體的兩個 slot 若填了同一列加成，只能算一次
+            // ——分子超過分母會讓下游的「必定出現」判定變成永遠成立。
+            var seenHere = new HashSet<(uint, uint, uint, uint, uint)>();
+            foreach (var bRef in p.GatheringPointBonus)
+            {
+                if (bRef.RowId == 0) continue;
+                var b = bRef.Value;
+                if (b.Condition.RowId == 0) continue;
+                var key = (b.Condition.RowId, b.ConditionValue, b.BonusType.RowId, b.BonusValue, b.Unknown3 ? 1u : 0u);
+                if (!seenHere.Add(key)) continue;
+                if (!hits.TryGetValue(baseId, out var m)) hits[baseId] = m = new();
+                m[key] = m.GetValueOrDefault(key) + 1;
+                usedCond.Add(b.Condition.RowId);
+                usedBonus.Add(b.BonusType.RowId);
+            }
+        }
+
+        var condSheet = gd.Excel.GetSheet<GatheringCondition>();
+        var bonusSheet = gd.Excel.GetSheet<GatheringPointBonusType>();
+
+        // fail-closed：被引用的文案若是空字串，畫面會長出「 ≥ 327 →  +40%」這種
+        // 缺一半的句子，而 build 與測試全綠 —— 語言 slot 錯／sheet 換欄的症狀正是這個。
+        static string Text(string kind, uint id, string macro)
+        {
+            if (string.IsNullOrWhiteSpace(macro))
+                throw new InvalidDataException($"{kind} {id} 的文案為空 —— 語言 slot 或欄位可能不對");
+            return macro;
+        }
+
+        var conds = usedCond.Select(id =>
+            $"    \"{id}\": {JsonStr(Text("GatheringCondition", id, condSheet.GetRow(id).Text.ToMacroString()))}");
+        var bonuses = usedBonus.Select(id =>
+            $"    \"{id}\": {JsonStr(Text("GatheringPointBonusType", id, bonusSheet.GetRow(id).Text.ToMacroString()))}");
+        // 每個節點區域＝`{"n": 變體總數, "b": [[條件id,條件值,效果id,效果值,旗標,帶此加成的變體數], …]}`
+        var nodes = hits.Keys.OrderBy(k => k).Select(baseId =>
+        {
+            var rows = hits[baseId].OrderBy(kv => kv.Key)
+                .Select(kv => $"[{kv.Key.C},{kv.Key.CV},{kv.Key.B},{kv.Key.BV},{kv.Key.F},{kv.Value}]");
+            return $"    \"{baseId}\": {{\"n\":{total[baseId]},\"b\":[" + string.Join(",", rows) + "]}";
+        });
+
+        File.WriteAllText(
+            Path.Combine(outDir, GatheringBonusFile),
+            "{\n"
+            + $"  \"generatedAt\": \"{DateTime.Now:yyyy-MM-ddTHH:mm:ss}\",\n"
+            + "  \"conditions\": {\n" + string.Join(",\n", conds) + "\n  },\n"
+            + "  \"bonusTypes\": {\n" + string.Join(",\n", bonuses) + "\n  },\n"
+            + "  \"byNode\": {\n" + string.Join(",\n", nodes) + "\n  }\n}\n",
+            new System.Text.UTF8Encoding(false));
+        Console.WriteLine($"[{"GatheringBonus",-24}] {hits.Count,6} 節點 → {GatheringBonusFile}"
+                          + $"（條件 {usedCond.Count} 種、效果 {usedBonus.Count} 種）");
+        return hits.Count;
+    }
+
+    /// <summary>最小 JSON 字串跳脫（文案含 `<`/`(`，但不含控制字元）。</summary>
+    private static string JsonStr(string s) =>
+        "\"" + s.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
+
+    /// <summary>新月島輔助職業 → tclocal_mkd.json（職業、等級上限、技能、特性，文案一律 macro 形式）。</summary>
+    /// <remarks>
+    /// 兩張表的 EXD 沒有欄名、Lumina.Excel 也沒有型別 ⇒ 以欄序讀，欄序由 client 實測（2026-09-30，
+    /// client 2026.09.14）：
+    ///   MKDSupportJob（13 列）：0 名稱、3 職業說明、4 英文名、5 等級上限（輔助自由人＝0：它的等級＝其他職業精通數）、
+    ///     6 介面排序、7/8 起每兩欄一組（習得等級, Action id）共 5 組，未用的組＝0。
+    ///   MKDTrait：0 輔助職業列、1 習得等級、2 圖示、3 名稱、4 說明（空名的保留列略過）。
+    /// 技能說明取 ActionTransient.Description 的 macro：數值常寫成
+    /// <c>&lt;if([gnum108&gt;=4],90%,60%)&gt;</c>（gnum108＝輔助職業等級），取純文字會把數值整段吃掉，
+    /// 要保留給下游依等級展開。
+    /// </remarks>
+    private static int DumpMkd(GameData gd, string outDir)
+    {
+        var jobSheet = gd.Excel.GetSheet<RawRow>(TcLanguage, "MKDSupportJob");
+        var traitSheet = gd.Excel.GetSheet<RawRow>(TcLanguage, "MKDTrait");
+        var actSheet = gd.Excel.GetSheet<Lumina.Excel.Sheets.Action>();
+        var descSheet = gd.Excel.GetSheet<ActionTransient>();
+
+        // fail-closed：欄序若位移（改版加欄）或語言 slot 錯，最先壞的就是這兩種字串 ——
+        // 空的就停，不要把「有欄位、沒內容」發布出去。部分文案（職業說明）的換行是字面 \n 而非 <br>
+        // macro，統一成 <br>；其餘控制字元 JSON 跳脫沒處理，出現就停。
+        static string Req(string what, string macro)
+        {
+            if (string.IsNullOrWhiteSpace(macro))
+                throw new InvalidDataException($"{what} 為空 —— 欄序或語言 slot 可能不對");
+            macro = macro.Replace("\r\n", "<br>").Replace("\n", "<br>");
+            if (macro.Any(c => c < ' '))
+                throw new InvalidDataException($"{what} 含控制字元，JSON 跳脫只處理引號與反斜線");
+            return macro;
+        }
+
+        var jobs = new List<string>();
+        var usedActions = new SortedSet<uint>();
+        foreach (var r in jobSheet)
+        {
+            var en = r.ReadStringColumn(4).ExtractText();
+            if (!en.StartsWith("Phantom ", StringComparison.Ordinal))
+                throw new InvalidDataException($"MKDSupportJob {r.RowId} 第 4 欄不是英文職業名（{en}）—— 欄序變了");
+            var pairs = new List<string>();
+            for (var c = 7; c + 1 < 17; c += 2)
+            {
+                var lv = r.ReadUInt8Column(c);
+                var act = r.ReadUInt32Column(c + 1);
+                if (act == 0) continue;
+                pairs.Add($"[{lv},{act}]");
+                usedActions.Add(act);
+            }
+            jobs.Add($"    \"{r.RowId}\": {{\"name\":{JsonStr(Req($"MKDSupportJob {r.RowId} 名稱", r.ReadStringColumn(0).ToMacroString()))},"
+                     + $"\"nameEn\":{JsonStr(en)},"
+                     + $"\"desc\":{JsonStr(Req($"MKDSupportJob {r.RowId} 說明", r.ReadStringColumn(3).ToMacroString()))},"
+                     + $"\"levelMax\":{r.ReadUInt8Column(5)},\"order\":{r.ReadUInt8Column(6)},"
+                     + $"\"actions\":[{string.Join(",", pairs)}]}}");
+        }
+
+        var traits = new List<string>();
+        foreach (var r in traitSheet)
+        {
+            var name = r.ReadStringColumn(3).ToMacroString();
+            if (string.IsNullOrEmpty(name)) continue;
+            traits.Add($"    [{r.ReadUInt8Column(0)},{r.ReadUInt8Column(1)},{r.ReadInt32Column(2)},"
+                       + $"{JsonStr(Req($"MKDTrait {r.RowId} 名稱", name))},"
+                       + $"{JsonStr(Req($"MKDTrait {r.RowId} 說明", r.ReadStringColumn(4).ToMacroString()))}]");
+        }
+
+        // recast＝Action.Recast100ms（復唱時間，單位 0.1 秒；共用 GCD 的技能是 25＝2.5 秒）
+        var actions = usedActions.Select(id =>
+            $"    \"{id}\": {{\"name\":{JsonStr(Req($"Action {id} 名稱", actSheet.GetRow(id).Name.ToMacroString()))},"
+            + $"\"recast\":{actSheet.GetRow(id).Recast100ms},"
+            + $"\"desc\":{JsonStr(Req($"ActionTransient {id} 說明", descSheet.GetRow(id).Description.ToMacroString()))}}}");
+
+        File.WriteAllText(
+            Path.Combine(outDir, MkdFile),
+            "{\n"
+            + $"  \"generatedAt\": \"{DateTime.Now:yyyy-MM-ddTHH:mm:ss}\",\n"
+            + "  \"jobs\": {\n" + string.Join(",\n", jobs) + "\n  },\n"
+            + "  \"traits\": [\n" + string.Join(",\n", traits) + "\n  ],\n"
+            + "  \"actions\": {\n" + string.Join(",\n", actions) + "\n  }\n}\n",
+            new System.Text.UTF8Encoding(false));
+        Console.WriteLine($"[{"MKD",-24}] {jobs.Count,6} 職業 → {MkdFile}（技能 {usedActions.Count}、特性 {traits.Count}）");
+        return jobs.Count;
+    }
+
+    /// <summary>SpecialShop → 兌換方案 JSON（幣種在此解析完成，索引語意不外洩給下游）。</summary>
+    private static int DumpSpecialShop(GameData gd, string outDir, string clientVersion)
+    {
+        // 神典石槽位 → 當期實際神典石 item。槽位配置**每個改版都會換**（7.2 的 slot 2 是天道），
+        // 正是「必須用同版 client 解包」而非沿用別服資料的原因。
+        var tome = new Dictionary<uint, uint>();
+        foreach (var ti in gd.Excel.GetSheet<TomestonesItem>())
+            if (ti.Tomestones.RowId != 0)
+                tome[ti.Tomestones.RowId] = ti.Item.RowId;
+
+        var sb = new System.Text.StringBuilder();
+        var n = 0;
+        var sample = new List<string>();   // 45987 的 cost，供發布前結構檢查
+        var scripShops = new HashSet<(uint Index, string Shop)>();  // 票券索引 → 店名，供交叉驗證
+        foreach (var shop in gd.Excel.GetSheet<SpecialShop>())
+        foreach (var listing in shop.Item)
+        {
+            var costs = new List<string>();
+            foreach (var c in listing.ItemCosts)
+            {
+                // qty 0 的成本不是成本。實測 382 筆是「Gil ×0」的空殼列（全部沒有共存的
+                // 非零成本），舊的 Teamcraft 管線也是丟掉它們（`amount` falsy 即跳過）。
+                // 留著會在畫面上長出「需 Gil」這種看起來免費的兌換。
+                if (c.CurrencyCost == 0) continue;
+                var curId = c.CostType switch
+                {
+                    0 or 1 => c.ItemCost.RowId,
+                    2 => tome.TryGetValue(c.ItemCost.RowId, out var t) ? t : 0,
+                    3 => ScripCurrency.TryGetValue(c.ItemCost.RowId, out var s) ? s.Item : 0,
+                    // 靜默塞 0 會讓那筆兌換變成「免費」而畫面完全正常 —— 寧可整批不發布。
+                    _ => throw new InvalidDataException(
+                        $"shop {shop.RowId} 未知 CostType={c.CostType}（ItemCost={c.ItemCost.RowId}）"),
+                };
+                if (c.CostType == 3) scripShops.Add((c.ItemCost.RowId, shop.Name.ToString()));
+                if (curId == 0)
+                    throw new InvalidDataException(
+                        $"shop {shop.RowId} CostType={c.CostType} 索引 {c.ItemCost.RowId} 解不出幣種"
+                        + "（新增票券世代或神典石槽位？→ 更新 ScripCurrency 並同步哨兵測試）");
+                costs.Add($"{{\"curId\":{curId},\"qty\":{c.CurrencyCost}}}");
+            }
+            if (costs.Count == 0) continue;
+
+            foreach (var r in listing.ReceiveItems)
+            {
+                if (r.Item.RowId == 0) continue;
+                sb.Append(n++ == 0 ? "\n    " : ",\n    ");
+                sb.Append($"{{\"item\":{r.Item.RowId},\"give\":{r.ReceiveCount}");
+                if (r.Item.RowId == SanitySampleItem) sample.AddRange(costs);
+                if (r.ReceiveHq) sb.Append(",\"hq\":1");
+                sb.Append($",\"patch\":{listing.PatchNumber},\"shop\":{shop.RowId}");
+                sb.Append($",\"cost\":[{string.Join(",", costs)}]}}");
+            }
+        }
+
+        // 結構檢查（發布前）：這一筆同時驗神典石槽位 join 與 ItemCosts 欄位對位。
+        // 刻意驗 id/數量而非譯名 —— 官方改名是合法事件，不該擋住整批發布（沿 B-038 判準）。
+        if (!sample.Contains(SanitySampleCost))
+            throw new InvalidDataException(
+                $"sanity：item {SanitySampleItem} 的 cost 應含 {SanitySampleCost}，實得 "
+                + (sample.Count == 0 ? "（無此 listing）" : string.Join(" / ", sample)));
+        Console.WriteLine($"[sanity] SpecialShop {SanitySampleItem} cost = {SanitySampleCost} OK");
+        VerifyScripMapping(scripShops);
+
+        File.WriteAllText(
+            Path.Combine(outDir, SpecialShopFile),
+            "{\n"
+            + $"  \"clientVersion\": \"{clientVersion}\",\n"
+            + $"  \"generatedAt\": \"{DateTime.Now:yyyy-MM-ddTHH:mm:ss}\",\n"
+            + "  \"trades\": [" + sb + "\n  ]\n}\n",
+            new System.Text.UTF8Encoding(false));
+        Console.WriteLine($"[{"SpecialShop",-24}] {n,6} 筆 → {SpecialShopFile}");
+        return n;
+    }
+
+    /// <summary>票券映射的**發布前**交叉驗證（前閘外審 P0：原本票券路徑在發布閘零覆蓋）。
+    ///
+    /// 證據來自 client 自己的店名，與推導映射時用的 Teamcraft 完全無關 —— 否則等於拿同一份
+    /// 假設證明自己。判準刻意是「有正面命中且無反面矛盾」而非「每個店名都要含票世代」：
+    /// 同一個索引也會出現在「素材」「雜貨·釣餌」這類不含幣名的店。
+    /// </summary>
+    private static void VerifyScripMapping(HashSet<(uint Index, string Shop)> scripShops)
+    {
+        foreach (var idx in scripShops.Select(s => s.Index).Distinct().OrderBy(i => i))
+        {
+            var want = ScripCurrency[idx].Gen;
+            var names = scripShops.Where(s => s.Index == idx).Select(s => s.Shop).ToList();
+            var hit = names.Count(n => n.Contains(want));
+            var clash = names.Where(n => ScripGenerations.Any(g => g != want && n.Contains(g))).ToList();
+            if (hit == 0 || clash.Count > 0)
+                throw new InvalidDataException(
+                    $"票券索引 {idx} 映射到「{want}」但店名不支持：正面命中 {hit} 筆"
+                    + (clash.Count > 0 ? $"、矛盾店名 {clash.Count} 筆（如「{clash[0]}」）" : "")
+                    + " —— 票券世代可能已滾動，請重新推導 ScripCurrency 並更新哨兵");
+            Console.WriteLine($"[sanity] 票券索引 {idx} → {want}：店名正面命中 {hit}/{names.Count}、矛盾 0 OK");
+        }
+        // 既有索引消失也要擋（後閘外審）：原本只印 warning 仍發布，與「每個映射索引須有
+        // 正面命中」的敘述不符。常數表是手工推導的 4 筆，某個索引不再出現＝票券世代可能滾動
+        // ⇒ 必須有人回去重跑兩個 oracle，而不是讓一張半失效的表繼續出貨。
+        var unused = ScripCurrency.Keys.Except(scripShops.Select(s => s.Index)).ToList();
+        if (unused.Count > 0)
+            throw new InvalidDataException(
+                $"ScripCurrency 有 {unused.Count} 個索引本批完全未出現：{string.Join(",", unused)}"
+                + " —— 票券世代可能已滾動，請重跑店名／收藏品兩個 oracle 後更新常數表與哨兵");
+    }
+
+    private const string SpecialShopFile = "tclocal_special_shop.json";
+    private const string GatheringBonusFile = "tclocal_gathering_bonus.json";
+    private const string MkdFile = "tclocal_mkd.json";
+    private const uint SanitySampleItem = 45987;                       // 鋒齒獸的粗皮
+    private const string SanitySampleCost = "{\"curId\":47,\"qty\":20}";  // 亞拉戈天道神典石 ×20
+
+    /// <summary>staging → 正式目錄，最後才寫 manifest（fetch() 以 manifest 為採用憑證）。</summary>
+    private static void Publish(string staging, string outDir, string clientVersion,
+        Dictionary<string, int> counts, int specialShop, int itemStats, int gatheringBonus, int mkd)
+    {
+        // 先撤舊 manifest 再搬檔：manifest 是採用憑證，搬移期間它若仍有效，
+        // 並行的建置會讀到「新舊混合」的表（外審 round-2 #1）。
+        var manifestPath = Path.Combine(outDir, "tclocal_manifest.json");
+        if (File.Exists(manifestPath)) File.Delete(manifestPath);
+
+        foreach (var f in Directory.GetFiles(staging, "tclocal_*"))
+            File.Move(f, Path.Combine(outDir, Path.GetFileName(f)), overwrite: true);
+
+        // manifest 最後寫＝發布的 commit point：缺它就代表這批 dump 不完整，
+        // fetch() 會整批忽略而不是逐檔挑著用（避免混用兩個 client 版本）。
+        var sheets = string.Join(",\n", counts.Select(kv => $"    \"{kv.Key}\": {kv.Value}"));
+        File.WriteAllText(
+            manifestPath,
+            "{\n"
+            + $"  \"clientVersion\": \"{clientVersion}\",\n"
+            + $"  \"generatedAt\": \"{DateTime.Now:yyyy-MM-ddTHH:mm:ss}\",\n"
+            + $"  \"specialShop\": {specialShop},\n"
+            // reader 據此擋「手改／截斷／manifest 與檔案不同次發布」（B-039 前閘外審 v3-#4）
+            + $"  \"specialShopSha256\": \"{Sha256(Path.Combine(outDir, SpecialShopFile))}\",\n"
+            // 裝備素質列數（2026-08-21）：manifest 是「這批 dump 完整」的憑證，
+            // 下游要能在讀檔之前就知道這一張有沒有跟著這次一起發布。
+            + $"  \"itemStats\": {itemStats},\n"
+            // 採集加成節點數（2026-08-22）：同上，下游要能在讀檔前知道這一張有沒有跟著發布。
+            + $"  \"gatheringBonus\": {gatheringBonus},\n"
+            + $"  \"gatheringBonusSha256\": \"{Sha256(Path.Combine(outDir, GatheringBonusFile))}\",\n"
+            // 新月島輔助職業數（2026-09-30）：同上；sha 讓下游擋「manifest 與檔案不同次發布」。
+            + $"  \"mkd\": {mkd},\n"
+            + $"  \"mkdSha256\": \"{Sha256(Path.Combine(outDir, MkdFile))}\",\n"
+            + "  \"sheets\": {\n" + sheets + "\n  }\n}\n",
+            new System.Text.UTF8Encoding(false));
+
+        Directory.Delete(staging, true);
+        Console.WriteLine($"\n✓ 已發布 {counts.Count} 張表 + manifest（client {clientVersion}）");
+    }
+
+    private static string Sha256(string path)
+    {
+        using var sha = System.Security.Cryptography.SHA256.Create();
+        return Convert.ToHexString(sha.ComputeHash(File.ReadAllBytes(path))).ToLowerInvariant();
+    }
+
+    /// <summary>`<sqpack>/../ffxivgame.ver`＝這批資料出自哪個 client 版本。</summary>
+    private static string ReadClientVersion(string sqpack)
+    {
+        var ver = Path.Combine(Path.GetDirectoryName(sqpack.TrimEnd('\\', '/'))!, "ffxivgame.ver");
+        return File.Exists(ver) ? File.ReadAllText(ver).Trim() : "unknown";
+    }
+
+    /// <summary>單張 sheet → SE Excel CSV 相容格式（reader 認 '#' 欄名列 + 數字 field0 資料列）。</summary>
+    private static int Dump<T>(
+        GameData gd, string sheet, string outDir,
+        Func<T, uint> id, params (string Col, Func<T, string> Get)[] cols)
+        where T : struct, IExcelRow<T>
+    {
+        var data = gd.Excel.GetSheet<T>();
+        var path = Path.Combine(outDir, $"tclocal_{sheet}.csv");
+
+        using var w = new StreamWriter(path, false, new System.Text.UTF8Encoding(false));
+        w.WriteLine("key," + string.Join(",", Enumerable.Range(0, cols.Length)));
+        w.WriteLine("#," + string.Join(",", cols.Select(c => c.Col)));
+        w.WriteLine("int32," + string.Join(",", cols.Select(_ => "str")));
+
+        var n = 0;
+        foreach (var row in data)
+        {
+            w.WriteLine($"{id(row)}," + string.Join(",", cols.Select(c => Csv(c.Get(row)))));
+            n++;
+        }
+        Console.WriteLine($"[{sheet,-24}] {n,6} 列 → {Path.GetFileName(path)}");
+        return n;
+    }
+
+    private static string Csv(string v)
+    {
+        if (v.Length == 0) return "";
+        return v.Contains(',') || v.Contains('"') || v.Contains('\n') || v.Contains('\r')
+            ? "\"" + v.Replace("\"", "\"\"") + "\""
+            : v;
+    }
+
+    /// <summary>已知 join 樣本。
+    ///
+    /// 硬失敗條件刻意**只驗結構**（非空 + 含中日韓字），因為這支工具每次改版都要再跑，
+    /// 而官方修訂譯名是合法事件——把某個譯名字串釘成永久成功條件，會在下次正名時
+    /// 擋住整批發布（外審 round-2 #7）。譯名比對降為提示：不同就印出來讓人看見，不阻斷。
+    /// 這樣仍抓得到真正的災難：語言 slot 選錯、空表、欄位錯位。
+    /// </summary>
+    private static int Sanity(GameData gd)
+    {
+        var checks = new (string What, string Got, string Want)[]
+        {
+            ("Item 46032",           gd.Excel.GetSheet<Item>().GetRow(46032).Name.ToString(),          "典禮禦敵襟翼帽"),
+            ("Item 46030",           gd.Excel.GetSheet<Item>().GetRow(46030).Name.ToString(),          "典禮平筆"),
+            ("ENpcResident 1001276", gd.Excel.GetSheet<ENpcResident>().GetRow(1001276).Singular.ToString(), "麥森塔"),
+            ("BNpcName 2",           gd.Excel.GetSheet<BNpcName>().GetRow(2).Singular.ToString(),      "遺跡走龍"),
+            ("Quest 65537",          gd.Excel.GetSheet<Quest>().GetRow(65537).Name.ToString(),         "招募冒險者"),
+            // row 12 ＝「限時的草場」：一次驗**前綴**與**地點性質名**兩軸（採集三分類的判準之一）
+            ("GatheringPointName 12", gd.Excel.GetSheet<GatheringPointName>().GetRow(12).Singular.ToString(), "限時的草場"),
+            // row 27 ＝「暴擊」：裝備素質的屬性名表（marketboard 顯示裝備素質用）。
+            // 挑它是因為它是**副屬性**——主屬性（力量／耐力）就算欄位錯位也還是像個屬性名，
+            // 副屬性錯位會直接掉進耐性／製作那段，一眼看得出來。
+            ("BaseParam 27", gd.Excel.GetSheet<BaseParam>().GetRow(27).Name.ToString(), "暴擊"),
+        };
+
+        Console.WriteLine();
+        var fails = 0;
+        var renamed = 0;
+        foreach (var (what, got, want) in checks)
+        {
+            if (!HasCjk(got))          // 結構性失敗：空值或非中文＝拿錯語言 slot／欄位錯位
+            {
+                fails++;
+                Console.WriteLine($"[sanity] {what,-22} = {got,-16} X 非繁中內容（語言 slot 或欄位錯位？）");
+                continue;
+            }
+            if (got != want)           // 官方改名：合法，但要看得見
+            {
+                renamed++;
+                Console.WriteLine($"[sanity] {what,-22} = {got,-16} ⚠ 與 2026-07 基準「{want}」不同（官方改名？）");
+                continue;
+            }
+            Console.WriteLine($"[sanity] {what,-22} = {got,-16} OK");
+        }
+        Console.WriteLine(fails == 0
+            ? $"\n結構檢查通過{(renamed > 0 ? $"（{renamed} 項譯名與基準不同，非錯誤）" : "")}"
+            : $"\n{fails} 項結構失敗");
+        return fails == 0 ? 0 : 1;
+    }
+
+    /// <summary>含中日韓統一表意文字＝確實拿到中文文本（而非空字串或英文 slot）。</summary>
+    private static bool HasCjk(string s) => s.Any(c => c >= '一' && c <= '鿿');
+
+    private static string? Arg(string[] args, string name)
+    {
+        var i = Array.IndexOf(args, name);
+        return i >= 0 && i + 1 < args.Length ? args[i + 1] : null;
+    }
+
+    /// <summary>從執行檔位置往上找 repo root（in-repo build＝bin/&lt;cfg&gt;/&lt;tfm&gt; 共五層）。</summary>
+    private static string DefaultOutDir()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        for (var i = 0; i < 8 && dir != null; i++, dir = dir.Parent)
+        {
+            var candidate = Path.Combine(dir.FullName, "data", "item_dict", "datamining_tc");
+            if (Directory.Exists(candidate)) return candidate;
+        }
+        throw new DirectoryNotFoundException("找不到 data/item_dict/datamining_tc，請用 --out 指定");
+    }
+}

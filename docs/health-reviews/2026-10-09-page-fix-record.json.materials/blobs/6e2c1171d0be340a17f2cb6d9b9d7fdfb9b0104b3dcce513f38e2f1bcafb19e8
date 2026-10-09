@@ -1,0 +1,15 @@
+{
+  "v": 1,
+  "cycle": "2026-10-09-page-health-fix",
+  "status": "implementing",
+  "revision": "47b0186a+page-health-fix-candidate1",
+  "controls": {"design": false, "plan": false, "assurance": [], "isolation": "none"},
+  "basis": {
+    "design": "Owner 明示直接修正本輪 confirmed 且不需拍板項；保留 UI 與資料契約，待決縮圖/CSP/資料來源/原子交易/CF 閘不執行。",
+    "plan": "單一靜態站本機修復；不發布、不協調部署。報告另附分批修復與待決提案計畫。",
+    "assurance": "使用者 storage key 與 array/legacy object schema 不變、不搬移既有資料；靜態資料重生不是使用者遷移。未改安全或公開 API，未降低有效契約覆蓋；變更可逆。",
+    "isolation": "原工作目錄 C:/FFXIVProject/external/ffxiv-tw-sightseeing；起始 clean，各 worker 固定檔案 ownership；另用 8789 本機 HTTP 驗收，不修改既有 portal 8774。"
+  },
+  "reviews": [],
+  "verify": {"commands": [], "result": "not-run", "evidence": []}
+}

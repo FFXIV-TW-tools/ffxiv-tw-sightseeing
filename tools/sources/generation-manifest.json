@@ -1,0 +1,13 @@
+{
+  "format": 1,
+  "clientVersion": "2026.09.14.0000.0000",
+  "nativeManifestSha256": "3822883ae305961ec0ce10ac8cbbf7df616e37a3c7666288b956a73f8decf80d",
+  "supplements": {
+    "tools/sources/cycleapple-arr.js": "17803b8f51a4cf628aa9a75ac12d55845b21d7f8fd7cb0d7d3e11e6e9923c378",
+    "tools/sources/babelin.html": "64ce287e5399db59d0bfc1aaae2d318c586527e251bdc3e61669ae8fccae28e0"
+  },
+  "outputs": {
+    "data/zones.js": "1fdc24a7107ace6f24bfd6e0905cbb5059c2c28dc2a819920a1336ab75acbabc",
+    "data/sightseeing-data.js": "d5e2ce43516cae5dcee3579b8b90d067154fbd343f9e40e15b0a099f14e5288a"
+  }
+}

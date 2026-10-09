@@ -1,0 +1,62 @@
+---
+status: approved
+type: feature
+cycle: 2026-10-09-sightseeing-hardening
+date: 2026-10-09
+devloop: 2
+---
+
+# 探索筆記核准改善
+
+## 授權與範圍
+
+Owner 核准前輪健檢的 CSP、同版資料、原子進度、CF 驗證閘、損毀恢復五項建議。縮圖沒有本站延遲證據，保持全尺寸小圖與放大圖；不新增縮圖資產。沒有 commit／push／部署、dashboard 修改或重置 Owner 實際資料的授權。前輪完整健檢與驗收保持歷史，不重跑。
+
+## 決策與契約
+
+### CSP
+
+marketboard 的 map_view 已以 document capture error listener 處理圖片失敗，沒有 inline onerror；本站移植這一既有修正，不一併引入它的縮圖／新 pin 外觀。保留既有 parser-inserted document.write bootstrap；script-src 移除 unsafe-inline，僅授權頁面實際 bootstrap 與 JSON-LD 的 SHA-256，另設 script-src-attr 'none'。style-src 保持 unsafe-inline，因 map 座標與 portal 現行動態 style 契約需要；不是宣稱已消除所有 inline style。新增可重現 hash 更新／check，出貨前檢查頁面與政策同步。既有第三方 host 清單不擴張。
+
+### 同版資料
+
+現有 native manifest 只有名稱層，沒有 Adventure／Emote／Level／Map；把現有混版檔案貼同一版本標籤不是解法。本機 client 與 .NET 10／Lumina 7.6.1、Lumina.Excel 7.5.0 已存在；擴充既有 tc-datamine-dump 的獨立 sightseeing 模式，只解包本工具需要的 Adventure、Emote、TextCommand、PlaceName、Level、Map 欄位，同一 clientVersion 與完整 SHA-256 manifest，輸出至本 repo tools/sources，不發布 monorepo 名稱層 dump。正常 exporter 模式與其他 consumers 不變。
+
+生成器只讀版控 snapshot；不再讀本機 local-first／upstream 路徑，不再把查無 Level／Map／zone／必要 emote 當 fallback。native Map 的 Id／PlaceName／SizeFactor／Offset 提供選圖與換算，保留既有最小合法主場景 map 選擇規則。社群來源僅保留 ARR 天氣、HW–DT 高度與引導等既有補充資料，分開標明來源，不冒稱它們有 clientVersion。先完整解析與驗證，再發布生成檔；錯誤保留前一個好產物。對照現有 340 筆逐欄差異，官方 native 的合法變更明列，不能無聲改座標／精度／圖片主機。
+
+### IndexedDB 與遷移
+
+以單一 object store 上的 readwrite transaction 讀取、套用一個 ID、寫回完成集合；所有寫入只在 transaction complete 後呈現成功。transaction 內不跨 await／網路等待。不同 ID 的同時寫入都保留；同 ID 衝突按 transaction 序列後者生效。不承諾跨裝置同步、磁碟毀損或斷電零遺失。
+
+首次成功 transaction 才從 ffxiv-sightseeing-completed 遷移。接受字串 array 與既有 truthy-key object，不過濾未知 ID；保存原始 JSON 原文／null，保留 legacy localStorage key 不改寫不刪除。migration marker 與完成集合在同一 transaction：兩 tab 同時初始化只遷移一次；中斷可重入。切換後只用 IndexedDB 寫進度，沒有 localStorage 寫入 fallback。偏好仍用原 ffxiv-sightseeing-prefs。
+
+使用 BroadcastChannel 的提交通知加 visibility/pageshow refresh；通知只提示重讀 DB，不傳整份完成集合覆蓋。app 的所有 async completion 操作完成後重讀 canonical snapshot，避免較舊結果晚回而覆蓋較新 UI。寫入失败不留假勾選，資料庫不可用明示無法保存，不冒充成功。
+
+### 損毀恢復
+
+損毀 legacy 或 IndexedDB 格式顯示持續可見的 codex 警告。提供原始資料下載（不外送）；下載開始後仍要求使用者確認檔案保存，才讓明示確認重置執行。取消／未備份不得寫入。backup 必須涵蓋當下 DB record 與 legacy raw；重置 transaction 核對備份 snapshot 與當下資料相同，其他 tab 已改則拒絕，要求重新備份。重置僅清本工具完成集合，保留原始備份與偏好；不保證從損毀資料猜回進度。
+
+### CF build
+
+deploy-prepare.sh 在清除／建立 _site 前執行 repo 自足 Node validators：資料、天氣、availability、圖片 CSP host、inline script CSP hash、source manifest。固定 .node-version 為官方 CF 支援版本；不要求 Python、.NET、portal sibling 或新 npm 套件。任一失敗非零退出，保留前一個 _site，並保留現有 tracked allowlist／symlink／洩漏驗收閘。只修改 repository build，不操作 dashboard 或部署。
+
+## 執行計畫
+
+- [ ] 完成必要 pre fact＋blind；獨立材料不互供其他 reviewer 意見。
+- [ ] CSP 既有上游修正同步，來源與 hash check；驗證 CSP 下正常圖片及失敗回饋。
+- [ ] scoped native exporter 與同版 snapshot，生成器 clean cutover；逐欄對帳及 fail-build／保留產物。
+- [ ] IndexedDB 遷移／同時交易與恢復 UX 整合；只在 owned localhost profile 行使 destructive 測試。
+- [ ] CF 自足驗證與 packaging 成功／失敗；不對本站未提交檔假裝 tracked 出貨。
+- [ ] 真實 UI、必要完整驗證與 post fact＋blind；更新現行文件／CHANGELOG。
+
+## 完成条件
+
+- [ ] script-src 無 unsafe-inline／無 inline handler，正常啟動、portal／地圖與圖片錯誤皆能運作；樣式契約不退化。
+- [ ] 所有遊戲 sheet 來自同一 native client version，manifest 驗 bytes；獨立 checkout 無 monorepo 也可生成，缺必要資料 build 非零且不改好產物。
+- [ ] array／object 精確遷移與原文保留、並行不同 ID 不遺失、同 ID 後者生效、失敗回滾、跨 tab reload 同步。
+- [ ] 損毀原文可下載；取消／未備份不刪除，備份後確認可重置，其他 tab 變更會使舊備份失效；偏好不清除。
+- [ ] CF build entry 真正執行自足 checks；好輸入輸出完整，注入失敗保留前一產物，無內部檔出貨。
+
+```devloop-record
+{"v":1,"cycle":"2026-10-09-sightseeing-hardening","revision":"health-fix-candidate3+hardening-design1","controls":{"design":true,"plan":true,"assurance":["data-migration","security-boundary"],"isolation":"none"},"basis":{"design":"Owner明示核准五項公開行為與來源/儲存策略；缩圖保留。","plan":"安全政策與caller、native exporter/snapshot/generator、DB遷移與UI需依序cutover；不部署，失敗保留資料與產物。","assurance":"CSP移除script unsafe-inline改安全邊界；localStorage進度轉IndexedDB是既存資料遷移，保留原文並有備份/確認重置。觸发④與③，因此pre/post fact+blind。無其他公開API不相容/唯一覆蓋停用或對外不可逆操作。","isolation":"在既有原工作目錄承接前輪未提交修復，不覆盖或revert；UI另開owned localhost profile，不用Owner瀏覽器、不改既有portal服務。"},"reviews":[],"verify":{"commands":[],"result":"not-run","evidence":[]}}
+```

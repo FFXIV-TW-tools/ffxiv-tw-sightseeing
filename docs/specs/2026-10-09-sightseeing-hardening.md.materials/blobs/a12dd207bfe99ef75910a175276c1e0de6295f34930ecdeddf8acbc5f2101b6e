@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<!--
+  FFXIV 繁中服 探索筆記工具（Sightseeing Log）
+  ============================================
+  骨架 + element ID 契約由 CC 維護；JS 模組（app/eorzea-time/weather）由 codex 實作、
+  資料（sightseeing-data）由 grok 產出。地圖渲染 vendored from marketboard（modules/map_view.js）。
+-->
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+  <!-- [CLS] 首屏 body 盒子（inline，必須是樣式的第一筆）- 2026-08-28，由真實使用者的 LayoutShift 反推。
+       診斷探針實測到的形狀：`body (8,21,...) -> (0,0,...)`，那個 x=8 是瀏覽器 **UA 預設的
+       `body{margin:8px}`** => 首屏是用 UA 樣式畫出來的，同源 CSS 與跨網域 header.css 都還沒生效，
+       樣式一到整頁重排。實測案例：macro-builder CLS **1.356**、marketboard **0.368**。
+       注意 1：本機重現不出來（所有 link 都在 head、render-blocking，延遲 CDN 只會讓瀏覽器多等），
+               **但修法不依賴知道確切機制** - inline 樣式在 parse 當下就生效，UA 預設沒有窗口能畫出來。
+       注意 2：值一律照**該站穩定期的 computed style 實測**抄，不套通用範本 -
+               macro-builder 第一版寫成 padding:0，而該站 body 有 12px 水平 padding，
+               等於自己製造一個 12px 水平位移。改完必須比對 computed style 前後一致。 -->
+  <style>html{scrollbar-gutter:stable;color-scheme:dark}html,body{margin:0}body{box-sizing:border-box;min-height:100vh;padding:64px 0 0}</style>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="google-site-verification" content="d5WDZwqeL4aAN0vGxMvg4mAi1OtpBhcr_xLJJ-3sXBI">
+<meta name="tool-name" content="探索筆記">
+<!-- ⚠ title 一律以「FF14」開頭（2026-08-13）：本站原本是 13 站中唯一以「FFXIV」起頭的，
+     而 GSC 481 個有曝光的查詢裡，前段全部用「ff14」而非「ffxiv」（ff14 排行／ff14 查價／
+     ff14 工具箱…）⇒ 少了那個 token 等於放掉玩家實際打的字。本站曝光 52，全站最低。 -->
+<title>FF14 探索筆記｜FFXIV 繁中服 340 個探索日誌・地圖座標</title>
+<!-- 分頁 icon＝真檔 SVG（emoji）；Google 搜尋結果吃下面的 PNG／apple-touch。⚠️ 別改回 data: URI —— 不可爬，Googlebot 拿不到就會退成 18px 內縮白圈 -->
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png?v=2">
+<link rel="apple-touch-icon" href="/favicon-192.png">
+<meta name="description" content="FFXIV 繁中服探索筆記（Sightseeing Log）收集工具：2.0~7.0 全 340 個探索日誌，含地圖座標、艾奧傑亞時間、天氣條件與表情提示。">
+
+<!-- SEO -->
+<link rel="canonical" href="https://sight.xivtc.com/">
+<meta property="og:url" content="https://sight.xivtc.com/">
+<meta property="og:site_name" content="FFXIV 繁中服工具箱">
+<meta property="og:title" content="FFXIV 探索筆記">
+<meta property="og:description" content="繁中服探索筆記收集工具：2.0~7.0 全 340 個探索日誌，含地圖座標、時間、天氣與表情提示。">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://xivtc.com/og-image.png?v=4">
+<meta property="og:locale" content="zh_TW">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="preconnect" href="https://xivtc.com">
+<!-- xivapi 兩個主機都實際使用（皆為 <img>、非 CORS ⇒ 不帶 crossorigin，否則連線池對不上、preconnect 白做）：
+     v2.xivapi.com＝地圖底圖（data/zones.js）；xivapi.com＝天氣與以太之光圖示（modules/weather.js、map_view.js）。 -->
+<link rel="preconnect" href="https://v2.xivapi.com">
+<link rel="preconnect" href="https://xivapi.com">
+<!-- Portal 共享資源（tokens/header CDN）— document.write 為唯一標準寫法（parser-inserted defer 保序）。
+     本站不用全域設定（進度只存本機），故不載 settings-client.js（_DESIGN-SYSTEM.md 允許；header.js 仍會背景載入供 ⚙ 設定用）。
+     usage.js＝使用統計（portal docs/specs/2026-10-01-usage-analytics-design.md）；_headers connect-src 要放行它的 Worker。 -->
+<script>(function(){
+  var dev = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  var base = dev ? 'http://localhost:8774/ffxiv-tw-tools-portal/' : 'https://xivtc.com/';
+  document.write(
+    '<link rel="stylesheet" href="' + base + 'tokens.css">' +
+    '<link rel="stylesheet" href="' + base + 'header.css">' +
+    '<script defer src="' + base + 'header.js"><\/script>' +
+    '<script defer src="' + base + 'usage.js"><\/script>'
+  );
+})();</script>
+
+<style>
+  * { box-sizing: border-box; }
+  :root {
+    --accent:      var(--color-accent-cyan, #4ec9d0);
+    --text:     var(--color-text, #f5f5f5);
+    --border:   var(--color-border, #2b3f56);
+  }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-sans, "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif);
+    background:
+      var(--pattern-overlay),
+      var(--pattern-scanline),
+      var(--gradient-body, linear-gradient(180deg, #03060c 0%, #070b12 50%, #03060c 100%));
+    color: var(--text);
+    min-height: 100vh;
+    padding-top: 64px;  /* 預留 fixed navbar，避免跨域 header.css 晚到 CLS */
+  }
+  .container { max-width: 1200px; margin: 0 auto; padding-inline: var(--space-4, 16px); }
+</style>
+
+<link rel="stylesheet" href="styles/90-map.css">
+<link rel="stylesheet" href="css/style.css">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "FFXIV 探索筆記",
+  "url": "https://sight.xivtc.com/",
+  "description": "FFXIV 繁中服探索筆記（Sightseeing Log）收集工具：2.0~7.0 全 340 個探索日誌，含地圖座標、艾奧傑亞時間、天氣條件與表情提示。",
+  "applicationCategory": "GameApplication",
+  "operatingSystem": "Web",
+  "browserRequirements": "Requires JavaScript",
+  "inLanguage": "zh-TW",
+  "isAccessibleForFree": true,
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "TWD" },
+  "isPartOf": { "@type": "WebSite", "@id": "https://xivtc.com/#website" },
+  "publisher": { "@type": "Organization", "name": "FFXIV TW Tools", "url": "https://xivtc.com/" }
+}
+</script>
+
+  <!-- modules/app.js 的靜態 import 圖 — 放 <head> 讓瀏覽器解析初期就平行抓，
+       不必等 body 尾端的 app.js 下載解析完才逐層發現依賴 -->
+  <!-- MODULEPRELOAD:BEGIN — 由 tools/gen-modulepreload.mjs 生成，勿手改 -->
+  <link rel="modulepreload" href="/modules/eorzea-time.js">
+  <link rel="modulepreload" href="/modules/esc.js">
+  <link rel="modulepreload" href="/modules/map_view.js">
+  <link rel="modulepreload" href="/modules/ss_availability.js">
+  <link rel="modulepreload" href="/modules/ss_icons.js">
+  <link rel="modulepreload" href="/modules/ss_list.js">
+  <link rel="modulepreload" href="/modules/ss_storage.js">
+  <link rel="modulepreload" href="/modules/ss_visual.js">
+  <link rel="modulepreload" href="/modules/weather.js">
+  <!-- MODULEPRELOAD:END -->
+</head>
+<body>
+  <header class="page-header">
+    <h1 class="codex-h1"><span class="ph-icon" aria-hidden="true">🔭</span>探索筆記 <span class="sub codex-label codex-label--muted">FFXIV 繁中服</span></h1>
+  </header>
+
+  <main class="container">
+
+    <!-- === 時間 / 天氣列（app.js updateTime 每秒刷新）=== -->
+    <section class="codex-tablet codex-tablet--cyan codex-tablet--padded codex-glow ss-timebar" aria-label="艾奧傑亞時間與天氣">
+      <span class="codex-hud" aria-hidden="true"></span>
+      <div class="ss-time-item">
+        <span class="codex-label"><svg class="codex-ico" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true" focusable="false" data-ss-icon="clock"></svg> 艾奧傑亞時間</span>
+        <span class="codex-big" id="et-clock">--:--</span>
+      </div>
+      <div class="ss-time-item">
+        <span class="codex-label"><svg class="codex-ico" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true" focusable="false" data-ss-icon="clock"></svg> 現實時間</span>
+        <span class="codex-body" id="local-time">--:--</span>
+      </div>
+      <div class="ss-time-item">
+        <span class="codex-label"><svg class="codex-ico" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true" focusable="false" data-ss-icon="hourglass-medium"></svg> 下次天氣變化</span>
+        <span class="codex-body" id="weather-countdown">--:--</span>
+      </div>
+    </section>
+
+    <!-- === 版本分頁（2.0~7.0）=== -->
+    <nav class="codex-tabs codex-tabs--boxed ss-exp-tabs" id="exp-tabs" role="group" aria-label="探索筆記版本">
+      <button type="button" class="codex-tab codex-tab--boxed" data-exp="all" aria-pressed="true">全部 <span class="codex-count" id="badge-all">—/340</span></button>
+      <button type="button" class="codex-tab codex-tab--boxed" data-exp="arr-front" aria-pressed="false">2.x 新生 前半 <span class="codex-count" id="badge-arr-front">—/20</span></button>
+      <button type="button" class="codex-tab codex-tab--boxed" data-exp="arr-back" aria-pressed="false" data-help="需先完成前半 20 個才會開放">2.x 新生 後半 <span class="codex-count" id="badge-arr-back">—/60</span></button>
+      <button type="button" class="codex-tab codex-tab--boxed" data-exp="hw" aria-pressed="false">3.x 蒼天 <span class="codex-count" id="badge-hw">—/62</span></button>
+      <button type="button" class="codex-tab codex-tab--boxed" data-exp="sb" aria-pressed="false">4.x 紅蓮 <span class="codex-count" id="badge-sb">—/62</span></button>
+      <button type="button" class="codex-tab codex-tab--boxed" data-exp="shb" aria-pressed="false">5.x 漆黑 <span class="codex-count" id="badge-shb">—/45</span></button>
+      <button type="button" class="codex-tab codex-tab--boxed" data-exp="ew" aria-pressed="false">6.x 曉月 <span class="codex-count" id="badge-ew">—/46</span></button>
+      <button type="button" class="codex-tab codex-tab--boxed" data-exp="dt" aria-pressed="false">7.x 黃金 <span class="codex-count" id="badge-dt">—/45</span></button>
+    </nav>
+    <p class="ss-exp-note" id="arr-back-note" hidden>新生後半需先完成前半 20 個才會開放；仍可先瀏覽點位。</p>
+
+    <!-- === 篩選列 === -->
+    <div class="codex-toolbar ss-filters" role="group" aria-label="探索筆記篩選">
+      <span class="codex-search ss-filter-search"><svg class="codex-ico codex-search__icon" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true" focusable="false" data-ss-icon="magnifying-glass"></svg><input id="search-input" class="codex-input" type="search" aria-label="搜尋探索筆記名稱或地區" aria-keyshortcuts="/" placeholder="搜尋名稱或地區…" autocomplete="off"><kbd class="codex-kbd codex-search__kbd" aria-hidden="true">/</kbd></span>
+      <span class="codex-toolbar__group ss-filter-zone"><label class="codex-toolbar__label" for="zone-filter">地區</label><select id="zone-filter" class="codex-select"><option value="">全部地區</option></select></span>
+      <button type="button" id="hide-completed" class="codex-chip" aria-pressed="false" data-help="僅隱藏已標記完成的筆記">隱藏已完成</button>
+      <button type="button" id="only-available" class="codex-chip" aria-pressed="false" data-help="僅顯示此刻符合時間與天氣條件的筆記">僅顯示可進行</button>
+      <button type="button" id="sort-by-time" class="codex-chip" aria-pressed="false" data-help="未知等待時間排在最後，同時間保持原有順序">依可進行時間排序</button>
+      <button type="button" id="copy-visible" class="codex-btn codex-btn--ghost" data-help="複製目前顯示、尚未完成的筆記" aria-disabled="true"><svg class="codex-ico" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true" focusable="false" data-ss-icon="copy"></svg> 複製待探索清單</button>
+    </div>
+
+    <!-- === 摘要 === -->
+    <div class="codex-kpis codex-kpis--compact ss-summary" aria-label="目前版本探索摘要">
+      <div class="codex-kpi" style="--kpi-tone:var(--color-success)" data-help="完成紀錄儲存在此瀏覽器；清除瀏覽資料後無法還原。"><span class="codex-kpi__icon" aria-hidden="true" data-ss-icon="check-circle"></span><span class="codex-kpi__label">已完成</span><span class="codex-kpi__value"><strong id="completed-count">0</strong>/<span id="completed-total">340</span><span class="codex-subline"><span id="completed-percent">0</span>%</span></span></div>
+      <div class="codex-kpi" style="--kpi-tone:var(--color-accent-cyan)" data-help="包含沒有時間與天氣限制的筆記；已完成仍計入，口徑與原統計相同"><span class="codex-kpi__icon" aria-hidden="true" data-ss-icon="lightning"></span><span class="codex-kpi__label">目前可進行</span><span class="codex-kpi__value" id="active-count">0</span></div>
+      <div class="codex-kpi" style="--kpi-tone:var(--color-accent-cyan)"><span class="codex-kpi__icon" aria-hidden="true" data-ss-icon="list-checks"></span><span class="codex-kpi__label">顯示中</span><span class="codex-kpi__value"><span id="visible-count">0</span>/<span id="total-count">340</span></span></div>
+    </div>
+    <div class="codex-card codex-card--info ss-first-visit" id="first-visit" hidden>
+      <p>先選版本，再查看可進行時間、天氣與地圖；抵達點位使用表情後勾選完成。</p>
+      <button type="button" class="codex-btn codex-btn--ghost" id="first-visit-action">查看現在可進行</button>
+    </div>
+
+    <!-- === 下一個可進行 提示（app.js updateNextHint 填入 top 3）=== -->
+    <div class="ss-next-hint" id="next-hint" hidden></div>
+
+    <!-- === 探索筆記卡片格（app.js renderLogs 填入）=== -->
+    <div id="ss-feedback" class="codex-sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+    <section class="ss-grid" id="log-grid"><div role="status" class="codex-empty ss-empty-state">正在整理探索筆記…<p>若持續無法載入，請重新整理頁面。</p><noscript>請啟用 JavaScript 並重新整理頁面。</noscript></div></section>
+
+    <!-- === 資料來源標註 === -->
+    <footer class="ss-page-foot codex-small">
+      <p>探索日誌名稱・時間・天氣・表情：遊戲內建探索筆記（Adventure Sheet，繁中服官方）· 地圖底圖：xivapi</p>
+      <p>「引導說明」翻譯自日文攻略站 <a href="https://www.ff14memo.com/other/sightseeing/" target="_blank" rel="noopener">ff14memo 探検手帳</a>（感謝原作者整理；DT 7.x 該站尚未收錄）</p>
+      <a class="codex-xs" href="https://xivtc.com/" data-hub-link>← FF14 工具箱（全部工具）</a>
+    </footer>
+
+  </main>
+
+  <!-- 回到頂端（app.js 依捲動位置切換 .is-visible）-->
+  <button class="ss-to-top" id="to-top" type="button" aria-label="回到頂端" title="回到頂端">
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>
+  </button>
+
+  <!-- 模組（codex 實作 app/eorzea-time/weather；map_view/esc vendored；data by grok）-->
+  <script src="data/zones.js"></script>
+  <script src="data/sightseeing-data.js"></script>
+  <script src="data/guides.js"></script>
+  <script type="module" src="modules/app.js"></script>
+</body>
+</html>

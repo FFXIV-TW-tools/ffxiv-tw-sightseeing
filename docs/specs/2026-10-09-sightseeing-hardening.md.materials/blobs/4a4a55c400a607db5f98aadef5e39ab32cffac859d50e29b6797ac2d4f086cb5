@@ -1,0 +1,230 @@
+using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+using Lumina;
+using Lumina.Data;
+using Lumina.Excel;
+using Lumina.Excel.Sheets;
+
+namespace TcDatamineDump;
+
+internal static class SightseeingDump
+{
+    // Raw layout is verified before any read; these two TC sheets differ from the installed typed schema.
+    private static readonly (string Type, ushort Offset)[] AdventureLayout =
+    [
+        ("Int32",12), ("Int32",16), ("UInt8",42), ("UInt16",36), ("UInt16",38), ("UInt16",40),
+        ("Int32",20), ("Int32",24), ("Int32",28), ("Int32",32), ("PackedBool0",43),
+        ("String",0), ("String",4), ("String",8),
+    ];
+    private static readonly (string Type, ushort Offset)[] EmoteLayout =
+    [
+        ("String",0), ("UInt16",12), ("UInt16",14), ("UInt16",16), ("UInt16",18),
+        ("UInt16",20), ("UInt16",22), ("UInt16",24), ("PackedBool0",38), ("PackedBool1",38),
+        ("PackedBool2",38), ("UInt8",36), ("UInt8",37), ("PackedBool3",38), ("PackedBool4",38),
+        ("PackedBool5",38), ("PackedBool6",38), ("PackedBool7",38), ("UInt16",26), ("Int32",8),
+        ("UInt16",28), ("UInt16",30), ("UInt16",32), ("UInt32",4), ("UInt16",34),
+    ];
+    private static readonly Regex ClientVersion = new(@"^\d{4}\.\d{2}\.\d{2}\.\d{4}\.\d{4}$", RegexOptions.CultureInvariant);
+    private static readonly Regex MapId = new(@"^[a-z]\d[ft]\d/\d{2}$", RegexOptions.CultureInvariant);
+
+    internal static int Run(string sqpack, string output)
+    {
+        string? staging = null;
+        var published = false;
+        try
+        {
+            if (!Directory.Exists(sqpack)) throw new DirectoryNotFoundException(sqpack);
+            var version = ReadVersion(sqpack);
+            using var game = new GameData(sqpack, new LuminaOptions
+            {
+                PanicOnSheetChecksumMismatch = true,
+                DefaultExcelLanguage = Language.TraditionalChinese,
+            });
+            var adventures = game.Excel.GetSheet<RawRow>(Language.TraditionalChinese, "Adventure");
+            var emotes = game.Excel.GetSheet<RawRow>(Language.TraditionalChinese, "Emote");
+            CheckLayout(adventures, AdventureLayout, "Adventure");
+            CheckLayout(emotes, EmoteLayout, "Emote");
+            // All four typed GetSheet calls retain Lumina's checksum hard gate.
+            var commands = game.Excel.GetSheet<TextCommand>();
+            var places = game.Excel.GetSheet<PlaceName>();
+            var levels = game.Excel.GetSheet<Level>();
+            var maps = game.Excel.GetSheet<Map>();
+            var count = 0;
+            foreach (var adventure in adventures)
+            {
+                if (adventure.ReadStringColumn(11).ToString().Length == 0) continue;
+                var level = levels.GetRow(adventure.ReadUInt32Column(0));
+                var map = maps.GetRow(level.Map.RowId);
+                var place = places.GetRow(map.PlaceName.RowId).Name.ToString();
+                var emote = emotes.GetRow(adventure.ReadUInt16Column(3));
+                var command = commands.GetRow(emote.ReadUInt32Column(19)).Command.ToString();
+                if (level.RowId == 0 || map.RowId == 0 || place.Length == 0 || !MapId.IsMatch(map.Id.ToString())
+                    || emote.ReadStringColumn(0).ToString().Length == 0 || !command.StartsWith('/'))
+                    throw new InvalidDataException($"Adventure {adventure.RowId}: necessary native join missing");
+                if (map.SizeFactor == 0 || !float.IsFinite(level.X) || !float.IsFinite(level.Z))
+                    throw new InvalidDataException($"Adventure {adventure.RowId}: invalid coordinates");
+                var x = Coordinate(level.X, map.OffsetX, map.SizeFactor);
+                var y = Coordinate(level.Z, map.OffsetY, map.SizeFactor);
+                if (x < 1 || x > 42 || y < 1 || y > 42)
+                    throw new InvalidDataException($"Adventure {adventure.RowId}: coordinates outside map");
+                count++;
+            }
+            if (count != 340) throw new InvalidDataException($"Adventure baseline 340, got {count}");
+            var directory = Path.GetFullPath(output);
+            Directory.CreateDirectory(directory);
+            staging = Path.Combine(directory, ".sightseeing-staging-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(staging);
+            var sheets = new Dictionary<string, object>(StringComparer.Ordinal);
+            Export(staging, sheets, "Adventure", adventures, "key,Level,Emote,MinTime,MaxTime,PlaceName,Name", (w,r) =>
+            {
+                Number(w,r.RowId); w.Write(','); Number(w,r.ReadUInt32Column(0)); w.Write(',');
+                Number(w,r.ReadUInt16Column(3)); w.Write(','); Number(w,r.ReadUInt16Column(4)); w.Write(',');
+                Number(w,r.ReadUInt16Column(5)); w.Write(','); Number(w,r.ReadUInt32Column(6)); w.Write(',');
+                Field(w,r.ReadStringColumn(11).ToString());
+            });
+            Export(staging, sheets, "Emote", emotes, "key,Name,TextCommand", (w,r) =>
+            {
+                Number(w,r.RowId); w.Write(','); Field(w,r.ReadStringColumn(0).ToString()); w.Write(',');
+                Number(w,r.ReadUInt32Column(19));
+            });
+            Export(staging, sheets, "TextCommand", commands, "key,Command", (w,r) =>
+            {
+                Number(w,r.RowId); w.Write(','); Field(w,r.Command.ToString());
+            });
+            Export(staging, sheets, "PlaceName", places, "key,Name", (w,r) =>
+            {
+                Number(w,r.RowId); w.Write(','); Field(w,r.Name.ToString());
+            });
+            Export(staging, sheets, "Level", levels, "key,X,Y,Z,Map", (w,r) =>
+            {
+                Number(w,r.RowId); w.Write(','); Number(w,r.X); w.Write(','); Number(w,r.Y); w.Write(',');
+                Number(w,r.Z); w.Write(','); Number(w,r.Map.RowId);
+            });
+            Export(staging, sheets, "Map", maps, "key,Id,PlaceName,SizeFactor,OffsetX,OffsetY", (w,r) =>
+            {
+                Number(w,r.RowId); w.Write(','); Field(w,r.Id.ToString()); w.Write(','); Number(w,r.PlaceName.RowId);
+                w.Write(','); Number(w,r.SizeFactor); w.Write(','); Number(w,r.OffsetX); w.Write(','); Number(w,r.OffsetY);
+            });
+            if (ReadVersion(sqpack) != version) throw new InvalidDataException("Client version changed during extraction");
+            File.WriteAllText(Path.Combine(staging, "native-manifest.json"),
+                JsonSerializer.Serialize(new { format = 1, clientVersion = version, sheets },
+                    new JsonSerializerOptions { WriteIndented = true }) + "\n", new UTF8Encoding(false));
+            Publish(staging, directory);
+            published = true;
+            Directory.Delete(staging, true);
+            staging = null;
+            Console.WriteLine($"✓ sightseeing native snapshot: client {version}, 6 sheets, 340 named adventures");
+            return 0;
+        }
+        catch (Exception error)
+        {
+            Console.Error.WriteLine((published ? "sightseeing 已發布，清理失敗：" : "sightseeing 失敗：") + error.Message);
+            if (staging is not null) Console.Error.WriteLine("保留 staging／rollback 備份：" + staging);
+            return 1;
+        }
+    }
+
+    private static double Coordinate(float world, short offset, ushort sf)
+    {
+        var scale = sf / 100.0;
+        return Math.Round((41.0 / scale) * (((world + offset) * scale + 1024.0) / 2048.0) + 1, 1);
+    }
+
+    private static string ReadVersion(string sqpack)
+    {
+        var parent = Directory.GetParent(Path.GetFullPath(sqpack)) ?? throw new InvalidDataException("No game directory");
+        var version = File.ReadAllText(Path.Combine(parent.FullName, "ffxivgame.ver")).Trim();
+        if (!ClientVersion.IsMatch(version)) throw new InvalidDataException("Empty or unknown client version");
+        return version;
+    }
+
+    private static void CheckLayout(ExcelSheet<RawRow> sheet, (string Type, ushort Offset)[] expected, string name)
+    {
+        var index = 0;
+        foreach (var column in sheet.Columns)
+        {
+            if (index >= expected.Length || column.Type.ToString() != expected[index].Type || column.Offset != expected[index].Offset)
+                throw new InvalidDataException($"{name}: native column {index} schema mismatch");
+            index++;
+        }
+        if (index != expected.Length) throw new InvalidDataException($"{name}: native column count mismatch");
+    }
+
+    private static void Export<T>(string staging, Dictionary<string, object> sheets, string name,
+        ExcelSheet<T> data, string header, Action<StreamWriter,T> row) where T : struct, IExcelRow<T>
+    {
+        var file = "tc_" + name + ".csv";
+        var path = Path.Combine(staging, file);
+        var count = 0;
+        using (var writer = new StreamWriter(path, false, new UTF8Encoding(false)) { NewLine = "\n" })
+        {
+            writer.WriteLine(header);
+            foreach (var value in data) { row(writer,value); writer.WriteLine(); count++; }
+        }
+        if (count == 0) throw new InvalidDataException(name + " has no rows");
+        using var input = File.OpenRead(path);
+        var hash = Convert.ToHexString(SHA256.HashData(input)).ToLowerInvariant();
+        sheets[name] = new { file, rows = count, sha256 = hash };
+        Console.WriteLine($"{name}: {count} rows, {hash}");
+    }
+
+    private static void Number<T>(StreamWriter writer, T value) where T : struct, IFormattable =>
+        writer.Write(value.ToString(null, CultureInfo.InvariantCulture));
+
+    private static void Field(StreamWriter writer, string value)
+    {
+        if (!value.Contains(',') && !value.Contains('"') && !value.Contains('\n') && !value.Contains('\r'))
+        {
+            writer.Write(value);
+            return;
+        }
+        writer.Write('"');
+        // Native text also contains CR line breaks; normalize inside quoted fields without copying the string.
+        for (var index = 0; index < value.Length; index++)
+        {
+            var character = value[index];
+            if (character == '\r')
+            {
+                writer.Write('\n');
+                if (index + 1 < value.Length && value[index + 1] == '\n') index++;
+            }
+            else
+            {
+                if (character == '"') writer.Write('"');
+                writer.Write(character);
+            }
+        }
+        writer.Write('"');
+    }
+
+    private static void Publish(string staging, string output)
+    {
+        var files = new[] { "tc_Adventure.csv", "tc_Emote.csv", "tc_TextCommand.csv", "tc_PlaceName.csv", "tc_Level.csv", "tc_Map.csv", "native-manifest.json" };
+        var moved = new List<(string File, bool HadPrior)>();
+        try
+        {
+            foreach (var file in files)
+            {
+                var path = Path.Combine(output,file);
+                var hadPrior = File.Exists(path);
+                if (hadPrior) File.Move(path,Path.Combine(staging,file + ".previous"));
+                moved.Add((file,hadPrior));
+                File.Move(Path.Combine(staging,file),path);
+            }
+        }
+        catch
+        {
+            for (var index = moved.Count - 1; index >= 0; index--)
+            {
+                var (file,hadPrior) = moved[index];
+                var path = Path.Combine(output,file);
+                if (hadPrior) File.Move(Path.Combine(staging,file + ".previous"),path,true);
+                else if (File.Exists(path)) File.Delete(path);
+            }
+            throw;
+        }
+    }
+}

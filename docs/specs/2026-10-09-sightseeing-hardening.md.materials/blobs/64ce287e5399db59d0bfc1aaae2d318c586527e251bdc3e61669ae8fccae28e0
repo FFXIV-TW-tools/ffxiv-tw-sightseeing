@@ -1,0 +1,1484 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<link rel="icon" type="image/png" href="/mochi.png">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FF14 探索筆記追蹤器</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap');
+:root{
+  --bg:#0d0f14;--bg2:#141720;--bg3:#1c2030;--border:#2a3050;
+  --gold:#c8a96e;--gold2:#e8cc90;--text:#cdd3e0;--text2:#8890a8;
+  --green:#4a9e6e;--green2:#6fcf97;--blue:#4a7ec0;--purple:#9b7fd4;
+  --red:#c0392b;--yellow:#d4a437;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans TC',sans-serif;min-height:100vh;}
+
+/* ── Header ── */
+header{background:linear-gradient(135deg,#0a0c10,#1a1e2e);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;gap:12px;}
+.emblem{width:36px;height:36px;border:2px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:var(--gold);flex-shrink:0;}
+header h1{font-family:'Cinzel',serif;font-size:1.05rem;color:var(--gold);letter-spacing:.1em;}
+header .sub{font-size:.72rem;color:var(--text2);margin-top:2px;}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:16px;}
+.et-block{display:flex;align-items:center;gap:5px;}
+.et-label{font-size:.7rem;color:var(--text2);}
+.et-clock{font-family:monospace;font-size:1.1rem;color:var(--gold2);font-weight:bold;}
+
+/* ── Layout ── */
+.layout{max-width:1100px;margin:0 auto;padding:18px 14px;display:grid;grid-template-columns:220px 1fr;gap:18px;align-items:start;}
+
+/* ── Sidebar ── */
+.sidebar{display:flex;flex-direction:column;gap:10px;position:sticky;top:14px;}
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:6px;overflow:hidden;}
+.panel-title{background:var(--bg3);border-bottom:1px solid var(--border);padding:7px 13px;font-size:.65rem;letter-spacing:.14em;color:var(--gold);font-family:'Cinzel',serif;text-transform:uppercase;}
+.ver-btn{width:100%;background:transparent;border:none;border-bottom:1px solid #1c2138;padding:8px 16px;text-align:left;color:var(--text2);font-family:'Noto Sans TC',sans-serif;font-size:.82rem;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:space-between;}
+.ver-btn:last-child{border-bottom:none;}
+.ver-btn:hover{background:var(--bg3);color:var(--text);}
+.ver-btn.active{background:rgba(200,169,110,.1);color:var(--gold2);border-left:3px solid var(--gold);}
+.ver-badge{font-size:.65rem;color:var(--text2);background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:1px 5px;}
+.ver-btn.active .ver-badge{color:var(--gold);border-color:rgba(200,169,110,.3);}
+
+/* progress in sidebar */
+.progress-box{padding:12px 14px;display:flex;flex-direction:column;gap:6px;}
+.progress-row{display:flex;align-items:center;justify-content:space-between;font-size:.75rem;}
+.progress-label{color:var(--text2);}
+.progress-count{color:var(--gold);font-weight:500;}
+.progress-track{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:3px;transition:width .5s;}
+.sidebar-btns{display:flex;flex-direction:column;gap:6px;padding:0;}
+.ctrl-btn{width:100%;background:transparent;border:1px solid var(--border);border-radius:6px;padding:7px 12px;color:var(--text2);font-size:.75rem;cursor:pointer;transition:all .15s;font-family:'Noto Sans TC',sans-serif;text-align:left;}
+.ctrl-btn:hover{border-color:var(--gold);color:var(--gold);}
+.ctrl-btn.active{border-color:var(--blue);color:var(--blue);background:rgba(74,126,192,.08);}
+
+/* sort */
+.sort-row{display:flex;gap:5px;flex-wrap:wrap;}
+.sort-btn{flex:1;padding:5px 4px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:.7rem;cursor:pointer;transition:all .15s;font-family:'Noto Sans TC',sans-serif;text-align:center;white-space:nowrap;}
+.sort-btn.active{border-color:var(--gold);color:var(--gold);background:rgba(200,169,110,.08);}
+
+/* ── Main ── */
+.main-area{display:flex;flex-direction:column;gap:12px;min-width:0;}
+
+/* ── Now/Soon 膠囊按鈕區 ── */
+.now-section{display:flex;flex-direction:column;gap:6px;}
+.now-header{font-size:.62rem;letter-spacing:.14em;color:var(--green2);font-family:'Cinzel',serif;text-transform:uppercase;padding:0 2px;}
+.now-pills{display:flex;flex-wrap:wrap;gap:6px;}
+.now-pill{display:flex;align-items:center;gap:7px;padding:6px 14px;border-radius:20px;background:#0e2318;border:1px solid rgba(74,158,110,.5);cursor:pointer;transition:all .2s;}
+.now-pill:hover{background:#152d22;border-color:var(--green2);}
+.now-dot{width:6px;height:6px;border-radius:50%;background:var(--green2);box-shadow:0 0 5px var(--green2);flex-shrink:0;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+.now-pill-id{font-size:.65rem;color:var(--text2);font-family:monospace;}
+.now-pill-name{font-size:.78rem;color:var(--green2);font-weight:500;}
+
+/* soon */
+.soon-header{font-size:.62rem;letter-spacing:.14em;color:var(--yellow);font-family:'Cinzel',serif;text-transform:uppercase;padding:0 2px;margin-top:2px;}
+.soon-pills{display:flex;flex-wrap:wrap;gap:6px;}
+.soon-pill{display:flex;align-items:center;gap:7px;padding:6px 14px;border-radius:20px;background:#1c1806;border:1px solid rgba(212,164,55,.35);cursor:pointer;transition:all .2s;}
+.soon-pill:hover{background:#252009;border-color:var(--yellow);}
+.soon-dot{width:6px;height:6px;border-radius:50%;background:var(--yellow);flex-shrink:0;}
+.soon-pill-id{font-size:.65rem;color:var(--text2);font-family:monospace;}
+.soon-pill-name{font-size:.78rem;color:var(--gold2);}
+.soon-pill-time{font-size:.68rem;color:var(--yellow);font-family:monospace;margin-left:2px;}
+
+/* divider */
+.divider{height:1px;background:var(--border);margin:4px 0;}
+.all-header{font-size:.65rem;letter-spacing:.14em;color:var(--text2);font-family:'Cinzel',serif;text-transform:uppercase;padding:0 2px;}
+
+/* ── Entry cards ── */
+.entry-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 15px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color .2s,background .2s;}
+.entry-card:hover{border-color:rgba(200,169,110,.4);background:var(--bg3);}
+.entry-card.done{opacity:.38;}
+.check-circle{width:20px;height:20px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s;font-size:.7rem;color:transparent;}
+.entry-card.done .check-circle{background:var(--gold);border-color:var(--gold);color:var(--bg);}
+.entry-body{flex:1;min-width:0;}
+.entry-top{display:flex;align-items:baseline;gap:7px;margin-bottom:3px;}
+.entry-id{font-size:.65rem;color:var(--text2);font-family:monospace;}
+.entry-zone{font-size:.65rem;color:var(--text2);}
+.entry-title{font-size:.88rem;color:var(--text);font-weight:500;}
+.entry-meta{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:4px;}
+.tag{padding:1px 7px;border-radius:3px;font-size:.68rem;}
+.tag-weather{background:rgba(74,126,192,.12);border:1px solid rgba(74,126,192,.25);color:#7eb8f0;}
+.tag-time{background:rgba(200,169,110,.08);border:1px solid rgba(200,169,110,.2);color:var(--gold);}
+.tag-emote{background:rgba(155,127,212,.1);border:1px solid rgba(155,127,212,.25);color:#b8a0e8;}
+.tag-coords{background:rgba(74,126,192,.08);border:1px solid rgba(74,126,192,.2);color:var(--blue);cursor:pointer;}
+.tag-coords:hover{background:rgba(74,126,192,.18);}
+.tag-note{background:rgba(192,57,43,.1);border:1px solid rgba(192,57,43,.25);color:#e07070;font-size:.65rem;}
+.entry-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;}
+.next-label{font-size:.6rem;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;}
+.next-time{font-size:.88rem;font-weight:bold;font-family:monospace;}
+.next-time.now{color:var(--green2);}
+.next-time.soon{color:var(--yellow);}
+.next-time.later{color:var(--text2);}
+
+/* ── WIP ── */
+.wip{text-align:center;padding:60px 20px;color:var(--text2);}
+.wip-icon{font-size:2.5rem;margin-bottom:12px;}
+.wip-title{font-family:'Cinzel',serif;font-size:.9rem;color:var(--gold);letter-spacing:.1em;margin-bottom:8px;}
+.wip-sub{font-size:.8rem;line-height:1.6;}
+
+/* ── HW+ 地圖 Pin 模式 ── */
+.zone-block{background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:12px;}
+.zone-header2{background:var(--bg3);border-bottom:1px solid var(--border);padding:8px 14px;display:flex;align-items:center;gap:10px;}
+.zone-name2{font-size:.85rem;color:var(--gold);font-weight:500;}
+.zone-count{margin-left:auto;font-size:.7rem;color:var(--text2);}
+.map-wrap2{position:relative;width:100%;background:#060e1a;overflow:hidden;aspect-ratio:1;}
+.map-wrap2 img{width:100%;height:100%;object-fit:cover;display:block;opacity:.88;}
+.pin-layer{position:absolute;inset:0;}
+.sight-pin2{position:absolute;transform:translate(-50%,-50%);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;}
+.pin-dot2{width:18px;height:18px;border-radius:50%;background:var(--gold);border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.7),0 0 8px rgba(200,169,110,.4);display:flex;align-items:center;justify-content:center;font-size:.5rem;color:var(--bg);font-weight:700;font-family:monospace;transition:transform .15s;}
+.sight-pin2:hover .pin-dot2{transform:scale(1.25);}
+.pin-num{font-size:.55rem;color:var(--gold2);font-family:monospace;background:rgba(13,15,20,.8);padding:1px 3px;border-radius:2px;white-space:nowrap;}
+.aeth-pin2{position:absolute;transform:translate(-50%,-50%);font-size:.85rem;cursor:default;z-index:2;}
+.aeth-label2{position:absolute;transform:translateX(-50%);top:16px;background:rgba(74,126,192,.9);color:#fff;font-size:.52rem;padding:1px 4px;border-radius:3px;white-space:nowrap;pointer-events:none;}gap:4px;padding:10px 12px;}
+.sight-item{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:4px;background:var(--bg3);border:1px solid var(--border);font-size:.75rem;color:var(--text2);cursor:pointer;transition:all .15s;}
+.sight-item:hover{border-color:var(--gold);color:var(--gold);}
+.sight-item-num{font-family:monospace;color:var(--text2);font-size:.65rem;}
+.sight-item-coord{font-family:monospace;font-size:.68rem;}
+.sight-item-emote{font-size:.65rem;padding:1px 5px;border-radius:3px;background:rgba(155,127,212,.1);border:1px solid rgba(155,127,212,.25);color:#b8a0e8;}
+
+/* ── Map Modal ── */
+.map-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:1000;align-items:center;justify-content:center;padding:20px;}
+.map-overlay.open{display:flex;}
+.map-modal{background:var(--bg2);border:1px solid rgba(255,255,255,.1);border-radius:12px;width:min(800px,95vw);max-height:95vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.7);animation:modal-in .18s ease;}
+@keyframes modal-in{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+.map-modal-header{display:flex;justify-content:space-between;align-items:flex-start;padding:14px 18px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.map-modal-title{font-size:.95rem;color:var(--gold);font-weight:500;}
+.map-modal-sub{font-size:.72rem;color:var(--text2);margin-top:3px;}
+.map-close{background:none;border:none;color:var(--text2);font-size:1.3rem;cursor:pointer;padding:2px 6px;line-height:1;transition:color .2s;}
+.map-close:hover{color:var(--text);}
+.map-wrap{position:relative;width:100%;background:#060e1a;overflow:auto;flex:1;}
+.map-wrap.is-map{aspect-ratio:1;overflow:hidden;}
+.map-wrap.is-map img{width:100%;height:100%;object-fit:cover;display:block;opacity:.88;}
+.map-wrap.is-screenshot img{display:block;width:100%;height:auto;max-height:75vh;object-fit:contain;opacity:.95;}
+.map-pin-layer{position:absolute;inset:0;}
+.sight-pin{position:absolute;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;}
+.sight-pin-dot{width:24px;height:24px;border-radius:50% 50% 50% 0;background:var(--gold);border:2px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,.7),0 0 12px rgba(200,169,110,.4);transform:rotate(-45deg);}
+.aeth-pin{position:absolute;transform:translate(-50%,-50%);font-size:.9rem;}
+.aeth-label{position:absolute;transform:translateX(-50%);background:rgba(74,126,192,.9);color:#fff;font-size:.55rem;padding:1px 5px;border-radius:3px;white-space:nowrap;}
+.map-modal-footer{padding:10px 18px;border-top:1px solid var(--border);display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+.map-coord-txt{font-size:.78rem;color:var(--text2);font-family:monospace;}
+.map-aeth-txt{font-size:.78rem;color:var(--blue);}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--bg3);border:1px solid var(--gold);color:var(--gold);padding:7px 20px;border-radius:6px;font-size:.8rem;opacity:0;transition:opacity .3s;pointer-events:none;z-index:2000;}
+.toast.show{opacity:1;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="emblem">👁</div>
+  <div>
+    <h1>探索筆記追蹤器</h1>
+
+  </div>
+  <div class="header-right">
+    <div class="et-block">
+      <span class="et-label">ET</span>
+      <span class="et-clock" id="etClock">00:00</span>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="panel">
+      <div class="panel-title">版本</div>
+      <button class="ver-btn active" onclick="setVer('arr',this)">
+        2.x 新生艾歐澤亞<span class="ver-badge" id="badge-arr">80</span>
+      </button>
+      <button class="ver-btn" onclick="setVer('hw',this)">
+        3.x 蒼天伊修加德<span class="ver-badge" id="badge-hw">62</span>
+      </button>
+      <button class="ver-btn" onclick="setVer('sb',this)">
+        4.x 紅蓮解放者<span class="ver-badge" id="badge-sb">62</span>
+      </button>
+      <button class="ver-btn" onclick="setVer('shb',this)">
+        5.x 漆黑反叛者<span class="ver-badge" id="badge-shb">45</span>
+      </button>
+      <button class="ver-btn" onclick="setVer('ew',this)">
+        6.x 曉月之終途<span class="ver-badge" id="badge-ew">46</span>
+      </button>
+      <button class="ver-btn" onclick="setVer('dt',this)">
+        7.x 黃金遺產<span class="ver-badge" id="badge-dt">45</span>
+      </button>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">進度</div>
+      <div class="progress-box">
+        <div class="progress-row">
+          <span class="progress-label">本版本完成</span>
+          <span class="progress-count" id="progressCount">0 / 80</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      </div>
+      <div id="doneList" style="max-height:180px;overflow-y:auto;border-top:1px solid var(--border);"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">顯示</div>
+      <div style="padding:10px 12px;display:flex;flex-direction:column;gap:7px;">
+        <div class="sort-row">
+          <button class="sort-btn active" onclick="setSort('id',this)">編號</button>
+          <button class="sort-btn" onclick="setSort('time',this)">時間</button>
+          <button class="sort-btn" onclick="setSort('zone',this)">地區</button>
+        </div>
+        <button class="ctrl-btn" id="hideBtn" onclick="toggleHide()">☐ 隱藏已完成</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main-area" id="mainArea"></div>
+</div>
+
+<!-- Map Modal -->
+<div class="map-overlay" id="mapOverlay" onclick="closeMap(event)">
+  <div class="map-modal" onclick="event.stopPropagation()">
+    <div class="map-modal-header">
+      <div>
+        <div class="map-modal-title" id="mapTitle">地圖</div>
+        <div class="map-modal-sub" id="mapSub"></div>
+      </div>
+      <button class="map-close" onclick="closeMapBtn()">✕</button>
+    </div>
+    <div class="map-wrap">
+      <img id="mapImg" src="" alt="">
+      <div class="map-pin-layer" id="mapPins"></div>
+    </div>
+    <div class="map-modal-footer">
+      <span class="map-coord-txt" id="mapCoord"></span>
+      <button id="mapVideoBtn" style="display:none;padding:5px 14px;border-radius:20px;background:rgba(0,120,255,.15);border:1px solid rgba(0,120,255,.4);color:#60a5fa;font-size:.75rem;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">▶ 教學影片</button>
+      <button id="mapDoneBtn" onclick="mapDone()" style="display:none;margin-left:auto;padding:6px 16px;border-radius:20px;background:rgba(74,158,110,.15);border:1px solid rgba(74,158,110,.5);color:var(--green2);font-size:.78rem;cursor:pointer;font-family:'Noto Sans TC',sans-serif;transition:all .2s;">✓ 標記完成</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">已複製座標</div>
+
+<script src="et.js"></script>
+<script>
+// ══ ET 系統 ══
+function toET(ms) {
+  const s = ms / 1000 * E_CONST;
+  return { h: Math.floor(s / 3600) % 24, m: Math.floor(s / 60) % 60 };
+}
+function weatherSeed(ms) {
+  const s = Math.floor(ms / 1000);
+  const base = ((s / 175 + 8 - (s / 175) % 8) % 24);
+  let k = (Math.floor(s / 4200)) >>> 0;
+  const chunk = k * 100 + base;
+  let x = (chunk << 11 ^ chunk) >>> 0;
+  return ((x >>> 8 ^ x) >>> 0) % 100;
+}
+
+// ══ 天氣表 ══
+const ZONES = {
+  limsa:             {name:"利姆薩·羅敏薩",   rates:[{r:20,w:"Cloudy"},{r:50,w:"ClearSkies"},{r:80,w:"FairSkies"},{r:90,w:"Fog"},{r:100,w:"Rain"}]},
+  middle_la:         {name:"中拉諾西亞",       rates:[{r:20,w:"Cloudy"},{r:50,w:"ClearSkies"},{r:70,w:"FairSkies"},{r:80,w:"Wind"},{r:90,w:"Fog"},{r:100,w:"Rain"}]},
+  lower_la:          {name:"低地拉諾西亞",     rates:[{r:20,w:"Cloudy"},{r:50,w:"ClearSkies"},{r:70,w:"FairSkies"},{r:80,w:"Wind"},{r:90,w:"Fog"},{r:100,w:"Rain"}]},
+  eastern_la:        {name:"東拉諾西亞",       rates:[{r:5,w:"Fog"},{r:50,w:"ClearSkies"},{r:80,w:"FairSkies"},{r:90,w:"Cloudy"},{r:95,w:"Rain"},{r:100,w:"Showers"}]},
+  western_la:        {name:"西拉諾西亞",       rates:[{r:10,w:"Fog"},{r:40,w:"ClearSkies"},{r:60,w:"FairSkies"},{r:80,w:"Cloudy"},{r:90,w:"Wind"},{r:100,w:"Gales"}]},
+  upper_la:          {name:"高地拉諾西亞",     rates:[{r:30,w:"ClearSkies"},{r:50,w:"FairSkies"},{r:70,w:"Cloudy"},{r:80,w:"Fog"},{r:90,w:"Thunder"},{r:100,w:"Thunderstorms"}]},
+  outer_la:          {name:"外地拉諾西亞",     rates:[{r:30,w:"ClearSkies"},{r:50,w:"FairSkies"},{r:70,w:"Cloudy"},{r:85,w:"Fog"},{r:100,w:"Rain"}]},
+  gridania:          {name:"格里達尼亞",       rates:[{r:20,w:"Rain"},{r:30,w:"Fog"},{r:40,w:"Cloudy"},{r:55,w:"FairSkies"},{r:85,w:"ClearSkies"},{r:100,w:"FairSkies"}]},
+  central_shroud:    {name:"黑衣森林中央林區", rates:[{r:5,w:"Thunder"},{r:20,w:"Rain"},{r:30,w:"Fog"},{r:40,w:"Cloudy"},{r:55,w:"FairSkies"},{r:85,w:"ClearSkies"},{r:100,w:"FairSkies"}]},
+  east_shroud:       {name:"黑衣森林東部林區", rates:[{r:5,w:"Thunder"},{r:20,w:"Rain"},{r:30,w:"Fog"},{r:40,w:"Cloudy"},{r:55,w:"FairSkies"},{r:85,w:"ClearSkies"},{r:100,w:"FairSkies"}]},
+  south_shroud:      {name:"黑衣森林南部林區", rates:[{r:5,w:"Fog"},{r:10,w:"Thunderstorms"},{r:25,w:"Thunder"},{r:30,w:"Fog"},{r:40,w:"Cloudy"},{r:70,w:"FairSkies"},{r:100,w:"ClearSkies"}]},
+  north_shroud:      {name:"黑衣森林北部林區", rates:[{r:5,w:"Fog"},{r:10,w:"Showers"},{r:25,w:"Rain"},{r:30,w:"Fog"},{r:40,w:"Cloudy"},{r:70,w:"FairSkies"},{r:100,w:"ClearSkies"}]},
+  uldah:             {name:"烏爾達哈",         rates:[{r:40,w:"ClearSkies"},{r:60,w:"FairSkies"},{r:85,w:"Cloudy"},{r:95,w:"Fog"},{r:100,w:"Rain"}]},
+  western_thanalan:  {name:"西薩納蘭",         rates:[{r:40,w:"ClearSkies"},{r:60,w:"FairSkies"},{r:85,w:"Cloudy"},{r:95,w:"Fog"},{r:100,w:"Rain"}]},
+  central_thanalan:  {name:"中薩納蘭",         rates:[{r:15,w:"DustStorms"},{r:55,w:"ClearSkies"},{r:75,w:"FairSkies"},{r:85,w:"Cloudy"},{r:95,w:"Fog"},{r:100,w:"Rain"}]},
+  eastern_thanalan:  {name:"東薩納蘭",         rates:[{r:40,w:"ClearSkies"},{r:60,w:"FairSkies"},{r:70,w:"Cloudy"},{r:80,w:"Fog"},{r:85,w:"Rain"},{r:100,w:"Showers"}]},
+  southern_thanalan: {name:"南薩納蘭",         rates:[{r:20,w:"HeatWaves"},{r:60,w:"ClearSkies"},{r:80,w:"FairSkies"},{r:90,w:"Cloudy"},{r:100,w:"Fog"}]},
+  northern_thanalan: {name:"北薩納蘭",         rates:[{r:5,w:"ClearSkies"},{r:20,w:"FairSkies"},{r:50,w:"Cloudy"},{r:100,w:"Fog"}]},
+  coerthas_central:  {name:"庫爾扎斯中央高地", rates:[{r:20,w:"Blizzards"},{r:60,w:"Snow"},{r:70,w:"FairSkies"},{r:75,w:"ClearSkies"},{r:85,w:"Cloudy"},{r:100,w:"Fog"}]},
+  mor_dhona:         {name:"摩杜納",           rates:[{r:15,w:"Cloudy"},{r:30,w:"Fog"},{r:60,w:"Gloom"},{r:75,w:"ClearSkies"},{r:100,w:"FairSkies"}]},
+};
+const ZONE_ORDER = {limsa:1,middle_la:1,lower_la:1,eastern_la:1,western_la:1,upper_la:1,outer_la:1,gridania:2,central_shroud:2,east_shroud:2,south_shroud:2,north_shroud:2,uldah:3,central_thanalan:3,eastern_thanalan:3,southern_thanalan:3,northern_thanalan:3,western_thanalan:3,coerthas_central:4,mor_dhona:5};
+const WEATHER_TC = {ClearSkies:'碧空',FairSkies:'晴朗',Cloudy:'陰雲',Fog:'薄霧',Wind:'微風',Gales:'強風',Rain:'下雨',Showers:'暴雨',Thunder:'打雷',Thunderstorms:'雷雨',DustStorms:'揚沙',HeatWaves:'熱浪',Snow:'下雪',Blizzards:'暴雪',Gloom:'妖霧'};
+
+// ══ 地圖 ══
+const ZONE_MAP_URL = {
+  limsa:null,
+  middle_la:'https://www.xivdaily.com/img/maps/arr_0.jpg',
+  lower_la:'https://www.xivdaily.com/img/maps/arr_1.jpg',
+  eastern_la:'https://www.xivdaily.com/img/maps/arr_2.jpg',
+  western_la:'https://www.xivdaily.com/img/maps/arr_3.jpg',
+  upper_la:'https://www.xivdaily.com/img/maps/arr_4.jpg',
+  outer_la:'https://www.xivdaily.com/img/maps/arr_5.jpg',
+  central_shroud:'https://www.xivdaily.com/img/maps/arr_6.jpg',
+  east_shroud:'https://www.xivdaily.com/img/maps/arr_7.jpg',
+  south_shroud:'https://www.xivdaily.com/img/maps/arr_8.jpg',
+  north_shroud:'https://www.xivdaily.com/img/maps/arr_9.jpg',
+  western_thanalan:'https://www.xivdaily.com/img/maps/arr_10.jpg',
+  central_thanalan:'https://www.xivdaily.com/img/maps/arr_11.jpg',
+  eastern_thanalan:'https://www.xivdaily.com/img/maps/arr_12.jpg',
+  southern_thanalan:'https://www.xivdaily.com/img/maps/arr_13.jpg',
+  northern_thanalan:'https://www.xivdaily.com/img/maps/arr_14.jpg',
+  coerthas_central:'https://www.xivdaily.com/img/maps/arr_15.jpg',
+  mor_dhona:'https://www.xivdaily.com/img/maps/arr_16.jpg',
+  gridania:null,
+  uldah:null,
+};
+function coordToPct(v){return((v-0.7)/(42.1-0.7))*100;}
+
+// ══ 資料 ══
+const ALL_DATA = {
+  arr: [
+    {id:"001",zone:"limsa",title:"梭魚埠頭",x:9,y:7,weather:["FairSkies"],timeStart:8,timeEnd:12,emote:"張望"},
+    {id:"002",zone:"limsa",title:"阿斯塔利西亞號海盜船",x:7,y:15,weather:["ClearSkies"],timeStart:18,timeEnd:5,emote:"張望"},
+    {id:"003",zone:"middle_la",title:"海詞石窟的紀念碑",x:20,y:19,weather:["Rain"],timeStart:5,timeEnd:8,emote:"祈禱"},
+    {id:"004",zone:"middle_la",title:"天梯",x:16,y:17,weather:["FairSkies"],timeStart:12,timeEnd:17,emote:"張望"},
+    {id:"005",zone:"middle_la",title:"拉撒格蘭東路",x:25,y:27,weather:["Cloudy"],timeStart:8,timeEnd:12,emote:"張望"},
+    {id:"006",zone:"lower_la",title:"砂鹽灘",x:23,y:40,weather:["FairSkies"],timeStart:18,timeEnd:5,emote:"張望"},
+    {id:"007",zone:"lower_la",title:"赤血雄雞農場的田地",x:33,y:19,weather:["Fog"],timeStart:5,timeEnd:8,emote:"張望"},
+    {id:"008",zone:"western_la",title:"釀酒師燈塔",x:29,y:30,weather:["FairSkies"],timeStart:5,timeEnd:8,emote:"張望"},
+    {id:"009",zone:"gridania",title:"制革匠行會",x:12,y:8,weather:["Cloudy"],timeStart:12,timeEnd:17,emote:"張望"},
+    {id:"010",zone:"gridania",title:"碧企鵝瀑布",x:10,y:6,weather:["ClearSkies"],timeStart:18,timeEnd:5,emote:"張望"},
+    {id:"011",zone:"central_shroud",title:"彎枝牧場",x:21,y:21,weather:["FairSkies"],timeStart:12,timeEnd:17,emote:"坐下"},
+    {id:"012",zone:"east_shroud",title:"十二神大聖堂",x:17,y:18,weather:["FairSkies"],timeStart:8,timeEnd:12,emote:"祈禱"},
+    {id:"013",zone:"east_shroud",title:"妖精暫留地",x:22,y:26,weather:["ClearSkies"],timeStart:18,timeEnd:5,emote:"張望"},
+    {id:"014",zone:"uldah",title:"御道",x:11,y:11,weather:["FairSkies"],timeStart:5,timeEnd:8,emote:"敬禮"},
+    {id:"015",zone:"uldah",title:"黃金廣場",x:11,y:11,weather:["Cloudy"],timeStart:12,timeEnd:17,emote:"張望"},
+    {id:"016",zone:"western_thanalan",title:"貿易城邦烏爾達哈",x:22,y:22,weather:["FairSkies"],timeStart:18,timeEnd:5,emote:"張望"},
+    {id:"017",zone:"central_thanalan",title:"希拉狄哈遺跡",x:15,y:22,weather:["Fog"],timeStart:8,timeEnd:12,emote:"張望"},
+    {id:"018",zone:"eastern_thanalan",title:"古卜的遺骸",x:19,y:24,weather:["Rain"],timeStart:17,timeEnd:18,emote:"安慰",note:"⚠ 超短時間"},
+    {id:"019",zone:"eastern_thanalan",title:"消逝王都",x:14,y:18,weather:["Cloudy"],timeStart:8,timeEnd:12,emote:"張望"},
+    {id:"020",zone:"eastern_thanalan",title:"跨天橋",x:21,y:20,weather:["FairSkies"],timeStart:5,timeEnd:8,emote:"祈禱"},
+    {id:"021",zone:"middle_la",title:"輕聲谷",x:20,y:13,weather:["FairSkies"],timeStart:12,timeEnd:17,emote:"張望"},
+    {id:"022",zone:"middle_la",title:"盛夏農莊",x:25,y:17,weather:["ClearSkies"],timeStart:5,timeEnd:8,emote:"張望"},
+    {id:"023",zone:"lower_la",title:"灰艦風車群",x:31,y:12,weather:["Rain"],timeStart:12,timeEnd:17,emote:"張望"},
+    {id:"024",zone:"eastern_la",title:"隱祕瀑布",x:32,y:23,weather:["ClearSkies"],timeStart:8,timeEnd:12,emote:"坐下"},
+    {id:"025",zone:"eastern_la",title:"白鷗塔",x:29,y:33,weather:["Rain"],timeStart:18,timeEnd:5,emote:"張望"},
+    {id:"026",zone:"western_la",title:"小麥酒港的利姆萊茵像",x:26,y:26,weather:["ClearSkies"],timeStart:17,timeEnd:18,emote:"祈禱"},
+    {id:"027",zone:"western_la",title:"船舶墓場",x:17,y:36,weather:["Gales"],timeStart:18,timeEnd:5,emote:"張望"},
+    {id:"028",zone:"western_la",title:"骷髏谷營地",x:22,y:22,weather:["FairSkies"],timeStart:8,timeEnd:12,emote:"張望"},
+    {id:"029",zone:"western_la",title:"南北防波堤",x:19,y:23,weather:["ClearSkies"],timeStart:12,timeEnd:17,emote:"張望"},
+    {id:"030",zone:"upper_la",title:"石綠湖營地",x:30,y:22,weather:["FairSkies"],timeStart:17,timeEnd:18,emote:"張望"},
+    {id:"031",zone:"upper_la",title:"撒拉奧斯的遺骸",x:13,y:21,weather:["ClearSkies"],timeStart:12,timeEnd:17,emote:"張望"},
+    {id:"032",zone:"upper_la",title:"吉吉盧恩交易站",x:29,y:25,weather:["Thunderstorms"],timeStart:18,timeEnd:5,emote:"張望"},
+    {id:"033",zone:"outer_la",title:"尼姆浮游遺跡",x:12,y:15,weather:["FairSkies"],timeStart:18,timeEnd:5,emote:"張望"},
+    {id:"034",zone:"outer_la",title:"瞭望陣營地",x:17,y:16,weather:["Cloudy"],timeStart:5,timeEnd:8,emote:"張望"},
+    {id:"035",zone:"outer_la",title:"武伽瑪羅武裝礦山",x:23,y:11,weather:["ClearSkies"],timeStart:12,timeEnd:17,emote:"張望"},
+    {id:"036",zone:"outer_la",title:"隱者庵",x:15,y:10,weather:["Rain"],timeStart:18,timeEnd:5,emote:"坐下"},
+    {id:"037",zone:"gridania",title:"魔女咖啡館和大水車",x:14,y:14,weather:["FairSkies"],timeStart:8,timeEnd:12,emote:"張望"},
+    {id:"038",zone:"gridania",title:"槍術師行會",x:14,y:5,weather:["Rain"],timeStart:5,timeEnd:8,emote:"張望"},
+    {id:"039",zone:"central_shroud",title:"烤餅練兵所",x:23,y:19,weather:["Rain"],timeStart:5,timeEnd:8,emote:"張望"},
+    {id:"040",zone:"central_shroud",title:"靜語莊園",x:13,y:23,weather:["ClearSkies"],timeStart:18,timeEnd:5,emote:"張望"},
+    {id:"041",zone:"central_shroud",title:"長老樹",x:16,y:22,weather:["FairSkies"],timeStart:12,timeEnd:17,emote:"張望"},
+    {id:"042",zone:"central_shroud",title:"虹橋瀑布",x:26,y:18,weather:["ClearSkies"],timeStart:11,timeEnd:14,emote:"張望"},
+    {id:"043",zone:"east_shroud",title:"搖籃樹",x:20.8,y:10.6,weather:["Thunder"],timeStart:18,timeEnd:5,emote:"張望"},
+    {id:"044",zone:"south_shroud",title:"巴斯卡隆酒家",x:17,y:20,weather:["Thunderstorms"],timeStart:8,timeEnd:12,emote:"張望"},
+    {id:"045",zone:"south_shroud",title:"森南飛艇坪",x:14,y:33,weather:["ClearSkies"],timeStart:8,timeEnd:12,emote:"張望"},
+    {id:"046",zone:"south_shroud",title:"兀爾德恩惠地",x:33,y:23,weather:["Fog"],timeStart:12,timeEnd:17,emote:"張望"},
+    {id:"047",zone:"south_shroud",title:"石場水車",x:25,y:21,weather:["FairSkies"],timeStart:5,timeEnd:8,emote:"張望"},
+    {id:"048",zone:"north_shroud",title:"鳥人軍采伐所",x:18,y:19,weather:["FairSkies"],timeStart:12,timeEnd:17,emote:"張望"},
+    {id:"049",zone:"north_shroud",title:"隕石背陰地",x:15,y:32,weather:["ClearSkies"],timeStart:18,timeEnd:5,emote:"張望"},
+    {id:"050",zone:"north_shroud",title:"榿木泉",x:15,y:27,weather:["Cloudy"],timeStart:8,timeEnd:12,emote:"張望"},
+    {id:"051",zone:"western_thanalan",title:"帝國海上基地",x:8,y:5,weather:["ClearSkies"],timeStart:17,timeEnd:18,emote:"張望"},
+    {id:"052",zone:"western_thanalan",title:"黃昏灣的羅羅力特像",x:12,y:14,weather:["FairSkies"],timeStart:12,timeEnd:17,emote:"指指點點"},
+    {id:"053",zone:"central_thanalan",title:"黑塵驛站",x:21,y:17,weather:["DustStorms"],timeStart:18,timeEnd:5,emote:"張望"},
+    {id:"054",zone:"central_thanalan",title:"納爾之門",x:18,y:26,weather:["ClearSkies"],timeStart:12,timeEnd:17,emote:"坐下"},
+    {id:"055",zone:"eastern_thanalan",title:"火牆",x:30,y:26,weather:["ClearSkies"],timeStart:12,timeEnd:17,emote:"張望"},
+    {id:"056",zone:"eastern_thanalan",title:"黃金集市",x:10,y:16,weather:["FairSkies"],timeStart:8,timeEnd:12,emote:"張望"},
+    {id:"057",zone:"eastern_thanalan",title:"札爾神祠",x:25,y:14,weather:["Showers"],timeStart:18,timeEnd:5,emote:"祈禱"},
+    {id:"058",zone:"southern_thanalan",title:"納爾神祠",x:12,y:22,weather:["Fog"],timeStart:5,timeEnd:8,emote:"祈禱"},
+    {id:"059",zone:"southern_thanalan",title:"不悔戰陣",x:19,y:20,weather:["FairSkies"],timeStart:5,timeEnd:8,emote:"張望"},
+    {id:"060",zone:"southern_thanalan",title:"工藝神擊",x:21,y:38,weather:["HeatWaves"],timeStart:12,timeEnd:17,emote:"張望"},
+    {id:"061",zone:"southern_thanalan",title:"喀恩埋沒聖堂",x:23,y:11,weather:["FairSkies"],timeStart:12,timeEnd:17,emote:"張望"},
+    {id:"062",zone:"southern_thanalan",title:"牛魔里程",x:14,y:26,weather:["HeatWaves"],timeStart:5,timeEnd:8,emote:"激勵"},
+    {id:"063",zone:"northern_thanalan",title:"東側監視塔",x:21,y:24,weather:["ClearSkies"],timeStart:5,timeEnd:8,emote:"敬禮"},
+    {id:"064",zone:"northern_thanalan",title:"青磷水輸送管",x:20,y:29,weather:["FairSkies"],timeStart:18,timeEnd:5,emote:"張望"},
+    {id:"065",zone:"northern_thanalan",title:"藍霧",x:20,y:22,weather:["FairSkies"],timeStart:12,timeEnd:17,emote:"張望"},
+    {id:"066",zone:"northern_thanalan",title:"勞班緩衝地",x:19,y:17,weather:["Cloudy"],timeStart:8,timeEnd:12,emote:"張望"},
+    {id:"067",zone:"northern_thanalan",title:"艾瑪吉娜祕銀廢礦",x:26,y:22,weather:["Fog"],timeStart:18,timeEnd:5,emote:"張望"},
+    {id:"068",zone:"coerthas_central",title:"劍峰",x:25,y:29,weather:["ClearSkies"],timeStart:17,timeEnd:18,emote:"張望"},
+    {id:"069",zone:"coerthas_central",title:"阿德內爾占星台",x:25,y:29,weather:["Fog"],timeStart:18,timeEnd:5,emote:"張望"},
+    {id:"070",zone:"coerthas_central",title:"龍族遺骸",x:11,y:15,weather:["Blizzards"],timeStart:8,timeEnd:12,emote:"張望"},
+    {id:"071",zone:"coerthas_central",title:"皇都伊修加德",x:12,y:17,weather:["FairSkies"],timeStart:5,timeEnd:8,emote:"張望"},
+    {id:"072",zone:"coerthas_central",title:"巨石丘",x:7,y:28,weather:["ClearSkies"],timeStart:17,timeEnd:18,emote:"張望"},
+    {id:"073",zone:"coerthas_central",title:"戰爭神秘石",x:7,y:31,weather:["Blizzards"],timeStart:18,timeEnd:5,emote:"張望"},
+    {id:"074",zone:"coerthas_central",title:"披雪大冰壁",x:2,y:21,weather:["FairSkies"],timeStart:8,timeEnd:12,emote:"張望"},
+    {id:"075",zone:"coerthas_central",title:"巨龍首營地",x:26,y:17,weather:["FairSkies"],timeStart:12,timeEnd:17,emote:"張望"},
+    {id:"076",zone:"coerthas_central",title:"鋼衛塔",x:28,y:10,weather:["ClearSkies"],timeStart:5,timeEnd:8,emote:"張望"},
+    {id:"077",zone:"mor_dhona",title:"帝國中央堡",x:9,y:13,weather:["Gloom"],timeStart:12,timeEnd:17,emote:"張望"},
+    {id:"078",zone:"mor_dhona",title:"水晶塔",x:27,y:8,weather:["FairSkies"],timeStart:18,timeEnd:5,emote:"張望"},
+    {id:"079",zone:"mor_dhona",title:"早霜頂",x:18,y:17,weather:["ClearSkies"],timeStart:12,timeEnd:17,emote:"張望"},
+    {id:"080",zone:"mor_dhona",title:"密約之塔",x:26,y:11,weather:["FairSkies"],timeStart:17,timeEnd:18,emote:"坐下"},
+  ],
+  hw: [
+    {id:"001",zone:"庫爾札斯西部高地",x:32,y:36.2,z:2.4,emote:"張望"},
+    {id:"002",zone:"庫爾札斯西部高地",x:20.7,y:23.1,z:1.7,emote:"張望"},
+    {id:"003",zone:"庫爾札斯西部高地",x:10.3,y:18,z:1.7,emote:"張望"},
+    {id:"004",zone:"庫爾札斯西部高地",x:20.1,y:6.6,z:0.9,emote:"張望"},
+    {id:"005",zone:"庫爾札斯西部高地",x:31.6,y:4.8,z:1.3,emote:"張望"},
+    {id:"006",zone:"庫爾札斯西部高地",x:36.2,y:19.2,z:1.6,emote:"張望"},
+    {id:"007",zone:"庫爾札斯西部高地",x:20.5,y:36.4,z:1.8,emote:"張望"},
+    {id:"008",zone:"德拉瓦尼亞山麓地",x:27.4,y:36.3,z:1.7,emote:"張望"},
+    {id:"009",zone:"德拉瓦尼亞山麓地",x:12,y:39.4,z:1,emote:"張望"},
+    {id:"010",zone:"德拉瓦尼亞山麓地",x:16.6,y:23.3,z:5.6,emote:"張望"},
+    {id:"011",zone:"德拉瓦尼亞山麓地",x:29.6,y:6.1,z:2.4,emote:"張望"},
+    {id:"012",zone:"德拉瓦尼亞山麓地",x:8.2,y:6.1,z:1.6,emote:"祈禱"},
+    {id:"013",zone:"德拉瓦尼亞山麓地",x:33.9,y:23.5,z:1.4,emote:"張望"},
+    {id:"014",zone:"德拉瓦尼亞山麓地",x:11.4,y:13.4,z:6.6,emote:"張望"},
+    {id:"015",zone:"德拉瓦尼亞雲海",x:29.4,y:35.1,z:0.2,emote:"張望"},
+    {id:"016",zone:"德拉瓦尼亞雲海",x:29.2,y:13,z:3,emote:"張望"},
+    {id:"017",zone:"德拉瓦尼亞雲海",x:18.6,y:6.4,z:3.6,emote:"張望"},
+    {id:"018",zone:"德拉瓦尼亞雲海",x:7.8,y:27,z:5.4,emote:"張望"},
+    {id:"019",zone:"德拉瓦尼亞雲海",x:17.6,y:37.2,z:0.5,emote:"祈禱"},
+    {id:"020",zone:"德拉瓦尼亞雲海",x:35.1,y:20.4,z:1.3,emote:"張望"},
+    {id:"021",zone:"德拉瓦尼亞雲海",x:23.2,y:18.6,z:1.5,emote:"張望"},
+    {id:"022",zone:"阿巴拉提亞雲海",x:15.2,y:37.7,z:1,emote:"張望"},
+    {id:"023",zone:"阿巴拉提亞雲海",x:37.2,y:40.1,z:1.6,emote:"打盹"},
+    {id:"024",zone:"阿巴拉提亞雲海",x:39.9,y:21.9,z:2.8,emote:"張望"},
+    {id:"025",zone:"阿巴拉提亞雲海",x:13,y:9,z:2.1,emote:"張望"},
+    {id:"026",zone:"阿巴拉提亞雲海",x:18.4,y:27,z:5.5,emote:"張望"},
+    {id:"027",zone:"阿巴拉提亞雲海",x:25,y:23.9,z:0.7,emote:"張望"},
+    {id:"028",zone:"阿巴拉提亞雲海",x:38.1,y:11.7,z:2,emote:"張望"},
+    {id:"029",zone:"德拉瓦尼亞河谷地",x:40.1,y:21.8,z:1.9,emote:"張望"},
+    {id:"030",zone:"德拉瓦尼亞河谷地",x:17.9,y:23.2,z:0.4,emote:"張望"},
+    {id:"031",zone:"德拉瓦尼亞河谷地",x:22.1,y:27.6,z:1.7,emote:"張望"},
+    {id:"032",zone:"德拉瓦尼亞河谷地",x:10.1,y:35.9,z:1.1,emote:"張望"},
+    {id:"033",zone:"德拉瓦尼亞河谷地",x:28.8,y:37.8,z:3.6,emote:"張望"},
+    {id:"034",zone:"德拉瓦尼亞河谷地",x:32.7,y:11.9,z:0.9,emote:"張望"},
+    {id:"035",zone:"德拉瓦尼亞河谷地",x:13,y:21.6,z:1.5,emote:"張望"},
+    {id:"036",zone:"魔大陸阿濟茲拉",x:39.2,y:17,z:6.8,emote:"張望"},
+    {id:"037",zone:"魔大陸阿濟茲拉",x:33.4,y:35.6,z:8.2,emote:"張望"},
+    {id:"038",zone:"魔大陸阿濟茲拉",x:6,y:30.6,z:6,emote:"張望"},
+    {id:"039",zone:"魔大陸阿濟茲拉",x:10.9,y:35.6,z:5.8,emote:"張望"},
+    {id:"040",zone:"魔大陸阿濟茲拉",x:6.2,y:9.9,z:7,emote:"張望"},
+    {id:"041",zone:"魔大陸阿濟茲拉",x:9.4,y:21.5,z:7.1,emote:"張望"},
+    {id:"042",zone:"魔大陸阿濟茲拉",x:30.4,y:11.4,z:6.9,emote:"張望"},
+    {id:"043",zone:"庫爾札斯西部高地",x:32.6,y:28.2,z:1.4,emote:"鼓勵"},
+    {id:"044",zone:"庫爾札斯西部高地",x:29.9,y:23.7,z:1.5,emote:"張望"},
+    {id:"045",zone:"庫爾札斯西部高地",x:9,y:10.4,z:0.4,emote:"坐下"},
+    {id:"046",zone:"庫爾札斯西部高地",x:12.7,y:8.2,z:0.9,emote:"展示"},
+    {id:"047",zone:"德拉瓦尼亞山麓地",x:23.4,y:39.4,z:0.2,emote:"張望"},
+    {id:"048",zone:"德拉瓦尼亞山麓地",x:24.2,y:18.8,z:1.2,emote:"張望"},
+    {id:"049",zone:"德拉瓦尼亞山麓地",x:34.3,y:15.8,z:1.3,emote:"張望"},
+    {id:"050",zone:"德拉瓦尼亞山麓地",x:18.6,y:32.6,z:0.7,emote:"張望"},
+    {id:"051",zone:"德拉瓦尼亞雲海",x:33.8,y:32.4,z:2.6,emote:"祈禱"},
+    {id:"052",zone:"德拉瓦尼亞雲海",x:37.3,y:14.4,z:2.8,emote:"張望"},
+    {id:"053",zone:"德拉瓦尼亞雲海",x:14.7,y:25,z:1.9,emote:"張望"},
+    {id:"054",zone:"阿巴拉提亞雲海",x:6.4,y:6,z:1.5,emote:"張望"},
+    {id:"055",zone:"阿巴拉提亞雲海",x:26.7,y:6.9,z:2.2,emote:"張望"},
+    {id:"056",zone:"阿巴拉提亞雲海",x:9.9,y:28.7,z:0.7,emote:"張望"},
+    {id:"057",zone:"德拉瓦尼亞河谷地",x:12.2,y:13,z:1.1,emote:"張望"},
+    {id:"058",zone:"德拉瓦尼亞河谷地",x:19.7,y:38.1,z:1.4,emote:"張望"},
+    {id:"059",zone:"德拉瓦尼亞河谷地",x:30.4,y:31.3,z:1.6,emote:"張望"},
+    {id:"060",zone:"魔大陸阿濟茲拉",x:10,y:14.8,z:4.3,emote:"張望"},
+    {id:"061",zone:"魔大陸阿濟茲拉",x:35.5,y:6.4,z:5.5,emote:"張望"},
+    {id:"062",zone:"魔大陸阿濟茲拉",x:25.9,y:28.6,z:6,emote:"張望"},
+  ],
+  sb: [
+    {id:"001",zone:"基拉巴尼亞邊區",x:21.9,y:26.9,z:0.8,emote:"張望"},
+    {id:"002",zone:"基拉巴尼亞邊區",x:24.2,y:16.3,z:0.7,emote:"張望"},
+    {id:"003",zone:"基拉巴尼亞邊區",x:23.2,y:7.2,z:0.6,emote:"張望"},
+    {id:"004",zone:"基拉巴尼亞邊區",x:9.3,y:10.8,z:1.7,emote:"張望"},
+    {id:"005",zone:"基拉巴尼亞邊區",x:8.6,y:26.4,z:0.9,emote:"張望"},
+    {id:"006",zone:"基拉巴尼亞邊區",x:36.5,y:16.4,z:2.1,emote:"張望"},
+    {id:"007",zone:"基拉巴尼亞邊區",x:30,y:25.2,z:2.4,emote:"張望"},
+    {id:"008",zone:"基拉巴尼亞山區",x:33.2,y:10.2,z:2.2,emote:"張望"},
+    {id:"009",zone:"基拉巴尼亞山區",x:27,y:36.8,z:2.9,emote:"張望"},
+    {id:"010",zone:"基拉巴尼亞山區",x:22,y:32.8,z:3.5,emote:"張望"},
+    {id:"011",zone:"基拉巴尼亞山區",x:25.1,y:5.8,z:1.1,emote:"張望"},
+    {id:"012",zone:"基拉巴尼亞山區",x:19.9,y:23.4,z:3.2,emote:"張望"},
+    {id:"013",zone:"基拉巴尼亞山區",x:8.1,y:37.5,z:2.6,emote:"張望"},
+    {id:"014",zone:"基拉巴尼亞山區",x:18.3,y:14.3,z:0.9,emote:"張望"},
+    {id:"015",zone:"基拉巴尼亞山區",x:7.5,y:7.6,z:0.1,emote:"張望"},
+    {id:"016",zone:"基拉巴尼亞湖區",x:23.5,y:33.7,z:1.7,emote:"張望"},
+    {id:"017",zone:"基拉巴尼亞湖區",x:35.2,y:33.2,z:1.5,emote:"張望"},
+    {id:"018",zone:"基拉巴尼亞湖區",x:13.8,y:35.5,z:2.8,emote:"張望"},
+    {id:"019",zone:"基拉巴尼亞湖區",x:20.6,y:16.5,z:0.8,emote:"祈禱"},
+    {id:"020",zone:"基拉巴尼亞湖區",x:33.9,y:30.2,z:0.5,emote:"張望"},
+    {id:"021",zone:"基拉巴尼亞湖區",x:5.9,y:22,z:2.4,emote:"張望"},
+    {id:"022",zone:"黃金港",x:14.3,y:9.6,emote:"張望"},
+    {id:"023",zone:"黃金港",x:9.4,y:7.3,emote:"坐下"},
+    {id:"024",zone:"黃金港",x:13.2,y:12.8,emote:"張望"},
+    {id:"025",zone:"黃金港",x:11.9,y:11.7,emote:"張望"},
+    {id:"026",zone:"黃金港",x:10.2,y:10,emote:"張望"},
+    {id:"027",zone:"紅玉海",x:25.9,y:13,z:-1,emote:"張望"},
+    {id:"028",zone:"紅玉海",x:32.9,y:8.6,z:1,emote:"張望"},
+    {id:"029",zone:"紅玉海",x:24,y:5.6,z:0.4,emote:"張望"},
+    {id:"030",zone:"紅玉海",x:31.5,y:37.2,z:0.6,emote:"張望"},
+    {id:"031",zone:"紅玉海",x:10.1,y:26.7,z:0.1,emote:"張望"},
+    {id:"032",zone:"紅玉海",x:6.4,y:10.8,z:0.1,emote:"張望"},
+    {id:"033",zone:"延夏",x:12.4,y:26.7,z:1.1,emote:"張望"},
+    {id:"034",zone:"延夏",x:30.3,y:32.9,z:0.8,emote:"張望"},
+    {id:"035",zone:"延夏",x:34.3,y:18.3,z:1.1,emote:"張望"},
+    {id:"036",zone:"延夏",x:30.4,y:6.2,z:0.4,emote:"張望"},
+    {id:"037",zone:"延夏",x:14.9,y:6.3,z:0.9,emote:"張望"},
+    {id:"038",zone:"延夏",x:19.5,y:20.5,z:1.5,emote:"張望"},
+    {id:"039",zone:"延夏",x:15.2,y:31.6,z:0.6,emote:"張望"},
+    {id:"040",zone:"太陽神草原",x:14.2,y:9.8,z:1.1,emote:"張望"},
+    {id:"041",zone:"太陽神草原",x:12.2,y:32,z:0.3,emote:"張望"},
+    {id:"042",zone:"太陽神草原",x:19.8,y:33.7,z:0.7,emote:"張望"},
+    {id:"043",zone:"太陽神草原",x:34.4,y:31.9,z:0.2,emote:"張望"},
+    {id:"044",zone:"太陽神草原",x:20,y:12.6,z:1,emote:"祈禱"},
+    {id:"045",zone:"太陽神草原",x:22.7,y:21.2,z:1.7,emote:"張望"},
+    {id:"046",zone:"神拳痕",x:11.4,y:13.9,emote:"張望"},
+    {id:"047",zone:"神拳痕",x:10.5,y:9.7,emote:"張望"},
+    {id:"048",zone:"基拉巴尼亞邊區",x:27.5,y:35.1,z:1.4,emote:"張望",note:"⏰ 18:00–05:00"},
+    {id:"049",zone:"基拉巴尼亞山區",x:14.3,y:36.6,z:2.6,emote:"張望"},
+    {id:"050",zone:"基拉巴尼亞山區",x:20.3,y:22.9,z:2.6,emote:"張望"},
+    {id:"051",zone:"基拉巴尼亞湖區",x:17.1,y:19.2,z:-2.9,emote:"張望"},
+    {id:"052",zone:"基拉巴尼亞湖區",x:36,y:33.5,z:0.8,emote:"張望"},
+    {id:"053",zone:"黃金港",x:11.1,y:9.9,emote:"張望"},
+    {id:"054",zone:"黃金港",x:9.8,y:8.3,emote:"張望"},
+    {id:"055",zone:"黃金港",x:12.5,y:10.6,emote:"張望"},
+    {id:"056",zone:"黃金港",x:9.9,y:12.3,emote:"張望"},
+    {id:"057",zone:"紅玉海",x:5,y:36.4,z:-8.6,emote:"張望"},
+    {id:"058",zone:"紅玉海",x:9.5,y:19,z:0.1,emote:"張望",note:"⏰ 05:00–08:00"},
+    {id:"059",zone:"紅玉海",x:21.5,y:11.9,z:0.3,emote:"張望"},
+    {id:"060",zone:"延夏",x:35.6,y:38.8,z:-1.2,emote:"張望"},
+    {id:"061",zone:"太陽神草原",x:31.3,y:11.5,z:0.6,emote:"張望"},
+    {id:"062",zone:"太陽神草原",x:21.8,y:20.3,z:-0.5,emote:"張望"},
+  ],
+  shb: [
+    {id:"001",zone:"水晶都",x:8.6,y:11.2,emote:"張望"},
+    {id:"002",zone:"水晶都",x:10.4,y:13.1,emote:"張望"},
+    {id:"003",zone:"水晶都",x:9.9,y:5.8,emote:"張望"},
+    {id:"004",zone:"水晶都",x:11,y:4.7,emote:"張望"},
+    {id:"005",zone:"水晶都",x:7.3,y:9.7,emote:"張望"},
+    {id:"006",zone:"遊末邦",x:11.7,y:8.4,emote:"張望"},
+    {id:"007",zone:"遊末邦",x:12.5,y:14,emote:"張望"},
+    {id:"008",zone:"遊末邦",x:11.1,y:11.4,emote:"張望"},
+    {id:"009",zone:"遊末邦",x:12.3,y:10.4,emote:"張望"},
+    {id:"010",zone:"雷克蘭德",x:37.4,y:20.9,z:0.7,emote:"張望"},
+    {id:"011",zone:"雷克蘭德",x:18.4,y:18.7,z:0.5,emote:"張望"},
+    {id:"012",zone:"雷克蘭德",x:22.1,y:15.1,z:2.2,emote:"張望"},
+    {id:"013",zone:"雷克蘭德",x:6.3,y:15.2,z:2,emote:"張望"},
+    {id:"014",zone:"雷克蘭德",x:8.7,y:22.9,z:0.6,emote:"張望"},
+    {id:"015",zone:"雷克蘭德",x:21.5,y:36.2,z:0.3,emote:"張望"},
+    {id:"016",zone:"珂露西亞島",x:33.2,y:28.9,z:0.3,emote:"張望"},
+    {id:"017",zone:"珂露西亞島",x:28.8,y:22.1,z:0.3,emote:"張望"},
+    {id:"018",zone:"珂露西亞島",x:23.6,y:38.1,z:0.5,emote:"張望"},
+    {id:"019",zone:"珂露西亞島",x:18.2,y:29.3,z:0.4,emote:"張望"},
+    {id:"020",zone:"珂露西亞島",x:12.2,y:22.1,z:3.6,emote:"張望"},
+    {id:"021",zone:"珂露西亞島",x:13.6,y:9.8,z:4.6,emote:"張望"},
+    {id:"022",zone:"珂露西亞島",x:37.1,y:11.5,z:2.8,emote:"張望"},
+    {id:"023",zone:"安穆·艾蘭",x:33.2,y:13.7,z:0.7,emote:"張望"},
+    {id:"024",zone:"安穆·艾蘭",x:25.3,y:16.6,z:2.4,emote:"張望"},
+    {id:"025",zone:"安穆·艾蘭",x:28.5,y:31.9,z:0.7,emote:"張望"},
+    {id:"026",zone:"安穆·艾蘭",x:22.1,y:9.4,z:1.6,emote:"張望"},
+    {id:"027",zone:"安穆·艾蘭",x:11.1,y:16.9,z:1.7,emote:"張望"},
+    {id:"028",zone:"安穆·艾蘭",x:20.4,y:21.3,z:1.1,emote:"張望"},
+    {id:"029",zone:"伊爾美格",x:14.8,y:31.9,z:0.9,emote:"張望"},
+    {id:"030",zone:"伊爾美格",x:8.7,y:16.8,z:0.6,emote:"張望"},
+    {id:"031",zone:"伊爾美格",x:20.2,y:4.6,z:1.2,emote:"張望"},
+    {id:"032",zone:"伊爾美格",x:21.4,y:20.9,z:-0.7,emote:"張望"},
+    {id:"033",zone:"伊爾美格",x:20.8,y:16.2,z:1.7,emote:"張望"},
+    {id:"034",zone:"伊爾美格",x:35.7,y:24.8,z:1.9,emote:"張望"},
+    {id:"035",zone:"拉凱提卡大森林",x:13.6,y:32.4,z:0.3,emote:"張望"},
+    {id:"036",zone:"拉凱提卡大森林",x:8.9,y:25.1,z:0.1,emote:"張望"},
+    {id:"037",zone:"拉凱提卡大森林",x:4.4,y:27.2,z:-0.9,emote:"張望"},
+    {id:"038",zone:"拉凱提卡大森林",x:14.4,y:18.3,z:0.1,emote:"張望"},
+    {id:"039",zone:"拉凱提卡大森林",x:29.1,y:19,z:0.3,emote:"張望"},
+    {id:"040",zone:"拉凱提卡大森林",x:26.4,y:9.9,z:0.2,emote:"張望"},
+    {id:"041",zone:"黑風海",x:33,y:16.2,z:-1.5,emote:"張望"},
+    {id:"042",zone:"黑風海",x:34.5,y:25.4,z:-1.5,emote:"張望"},
+    {id:"043",zone:"黑風海",x:37.1,y:6.6,z:-1,emote:"張望"},
+    {id:"044",zone:"黑風海",x:34.3,y:30.6,z:-7.9,emote:"張望"},
+    {id:"045",zone:"黑風海",x:13.7,y:36.8,z:-4.1,emote:"張望"},
+  ],
+  ew: [
+    {id:"001",zone:"舊薩雷安",x:15.6,y:8,emote:"張望"},
+    {id:"002",zone:"舊薩雷安",x:11.8,y:15.8,emote:"張望"},
+    {id:"003",zone:"舊薩雷安",x:10.8,y:6.8,emote:"張望"},
+    {id:"004",zone:"舊薩雷安",x:4.5,y:11.3,emote:"張望"},
+    {id:"005",zone:"舊薩雷安",x:11.2,y:10,emote:"張望"},
+    {id:"006",zone:"舊薩雷安",x:15.1,y:9.6,emote:"張望"},
+    {id:"007",zone:"舊薩雷安",x:3.2,y:9,emote:"張望"},
+    {id:"008",zone:"拉札罕",x:7.9,y:13.3,emote:"張望"},
+    {id:"009",zone:"拉札罕",x:10.6,y:9.4,emote:"張望"},
+    {id:"010",zone:"拉札罕",x:7.7,y:14.1,emote:"張望"},
+    {id:"011",zone:"拉札罕",x:11.2,y:7.2,emote:"張望"},
+    {id:"012",zone:"拉札罕",x:5.1,y:13.2,emote:"張望"},
+    {id:"013",zone:"拉札罕",x:10.9,y:12.1,emote:"張望"},
+    {id:"014",zone:"拉札罕",x:8.6,y:13.1,emote:"張望"},
+    {id:"015",zone:"迷津",x:20.4,y:7.5,z:3.9,emote:"張望"},
+    {id:"016",zone:"迷津",x:15,y:25.3,z:0,emote:"張望"},
+    {id:"017",zone:"迷津",x:30.8,y:18.7,z:3,emote:"張望"},
+    {id:"018",zone:"迷津",x:38.4,y:13.6,z:4,emote:"張望"},
+    {id:"019",zone:"迷津",x:22.4,y:17.5,z:2.7,emote:"張望"},
+    {id:"020",zone:"薩維奈島",x:26.2,y:33.6,z:0.2,emote:"張望"},
+    {id:"021",zone:"薩維奈島",x:22.5,y:19.6,z:1.1,emote:"張望"},
+    {id:"022",zone:"薩維奈島",x:19.9,y:6.9,z:1.2,emote:"張望"},
+    {id:"023",zone:"薩維奈島",x:29.3,y:24.9,z:0.1,emote:"張望"},
+    {id:"024",zone:"薩維奈島",x:26.5,y:24.1,z:0.1,emote:"張望"},
+    {id:"025",zone:"薩維奈島",x:9.8,y:23.2,z:1,emote:"張望"},
+    {id:"026",zone:"加雷馬",x:32.3,y:18.5,z:-0.2,emote:"張望"},
+    {id:"027",zone:"加雷馬",x:29.6,y:34.1,z:0.9,emote:"張望"},
+    {id:"028",zone:"加雷馬",x:29.5,y:23.3,z:0.5,emote:"張望"},
+    {id:"029",zone:"加雷馬",x:17,y:9.2,z:0.6,emote:"張望"},
+    {id:"030",zone:"加雷馬",x:19.3,y:16.8,z:0.6,emote:"張望"},
+    {id:"031",zone:"加雷馬",x:29.1,y:8.6,z:0.3,emote:"張望"},
+    {id:"032",zone:"厄爾庇斯",x:33,y:29.3,z:2,emote:"張望"},
+    {id:"033",zone:"厄爾庇斯",x:10.1,y:13.5,z:5.2,emote:"張望"},
+    {id:"034",zone:"厄爾庇斯",x:31.7,y:15.7,z:3.3,emote:"張望"},
+    {id:"035",zone:"厄爾庇斯",x:14.9,y:7.2,z:4.9,emote:"張望"},
+    {id:"036",zone:"厄爾庇斯",x:24.5,y:22.8,z:1.9,emote:"張望"},
+    {id:"037",zone:"嘆息海",x:11.3,y:22,z:1.5,emote:"張望"},
+    {id:"038",zone:"嘆息海",x:7.3,y:6.1,z:-1.1,emote:"張望"},
+    {id:"039",zone:"嘆息海",x:35.9,y:9.3,z:-1.6,emote:"張望"},
+    {id:"040",zone:"嘆息海",x:34.3,y:29.4,z:1.5,emote:"張望"},
+    {id:"041",zone:"嘆息海",x:13.5,y:32.6,z:2.1,emote:"張望"},
+    {id:"042",zone:"天外天垓",x:32.6,y:29.9,z:3.9,emote:"張望"},
+    {id:"043",zone:"天外天垓",x:33.6,y:26.8,z:4.2,emote:"張望"},
+    {id:"044",zone:"天外天垓",x:18.7,y:13.7,z:2.6,emote:"張望"},
+    {id:"045",zone:"天外天垓",x:8.9,y:18.1,z:0.4,emote:"張望"},
+    {id:"046",zone:"天外天垓",x:23,y:27.2,z:5.7,emote:"張望"},
+  ],
+  dt: [
+    {id:"001",zone:"圖萊尤拉",x:12.1,y:14,emote:"張望"},
+    {id:"002",zone:"圖萊尤拉",x:7.9,y:10.7,emote:"張望"},
+    {id:"003",zone:"圖萊尤拉",x:14.7,y:15.1,emote:"張望"},
+    {id:"004",zone:"圖萊尤拉",x:10.2,y:22,emote:"張望"},
+    {id:"005",zone:"圖萊尤拉",x:18.4,y:3.1,emote:"張望"},
+    {id:"006",zone:"奧闊帕恰山",x:29,y:12.6,emote:"張望"},
+    {id:"007",zone:"奧闊帕恰山",x:14.5,y:8.8,emote:"張望"},
+    {id:"008",zone:"奧闊帕恰山",x:26.7,y:24.2,emote:"張望"},
+    {id:"009",zone:"奧闊帕恰山",x:34.6,y:25.2,emote:"張望"},
+    {id:"010",zone:"奧闊帕恰山",x:21.9,y:35.2,emote:"張望"},
+    {id:"011",zone:"奧闊帕恰山",x:9,y:22.2,emote:"張望"},
+    {id:"012",zone:"克札瑪烏卡濕地",x:9.1,y:11.9,emote:"張望"},
+    {id:"013",zone:"克札瑪烏卡濕地",x:18.2,y:20.7,emote:"張望"},
+    {id:"014",zone:"克札瑪烏卡濕地",x:24.7,y:19.1,emote:"張望"},
+    {id:"015",zone:"克札瑪烏卡濕地",x:34.6,y:10.7,emote:"張望"},
+    {id:"016",zone:"克札瑪烏卡濕地",x:10.7,y:28,emote:"張望"},
+    {id:"017",zone:"克札瑪烏卡濕地",x:28.7,y:28.8,emote:"張望"},
+    {id:"018",zone:"亞克特爾樹海",x:11.5,y:14.1,emote:"張望"},
+    {id:"019",zone:"亞克特爾樹海",x:32.9,y:6.5,emote:"張望"},
+    {id:"020",zone:"亞克特爾樹海",x:29.5,y:15.2,emote:"張望"},
+    {id:"021",zone:"亞克特爾樹海",x:24.4,y:23.5,emote:"張望"},
+    {id:"022",zone:"亞克特爾樹海",x:19.5,y:32.4,emote:"張望"},
+    {id:"023",zone:"亞克特爾樹海",x:25.2,y:27.2,emote:"張望"},
+    {id:"024",zone:"夏勞尼荒野",x:28.5,y:29.9,emote:"張望"},
+    {id:"025",zone:"夏勞尼荒野",x:27.6,y:11.9,emote:"張望"},
+    {id:"026",zone:"夏勞尼荒野",x:32.4,y:13.5,emote:"張望"},
+    {id:"027",zone:"夏勞尼荒野",x:13.7,y:34.3,emote:"張望"},
+    {id:"028",zone:"夏勞尼荒野",x:10.2,y:12.3,emote:"張望"},
+    {id:"029",zone:"九號解決方案",x:10.8,y:5.5,emote:"張望"},
+    {id:"030",zone:"九號解決方案",x:4,y:16.9,emote:"張望"},
+    {id:"031",zone:"九號解決方案",x:5.5,y:14.7,emote:"張望"},
+    {id:"032",zone:"九號解決方案",x:20,y:15,emote:"張望"},
+    {id:"033",zone:"九號解決方案",x:7.6,y:13.3,emote:"張望"},
+    {id:"034",zone:"遺產之地",x:33.4,y:13.5,emote:"張望"},
+    {id:"035",zone:"遺產之地",x:20.1,y:7.9,emote:"張望"},
+    {id:"036",zone:"遺產之地",x:17.6,y:5.2,emote:"張望"},
+    {id:"037",zone:"遺產之地",x:20.7,y:25,emote:"張望"},
+    {id:"038",zone:"遺產之地",x:25.4,y:34.6,emote:"張望"},
+    {id:"039",zone:"遺產之地",x:9.4,y:37.2,emote:"張望"},
+    {id:"040",zone:"憶想之地",x:21.9,y:36.2,emote:"張望"},
+    {id:"041",zone:"憶想之地",x:19.2,y:33.4,emote:"張望"},
+    {id:"042",zone:"憶想之地",x:28.8,y:29.2,emote:"張望"},
+    {id:"043",zone:"憶想之地",x:6.4,y:13.6,emote:"張望"},
+    {id:"044",zone:"憶想之地",x:30.2,y:18.7,emote:"張望"},
+    {id:"045",zone:"憶想之地",x:30.4,y:7.6,emote:"張望"},
+  ]
+};
+
+// ══ 邏輯 ══
+function getWeather(zoneKey, ms) {
+  const z = ZONES[zoneKey]; if (!z) return 'Unknown';
+  const seed = weatherSeed(ms);
+  for (const r of z.rates) if (seed < r.r) return r.w;
+  return 'Unknown';
+}
+function inTime(h, s, e) {
+  return s < e ? h >= s && h < e : h >= s || h < e;
+}
+function isNow(item) {
+  const ms = now();
+  const w = getWeather(item.zone, ms);
+  if (!item.weather.includes(w)) return false;
+  return inTime(toET(ms).h, item.timeStart, item.timeEnd);
+}
+function findNext(item) {
+  const nowMs = now();
+  const SLOT = 1400000;
+  let slot = Math.floor(nowMs / SLOT) * SLOT;
+  for (let i = 0; i < 2000; i++) {
+    const ms = slot + i * SLOT;
+    const w = getWeather(item.zone, ms);
+    if (item.weather.includes(w)) {
+      const etS = ms / 1000 * E_CONST;
+      const baseH = Math.floor(etS / 3600) % 24;
+      for (let dh = 0; dh < 8; dh++) {
+        const h = (baseH + dh) % 24;
+        if (inTime(h, item.timeStart, item.timeEnd)) {
+          const windowMs = ms + dh * 3600 / E_CONST * 1000;
+          if (windowMs >= nowMs) return windowMs;
+        }
+      }
+    }
+  }
+  return null;
+}
+function fmtCountdown(ms) {
+  const diff = ms - now();
+  if (diff <= 0) return { text:'現在可去', cls:'now' };
+  const m = Math.floor(diff / 60000), h = Math.floor(m / 60), rm = m % 60;
+  return { text: h > 0 ? `${h}h ${rm}m` : `${rm}m後`, cls: m < 30 ? 'soon' : 'later' };
+}
+function fmtRange(s, e) {
+  const ep = e === 0 ? 23 : e - 1 < 0 ? 23 : e - 1;
+  return `${String(s).padStart(2,'0')}:00–${String(ep).padStart(2,'0')}:59`;
+}
+
+// ══ 狀態 ══
+let curVer = 'arr', sortMode = 'id', hideChecked = false, windows = {};
+let checked = {};
+function loadChecked() {
+  try { checked = JSON.parse(localStorage.getItem('ff14_sight_checked') || '{}'); } catch { checked = {}; }
+}
+function saveChecked() { localStorage.setItem('ff14_sight_checked', JSON.stringify(checked)); }
+function getChecked(ver) { return checked[ver] || []; }
+function toggleCheck(ver, id) {
+  if (!checked[ver]) checked[ver] = [];
+  const i = checked[ver].indexOf(id);
+  if (i >= 0) checked[ver].splice(i, 1); else checked[ver].push(id);
+  saveChecked(); render();
+}
+
+const ARR_VERS = ['arr'];
+function isHWPlus(ver) { return !ARR_VERS.includes(ver); }
+
+function setVer(ver, btn) {
+  curVer = ver;
+  document.querySelectorAll('.ver-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (isHWPlus(ver)) { renderHW(); }
+  else { computeWindows(); render(); }
+}
+function setSort(mode, btn) {
+  sortMode = mode;
+  document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active'); render();
+}
+function toggleHide() {
+  hideChecked = !hideChecked;
+  const btn = document.getElementById('hideBtn');
+  btn.classList.toggle('active', hideChecked);
+  btn.textContent = hideChecked ? '☑ 隱藏已完成' : '☐ 隱藏已完成';
+  render();
+}
+
+function computeWindows() {
+  windows = {};
+  const data = ALL_DATA[curVer] || [];
+  data.forEach(d => { windows[d.id] = findNext(d); });
+}
+
+function getSorted() {
+  const data = ALL_DATA[curVer] || [];
+  const done = getChecked(curVer);
+  let list = hideChecked ? data.filter(d => !done.includes(d.id)) : [...data];
+  if (sortMode === 'id') list.sort((a,b) => parseInt(a.id) - parseInt(b.id));
+  else if (sortMode === 'time') list.sort((a,b) => {
+    const wa = windows[a.id], wb = windows[b.id];
+    if (!wa) return 1; if (!wb) return -1; return wa - wb;
+  });
+  else list.sort((a,b) => {
+    const za = ZONE_ORDER[a.zone]||99, zb = ZONE_ORDER[b.zone]||99;
+    return za !== zb ? za - zb : parseInt(a.id) - parseInt(b.id);
+  });
+  return list;
+}
+
+function render() {
+  const data = ALL_DATA[curVer] || [];
+  const done = getChecked(curVer);
+
+  // 進度
+  document.getElementById('progressCount').textContent = `${done.length} / ${data.length}`;
+  document.getElementById('progressFill').style.width = data.length ? `${done.length/data.length*100}%` : '0%';
+
+  // 已完成清單
+  const doneList = document.getElementById('doneList');
+  if (done.length === 0) {
+    doneList.innerHTML = '';
+  } else {
+    doneList.innerHTML = done.map(id => {
+      const d = data.find(x => x.id === id);
+      if (!d) return '';
+      return `<div onclick="toggleCheck('${curVer}','${id}')" style="padding:5px 12px;font-size:.72rem;color:var(--text2);cursor:pointer;border-bottom:1px solid #1a1d30;display:flex;align-items:center;gap:6px;transition:background .15s;" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
+        <span style="color:var(--green);font-size:.65rem;">✓</span>
+        <span style="font-family:monospace;font-size:.65rem;">${id}</span>
+        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.title}</span>
+        <span style="color:var(--red);font-size:.65rem;flex-shrink:0;">✕</span>
+      </div>`;
+    }).join('');
+  }
+
+  const main = document.getElementById('mainArea');
+
+  // WIP
+  if (data.length === 0) {
+    main.innerHTML = `<div class="wip"><div class="wip-icon">🔧</div><div class="wip-title">資料準備中</div><div class="wip-sub">本版本觀景筆記資料整理中<br>敬請期待</div></div>`;
+    return;
+  }
+
+  const list = getSorted();
+  const nowItems = data.filter(d => !done.includes(d.id) && isNow(d));
+  const soonItems = data.filter(d => !done.includes(d.id) && !isNow(d) && windows[d.id] && (windows[d.id] - now()) < 30 * 60000);
+
+  let html = '';
+
+  // 現在可去 膠囊按鈕
+  if (nowItems.length > 0) {
+    html += `<div class="now-section"><div class="now-header">✦ 現在可以去</div><div class="now-pills">`;
+    nowItems.forEach(d => {
+      html += `<div class="now-pill" onclick="openMapWithDone('${curVer}','${d.id}','${d.zone}','${d.title}',${d.x},${d.y})">
+        <div class="now-dot"></div>
+        <span class="now-pill-id">${d.id}</span>
+        <span class="now-pill-name">${d.title}</span>
+      </div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  // 即將開放 膠囊按鈕
+  if (soonItems.length > 0) {
+    html += `<div class="now-section"><div class="soon-header">⏳ 即將開放</div><div class="soon-pills">`;
+    soonItems.forEach(d => {
+      const cd = fmtCountdown(windows[d.id]);
+      html += `<div class="soon-pill" onclick="openMapWithDone('${curVer}','${d.id}','${d.zone}','${d.title}',${d.x},${d.y})">
+        <div class="soon-dot"></div>
+        <span class="soon-pill-id">${d.id}</span>
+        <span class="soon-pill-name">${d.title}</span>
+        <span class="soon-pill-time">${cd.text}</span>
+      </div>`;
+    });
+    html += `</div></div>`;
+  }
+  if (nowItems.length > 0 || soonItems.length > 0) {
+    html += `<div class="divider"></div><div class="all-header">全部景點</div>`;
+  }
+
+  // 全部卡片
+  list.forEach(d => {
+    const isDone = done.includes(d.id);
+    const w = windows[d.id];
+    const cd = w ? fmtCountdown(w) : { text:'–', cls:'later' };
+    const isAvail = isNow(d);
+    html += `<div class="entry-card${isDone?' done':''}" onclick="toggleCheck('${curVer}','${d.id}')">
+      <div class="check-circle">✓</div>
+      <div class="entry-body">
+        <div class="entry-top">
+          <span class="entry-id">No.${d.id}</span>
+          <span class="entry-zone">${ZONES[d.zone]?.name||d.zone}</span>
+        </div>
+        <div class="entry-title">${d.title}${d.note?`<span class="tag tag-note" style="margin-left:6px">${d.note}</span>`:''}</div>
+        <div class="entry-meta">
+          <span class="tag tag-weather">${WEATHER_TC[d.weather[0]]||d.weather[0]}</span>
+          <span class="tag tag-time">🕐 ${fmtRange(d.timeStart,d.timeEnd)}</span>
+          <span class="tag tag-emote">${d.emote}</span>
+          <span class="tag tag-coords" onclick="copyCoords(${d.x},${d.y},event)">X:${d.x} Y:${d.y}</span>
+          <button class="map-btn-sm" onclick="openMap('${d.zone}','${d.title}',${d.x},${d.y},event,'${d.id}')">🗺</button>
+        </div>
+      </div>
+      ${!isDone?`<div class="entry-right">
+        <div class="next-label">Next Window</div>
+        <div class="next-time ${isAvail?'now':cd.cls}">${isAvail?'現在！':cd.text}</div>
+      </div>`:''}
+    </div>`;
+  });
+
+  main.innerHTML = html;
+}
+
+// ══ 地圖 Modal ══
+// 截圖對應表
+const SIGHT_IMG = {
+  '001':'img/mochi_001.jpg',
+  '002':'img/mochi_002.jpg',
+  '003':'img/mochi_003.jpg',
+  '004':'img/mochi_004.jpg',
+  '005':'img/mochi_005.jpg',
+  '006':'img/mochi_006.jpg',
+  '007':'img/mochi_007.jpg',
+  '008':'img/mochi_008.jpg',
+  '009':'img/mochi_009.jpg',
+  '010':'img/mochi_010.jpg',
+  '011':'img/mochi_011.jpg',
+  '012':'img/mochi_012.jpg',
+  '013':'img/mochi_013.jpg',
+  '014':'img/mochi_014.jpg',
+  '015':'img/mochi_015.jpg',
+  '016':'img/mochi_016.jpg',
+  '017':'img/mochi_017.jpg',
+  '018':'img/mochi_018.jpg',
+  '019':'img/mochi_019.jpg',
+  '020':'img/mochi_020.jpg',
+  '021':'img/mochi_021.jpg',
+  '022':'img/mochi_022.jpg',
+  '023':'img/mochi_023.jpg',
+  '024':'img/mochi_024.jpg',
+  '025':'img/mochi_025.jpg',
+  '026':'img/mochi_026.jpg',
+  '027':'img/mochi_027.jpg',
+  '028':'img/mochi_028.jpg',
+  '029':'img/mochi_029.jpg',
+  '037':'img/mochi_037.jpg',
+  '038':'img/mochi_038.jpg',
+};
+const SIGHT_VIDEO = {
+  '010':'https://www.bilibili.com/video/BV11V4y1F7b2/',
+  '021':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '022':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '023':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '024':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '025':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '026':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '027':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '028':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '029':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '030':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '031':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '032':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '033':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '034':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '035':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '036':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '037':'https://www.bilibili.com/video/BV1Q44y137Ec/?p=24',
+  '038':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '039':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '040':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '041':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '042':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '043':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '044':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '045':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '046':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '047':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '048':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '049':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '050':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '051':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '052':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '053':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '054':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '055':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '056':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '057':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '058':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '059':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '060':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '061':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '062':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '063':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '064':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '065':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '066':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '067':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '068':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '069':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '070':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '071':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '072':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '073':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '074':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '075':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '076':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '077':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '078':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '079':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+  '080':'https://www.bilibili.com/video/BV1Q44y137Ec/',
+};
+
+// ══ HW+ 地圖資料 ══
+const HW_AETHERYTES = {
+  "庫爾札斯西部高地": [
+    { name: "隼巢", x: 31.9, y: 36.4 },
+    { name: "尾羽部落下方出口", x: 6.7, y: 9.7 },
+    { name: "尊杜部落左上方出口", x: 31.8, y: 4.6 },
+  ],
+  "阿巴拉提亞雲海": [
+    { name: "雲頂營地", x: 10.4, y: 33.4 },
+    { name: "尊杜部落", x: 10.5, y: 14.3 },
+  ],
+  "德拉瓦尼亞山麓地": [
+    { name: "尾羽部落", x: 33.4, y: 23.1 },
+    { name: "不潔三塔", x: 16.4, y: 23 },
+  ],
+  "德拉瓦尼亞雲海": [
+    { name: "莫古利之家", x: 27.8, y: 34.3 },
+    { name: "天極白堊宮", x: 10.8, y: 28.9 },
+  ],
+  "德拉瓦尼亞河谷地": [
+    { name: "田園郡", x: 14, y: 11 },
+    { name: "不潔三塔左下出口", x: 40.4, y: 26.3 },
+    { name: "隼巢左出口", x: 37.5, y: 32.2 },
+  ],
+  "魔大陸阿濟茲拉": [
+    { name: "螺旋港", x: 7.8, y: 10.4 },
+  ],
+};
+
+const XPLUS_ZONE_MAP_URL = {
+  // HW
+  "庫爾札斯西部高地":"https://www.xivdaily.com/img/maps/hw_0.jpg",
+  "阿巴拉提亞雲海":  "https://www.xivdaily.com/img/maps/hw_1.jpg",
+  "德拉瓦尼亞山麓地":"https://www.xivdaily.com/img/maps/hw_2.jpg",
+  "德拉瓦尼亞雲海":  "https://www.xivdaily.com/img/maps/hw_3.jpg",
+  "德拉瓦尼亞河谷地":"https://www.xivdaily.com/img/maps/hw_4.jpg",
+  "魔大陸阿濟茲拉":  "https://www.xivdaily.com/img/maps/hw_5.jpg",
+  // SB
+  "基拉巴尼亞邊區":  "https://www.xivdaily.com/img/maps/sb_0.jpg",
+  "基拉巴尼亞山區":  "https://www.xivdaily.com/img/maps/sb_1.jpg",
+  "紅玉海":          "https://www.xivdaily.com/img/maps/sb_2.jpg",
+  "延夏":            "https://www.xivdaily.com/img/maps/sb_3.jpg",
+  "太陽神草原":      "https://www.xivdaily.com/img/maps/sb_4.jpg",
+  "基拉巴尼亞湖區":  "https://www.xivdaily.com/img/maps/sb_5.jpg",
+  // SB 城市截圖
+  "黃金港":          "img/sb_golden_saucer.jpg",
+  "神拳痕":          "img/sb_rhalgrs_reach.jpg",
+  // ShB 城市截圖
+  "水晶都":          "img/ShB_01.jpg",
+  "遊末邦":          "img/ShB_02.jpg",
+  // ShB 野外
+  "雷克蘭德":        "https://www.xivdaily.com/img/maps/shb_0.jpg",
+  "珂露西亞島":      "https://www.xivdaily.com/img/maps/shb_1.jpg",
+  "安穆·艾蘭":       "https://www.xivdaily.com/img/maps/shb_2.jpg",
+  "伊爾美格":        "https://www.xivdaily.com/img/maps/shb_3.jpg",
+  "拉凱提卡大森林":  "https://www.xivdaily.com/img/maps/shb_4.jpg",
+  "黑風海":          "https://www.xivdaily.com/img/maps/shb_5.jpg",
+  // EW 城市截圖
+  "舊薩雷安":        "img/EW_01.jpg",
+  "拉札罕":          "img/EW_02.jpg",
+  // EW 野外
+  "迷津":            "https://www.xivdaily.com/img/maps/ew_0.jpg",
+  "薩維奈島":        "https://www.xivdaily.com/img/maps/ew_1.jpg",
+  "加雷馬":          "https://www.xivdaily.com/img/maps/ew_2.jpg",
+  "嘆息海":          "https://www.xivdaily.com/img/maps/ew_3.jpg",
+  "厄爾庇斯":        "https://www.xivdaily.com/img/maps/ew_4.jpg",
+  "天外天垓":        "https://www.xivdaily.com/img/maps/ew_5.jpg",
+  // DT 城市（無截圖，用影片）
+  // "圖萊尤拉": 無地圖
+  // "九號解決方案": 無地圖
+  // DT 野外
+  "奧闊帕恰山":      "https://www.xivdaily.com/img/maps/dt_0.jpg",
+  "克札瑪烏卡濕地":  "https://www.xivdaily.com/img/maps/dt_1.jpg",
+  "亞克特爾樹海":    "https://www.xivdaily.com/img/maps/dt_2.jpg",
+  "夏勞尼荒野":      "https://www.xivdaily.com/img/maps/dt_3.jpg",
+  "遺產之地":        "https://www.xivdaily.com/img/maps/dt_4.jpg",
+  "憶想之地":        "https://www.xivdaily.com/img/maps/dt_5.jpg",
+};
+const ZONE_SIZE = {
+  // HW
+  "庫爾札斯西部高地":43,"德拉瓦尼亞山麓地":43,"德拉瓦尼亞雲海":43,
+  "德拉瓦尼亞河谷地":43,"阿巴拉提亞雲海":43,"魔大陸阿濟茲拉":43,
+  // SB
+  "基拉巴尼亞邊區":40.9,"基拉巴尼亞山區":40.9,"基拉巴尼亞湖區":40.9,
+  "紅玉海":40.9,"延夏":40.9,"太陽神草原":40.9,
+  // ShB
+  "雷克蘭德":40.9,"珂露西亞島":40.9,"安穆·艾蘭":40.9,
+  "伊爾美格":40.9,"拉凱提卡大森林":40.9,"黑風海":40.9,
+  // EW
+  "迷津":40.9,"薩維奈島":40.9,"加雷馬":40.9,
+  "嘆息海":40.9,"厄爾庇斯":40.9,"天外天垓":40.9,
+  // DT
+  "奧闊帕恰山":40.9,"克札瑪烏卡濕地":40.9,"亞克特爾樹海":40.9,
+  "夏勞尼荒野":40.9,"遺產之地":40.9,"憶想之地":40.9,
+};
+const XPLUS_AETHERYTES = {
+  // HW
+  "庫爾札斯西部高地": [
+    { name: "隼巢", x: 31.9, y: 36.4 },
+    { name: "尾羽部落下方出口", x: 6.7, y: 9.7 },
+    { name: "尊杜部落左上方出口", x: 31.8, y: 4.6 },
+  ],
+  "阿巴拉提亞雲海": [
+    { name: "雲頂營地", x: 10.4, y: 33.4 },
+    { name: "尊杜部落", x: 10.5, y: 14.3 },
+  ],
+  "德拉瓦尼亞山麓地": [
+    { name: "尾羽部落", x: 33.4, y: 23.1 },
+    { name: "不潔三塔", x: 16.4, y: 23 },
+  ],
+  "德拉瓦尼亞雲海": [
+    { name: "莫古利之家", x: 27.8, y: 34.3 },
+    { name: "天極白堊宮", x: 10.8, y: 28.9 },
+  ],
+  "德拉瓦尼亞河谷地": [
+    { name: "田園郡", x: 14, y: 11 },
+    { name: "不潔三塔左下出口", x: 40.4, y: 26.3 },
+    { name: "隼巢左出口", x: 37.5, y: 32.2 },
+  ],
+  "魔大陸阿濟茲拉": [
+    { name: "螺旋港", x: 7.8, y: 10.4 },
+  ],
+  // SB
+  "基拉巴尼亞邊區": [
+    { name: "帝國東方堡", x: 8.8, y: 11.1 },
+    { name: "對等石", x: 29.6, y: 26.2 },
+    { name: "神拳痕", x: 30.7, y: 10.5 },
+  ],
+  "基拉巴尼亞山區": [
+    { name: "阿拉基利", x: 16.1, y: 36.3 },
+    { name: "阿拉加納", x: 22.9, y: 6.4 },
+    { name: "天營門", x: 32.8, y: 29.8 },
+    { name: "對等石", x: 5.9, y: 25.7 },
+    { name: "神拳痕", x: 8.4, y: 5.7 },
+  ],
+  "基拉巴尼亞湖區": [
+    { name: "天營門", x: 8.4, y: 21.1 },
+    { name: "阿拉米格人居住區", x: 33.6, y: 34.8 },
+  ],
+  "紅玉海": [
+    { name: "自凝島", x: 23.1, y: 9.6 },
+    { name: "碧玉水", x: 28.6, y: 16.4 },
+    { name: "重逢市集", x: 6.8, y: 4.3 },
+    { name: "茨孤村", x: 5.2, y: 15.9 },
+    { name: "黃金港出口", x: 38.8, y: 38.9 },
+  ],
+  "延夏": [
+    { name: "茨菰村", x: 30.1, y: 19.4 },
+    { name: "烈士庵", x: 26.1, y: 13.4 },
+    { name: "多瑪飛地", x: 11.7, y: 32.2 },
+  ],
+  "太陽神草原": [
+    { name: "重逢市集", x: 32.4, y: 28 },
+    { name: "晨曦王座", x: 22.9, y: 22 },
+    { name: "烈士庵", x: 18.1, y: 38.1 },
+    { name: "朵洛衣樓", x: 6.2, y: 23.9 },
+  ],
+  // ShB
+  "雷克蘭德": [
+    { name: "喬布要塞", x: 36.5, y: 21.1 },
+    { name: "安穆艾蘭", x: 32.2, y: 38.5 },
+    { name: "水晶都", x: 37.9, y: 29.5 },
+    { name: "奧斯塔爾嚴命城", x: 6.1, y: 17 },
+  ],
+  "珂露西亞島": [
+    { name: "滯潮村", x: 34.7, y: 27.2 },
+    { name: "工匠村", x: 16.4, y: 29.1 },
+    { name: "特美拉村", x: 12.8, y: 8.9 },
+  ],
+  "安穆·艾蘭": [
+    { name: "鼴靈市集", x: 26.2, y: 17 },
+    { name: "上路客店", x: 29.4, y: 27.8 },
+    { name: "絡尾部落", x: 11, y: 17.2 },
+  ],
+  "伊爾美格": [
+    { name: "群花館", x: 14.7, y: 31.8 },
+    { name: "普拉恩尼茸洞", x: 20, y: 4.3 },
+    { name: "雲村", x: 29.1, y: 7.7 },
+  ],
+  "拉凱提卡大森林": [
+    { name: "蛇行枝", x: 19.5, y: 27.2 },
+    { name: "法諾村", x: 29.3, y: 17.5 },
+    { name: "喬布要塞", x: 5.4, y: 36.1 },
+  ],
+  "黑風海": [
+    { name: "鰭人潮池", x: 32.5, y: 17.4 },
+    { name: "馬克連薩斯廣場", x: 18.6, y: 25.9 },
+  ],
+  // EW
+  "迷津": [
+    { name: "公堂保管院", x: 30.4, y: 12 },
+    { name: "小薩雷安", x: 21.5, y: 20.4 },
+    { name: "無路總部", x: 6.9, y: 27.6 },
+    { name: "舊薩雷安迷津出口", x: 20.9, y: 4.9 },
+  ],
+  "薩維奈島": [
+    { name: "新港", x: 25.4, y: 34 },
+    { name: "代米爾遺烈鄉", x: 10.9, y: 22.3 },
+    { name: "波洛伽護法村", x: 29.5, y: 16.7 },
+  ],
+  "加雷馬": [
+    { name: "碎璃營地", x: 13.4, y: 31 },
+    { name: "第三站", x: 31.7, y: 17.8 },
+  ],
+  "嘆息海": [
+    { name: "淚灣", x: 9.9, y: 34.1 },
+    { name: "最佳威兔洞", x: 21.7, y: 11.2 },
+  ],
+  "厄爾庇斯": [
+    { name: "醒悟天測園", x: 24.5, y: 24.2 },
+    { name: "十二奇園", x: 9, y: 32.2 },
+    { name: "創作者之家", x: 10.7, y: 16.8 },
+  ],
+  "天外天垓": [
+    { name: "半途終旅", x: 10.7, y: 26.8 },
+    { name: "異亞村落", x: 23, y: 8.3 },
+    { name: "奧密克戎基地", x: 31.4, y: 28.1 },
+  ],
+  // DT
+  "奧闊帕恰山": [
+    { name: "瓦丘恩佩洛", x: 28, y: 12.9 },
+    { name: "沃拉的迴響", x: 30.9, y: 34.1 },
+  ],
+  "克札瑪烏卡濕地": [
+    { name: "哈努聚落", x: 18, y: 11.6 },
+    { name: "朋友的燈火", x: 32.4, y: 25.5 },
+    { name: "土陶郡", x: 11.8, y: 27.8 },
+    { name: "圖萊尤拉", x: 15.8, y: 5.1 },
+    { name: "水果碼頭", x: 37.2, y: 16.7 },
+  ],
+  "亞克特爾樹海": [
+    { name: "紅豹村", x: 13.5, y: 12.8 },
+    { name: "瑪穆克", x: 35.9, y: 32 },
+    { name: "圖萊尤拉", x: 21.9, y: 8.3 },
+  ],
+  "夏勞尼荒野": [
+    { name: "胡薩塔伊驛鎮", x: 29, y: 30.7 },
+    { name: "謝申內青磷泉", x: 15.6, y: 19.2 },
+    { name: "美花黑澤恩", x: 27.6, y: 10.1 },
+  ],
+  "遺產之地": [
+    { name: "亞斯拉尼站", x: 31.7, y: 25.6 },
+    { name: "邊郊鎮", x: 17, y: 9.8 },
+    { name: "雷轉質礦場", x: 17, y: 23.9 },
+  ],
+  "憶想之地": [
+    { name: "憶之節點", x: 21.4, y: 37.4 },
+    { name: "火之節點", x: 34.6, y: 15.8 },
+    { name: "風之節點", x: 16.3, y: 13.5 },
+  ],
+};
+const XPLUS_ZONE_ORDER = {
+  hw: ["庫爾札斯西部高地","德拉瓦尼亞山麓地","德拉瓦尼亞雲海","阿巴拉提亞雲海","德拉瓦尼亞河谷地","魔大陸阿濟茲拉"],
+  sb: ["基拉巴尼亞邊區","基拉巴尼亞山區","基拉巴尼亞湖區","紅玉海","延夏","太陽神草原","黃金港","神拳痕"],
+  shb: ["水晶都","遊末邦","雷克蘭德","珂露西亞島","安穆·艾蘭","伊爾美格","拉凱提卡大森林","黑風海"],
+  ew:  ["舊薩雷安","拉札罕","迷津","薩維奈島","加雷馬","嘆息海","厄爾庇斯","天外天垓"],
+  dt:  ["圖萊尤拉","九號解決方案","奧闊帕恰山","克札瑪烏卡濕地","亞克特爾樹海","夏勞尼荒野","遺產之地","憶想之地"],
+};
+
+const DT_CITY_VIDEO = "https://www.bilibili.com/video/BV1X5SdYyEdC/";
+
+function coordToPctHW(coord, zone) {
+  const size = ZONE_SIZE[zone] || 41;
+  return ((coord - 1) / size) * 100;
+}
+
+// HW+ Modal（簡易，只顯示資訊）
+let _hwModal = null;
+function openHWModal(item) {
+  const overlay = document.getElementById('mapOverlay');
+  document.getElementById('mapTitle').textContent = `No.${item.id}`;
+  document.getElementById('mapSub').textContent = item.zone;
+  document.getElementById('mapCoord').textContent = `X:${item.x}  Y:${item.y}  Z:${item.z}　　${item.emote}`;
+  document.getElementById('mapVideoBtn').style.display = 'none';
+  document.getElementById('mapDoneBtn').style.display = 'none';
+
+  const isDTCity = ["圖萊尤拉","九號解決方案"].includes(item.zone);
+  if (isDTCity) {
+    const videoBtn = document.getElementById('mapVideoBtn');
+    videoBtn.style.display = '';
+    videoBtn.onclick = () => window.open(DT_CITY_VIDEO, '_blank');
+    document.querySelector('.map-wrap').classList.remove('is-map','is-screenshot');
+    document.getElementById('mapImg').src = '';
+    document.getElementById('mapPins').innerHTML = '';
+    document.getElementById('mapOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    return;
+  }
+
+  const mapUrl = XPLUS_ZONE_MAP_URL[item.zone];
+  const mapWrap = document.querySelector('.map-wrap');
+  const isScreenshot = ["黃金港","神拳痕","水晶都","遊末邦","舊薩雷安","拉札罕"].includes(item.zone);
+  if (mapUrl) {
+    document.getElementById('mapImg').src = mapUrl;
+    if (isScreenshot) {
+      mapWrap.classList.add('is-screenshot');
+      mapWrap.classList.remove('is-map');
+      document.getElementById('mapPins').innerHTML = '';
+    } else {
+      mapWrap.classList.add('is-map');
+      mapWrap.classList.remove('is-screenshot');
+      const px = coordToPctHW(item.x, item.zone);
+      const py = coordToPctHW(item.y, item.zone);
+      document.getElementById('mapPins').innerHTML = `
+        <div class="sight-pin" style="left:${px}%;top:${py}%">
+          <div class="sight-pin-dot"></div>
+        </div>`;
+    }
+  } else {
+    document.getElementById('mapPins').innerHTML = '';
+  }
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function renderHW() {
+  const data = ALL_DATA[curVer] || [];
+  const main = document.getElementById('mainArea');
+
+  if (data.length === 0) {
+    main.innerHTML = `<div class="wip"><div class="wip-icon">🔧</div><div class="wip-title">資料準備中</div><div class="wip-sub">本版本觀景筆記資料整理中<br>敬請期待</div></div>`;
+    // sidebar badge
+    document.getElementById(`badge-${curVer}`).textContent = '–';
+    document.getElementById('progressCount').textContent = '0 / 0';
+    document.getElementById('progressFill').style.width = '0%';
+    document.getElementById('doneList').innerHTML = '';
+    return;
+  }
+
+  // sidebar 進度（HW+ 不追蹤完成，只顯示總數）
+  document.getElementById(`badge-${curVer}`).textContent = data.length;
+  document.getElementById('progressCount').textContent = `共 ${data.length} 個`;
+  document.getElementById('progressFill').style.width = '100%';
+  document.getElementById('doneList').innerHTML = '';
+
+  // 依地圖分組
+  const zoneOrder = XPLUS_ZONE_ORDER[curVer] || Object.keys(grouped);
+  const grouped = {};
+  data.forEach(d => {
+    if (!grouped[d.zone]) grouped[d.zone] = [];
+    grouped[d.zone].push(d);
+  });
+
+  let html = '';
+  const zones = zoneOrder.filter(z => grouped[z]);
+  zones.forEach(zoneName => {
+    const items = grouped[zoneName];
+    const mapUrl = XPLUS_ZONE_MAP_URL[zoneName];
+    const isScreenshot = ["黃金港","神拳痕","水晶都","遊末邦","舊薩雷安","拉札罕"].includes(zoneName);
+    const isDTCity = ["圖萊尤拉","九號解決方案"].includes(zoneName);
+    let pinsHtml = '';
+    if (mapUrl && !isScreenshot) {
+      // 傳送點 pin
+      const aeths = XPLUS_AETHERYTES[zoneName] || [];
+      aeths.forEach(a => {
+        const px = coordToPctHW(a.x, zoneName);
+        const py = coordToPctHW(a.y, zoneName);
+        pinsHtml += `<div class="aeth-pin2" style="left:${px}%;top:${py}%">⬡<div class="aeth-label2">${a.name}</div></div>`;
+      });
+      // 景點 pin
+      items.forEach(d => {
+        const px = coordToPctHW(d.x, zoneName);
+        const py = coordToPctHW(d.y, zoneName);
+        pinsHtml += `<div class="sight-pin2" style="left:${px}%;top:${py}%" onclick='openHWModal(${JSON.stringify(d)})'>
+          <div class="pin-dot2">${d.id}</div>
+        </div>`;
+      });
+    }
+
+    let listHtml = items.map(d => `
+      <div class="sight-item" onclick='openHWModal(${JSON.stringify(d)})'>
+        <span class="sight-item-num">No.${d.id}</span>
+        <span class="sight-item-coord">X:${d.x} Y:${d.y}${d.z!=null?' Z:'+d.z:''}</span>
+        <span class="sight-item-emote">${d.emote}</span>
+        ${d.note ? `<span class="tag tag-note">${d.note}</span>` : ''}
+      </div>`).join('');
+
+    html += `<div class="zone-block">
+      <div class="zone-header2">
+        <span class="zone-name2">📍 ${zoneName}</span>
+        <span class="zone-count">${items.length} 個景點</span>
+      </div>
+      ${isDTCity
+        ? `<div style="padding:10px 14px;display:flex;align-items:center;gap:10px;">
+            <button onclick="window.open('${DT_CITY_VIDEO}','_blank')" style="padding:5px 14px;border-radius:20px;background:rgba(0,120,255,.15);border:1px solid rgba(0,120,255,.4);color:#60a5fa;font-size:.75rem;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">▶ 教學影片</button>
+            <span style="font-size:.72rem;color:var(--text2);">無地圖，請參考影片座標</span>
+           </div>`
+        : mapUrl
+          ? isScreenshot
+            ? `<div class="map-wrap2" style="aspect-ratio:auto"><img src="${mapUrl}" loading="lazy" style="width:100%;height:auto;max-height:600px;object-fit:contain;"></div>`
+            : `<div class="map-wrap2"><img src="${mapUrl}" loading="lazy"><div class="pin-layer">${pinsHtml}</div></div>`
+          : '<div style="padding:10px 14px;font-size:.75rem;color:var(--text2);">🔧 截圖待補</div>'
+      }
+      <div class="sight-list">${listHtml}</div>
+    </div>`;
+  });
+
+  main.innerHTML = html;
+}
+
+function openMap(zone, title, x, y, e, id) {
+  e.stopPropagation();
+  const customImg = id ? SIGHT_IMG[id] : null;
+  const url = customImg || ZONE_MAP_URL[zone];
+  if (!url) return;
+  document.getElementById('mapTitle').textContent = '📍 ' + title;
+  document.getElementById('mapSub').textContent = ZONES[zone]?.name || zone;
+  document.getElementById('mapImg').src = url;
+  document.getElementById('mapCoord').textContent = `座標 X:${x}  Y:${y}`;
+
+  // 影片按鈕
+  const videoBtn = document.getElementById('mapVideoBtn');
+  const video = id ? SIGHT_VIDEO[id] : null;
+  if (video) {
+    videoBtn.style.display = '';
+    videoBtn.onclick = () => window.open(video, '_blank');
+  } else {
+    videoBtn.style.display = 'none';
+  }
+
+  // 截圖/地圖模式切換
+  const mapWrap = document.querySelector('.map-wrap');
+  if (customImg) {
+    mapWrap.classList.add('is-screenshot');
+    mapWrap.classList.remove('is-map');
+    document.getElementById('mapPins').innerHTML = '';
+  } else {
+    mapWrap.classList.add('is-map');
+    mapWrap.classList.remove('is-screenshot');
+    const px = coordToPct(x), py = coordToPct(y);
+    document.getElementById('mapPins').innerHTML = `
+      <div class="sight-pin" style="left:${px}%;top:${py}%">
+        <div class="sight-pin-dot"></div>
+      </div>`;
+  }
+  document.getElementById('mapOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  document.getElementById('mapDoneBtn').style.display = 'none';
+}
+function closeMap(e) { if (e.target === document.getElementById('mapOverlay')) closeMapBtn(); }
+function closeMapBtn() { document.getElementById('mapOverlay').classList.remove('open'); document.body.style.overflow = ''; }
+
+// 從膠囊按鈕開地圖，modal內有完成按鈕
+let _mapDoneVer = null, _mapDoneId = null;
+function openMapWithDone(ver, id, zone, title, x, y) {
+  _mapDoneVer = ver; _mapDoneId = id;
+  const isDone = getChecked(ver).includes(id);
+  openMap(zone, title, x, y, { stopPropagation:()=>{} }, id);
+  const btn = document.getElementById('mapDoneBtn');
+  btn.style.display = '';
+  btn.textContent = isDone ? '✓ 已完成' : '✓ 標記完成';
+  btn.style.opacity = isDone ? '.5' : '1';
+}
+function mapDone() {
+  if (!_mapDoneVer || !_mapDoneId) return;
+  toggleCheck(_mapDoneVer, _mapDoneId);
+  const isDone = getChecked(_mapDoneVer).includes(_mapDoneId);
+  const btn = document.getElementById('mapDoneBtn');
+  btn.textContent = isDone ? '✓ 已完成' : '✓ 標記完成';
+  btn.style.opacity = isDone ? '.5' : '1';
+}
+
+// ══ 複製座標 ══
+function copyCoords(x, y, e) {
+  e.stopPropagation();
+  navigator.clipboard.writeText(`(${x}, ${y})`).catch(()=>{
+    const t = document.createElement('textarea');
+    t.value = `(${x}, ${y})`; document.body.appendChild(t); t.select();
+    document.execCommand('copy'); document.body.removeChild(t);
+  });
+  const toast = document.getElementById('toast');
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 1500);
+}
+
+// ══ ET 時鐘 ══
+function updateClock() {
+  const et = toET(now());
+  document.getElementById('etClock').textContent = `${String(et.h).padStart(2,'0')}:${String(et.m).padStart(2,'0')}`;
+}
+
+// ══ Init ══
+loadChecked();
+computeWindows();
+render();
+updateClock();
+setInterval(updateClock, 1000);
+setInterval(() => { computeWindows(); render(); }, 60000);
+</script>
+</body>
+</html>

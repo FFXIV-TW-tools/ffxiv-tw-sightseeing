@@ -1,0 +1,133 @@
+[
+  {
+    "key": "sec-backend:A1",
+    "kind": "refuted",
+    "reason": "simple POST 路徑不成立；UUID capability 非 cookie/session。上游 MIME/route guard 仍須逐輪驗錨。",
+    "anchors": [
+      {
+        "file": "../ffxiv-tw-tools-portal/worker/src/index.js",
+        "line": 325,
+        "excerpt": "if (fbCt.split(';')[0].trim() !== 'application/json') return jsonResponse(request, { error: 'content-type must be application/json' }, 415);"
+      },
+      {
+        "file": "../ffxiv-tw-tools-portal/worker/src/store-logic.js",
+        "line": 142,
+        "excerpt": "'/settings/:uuid': ['GET', 'PUT', 'DELETE'],"
+      }
+    ],
+    "round": 1
+  },
+  {
+    "key": "sec-frontend:S1",
+    "kind": "refuted",
+    "reason": "simple POST 路徑不成立；UUID capability 非 cookie/session。上游 MIME/route guard 仍須逐輪驗錨。",
+    "anchors": [
+      {
+        "file": "../ffxiv-tw-tools-portal/worker/src/index.js",
+        "line": 325,
+        "excerpt": "if (fbCt.split(';')[0].trim() !== 'application/json') return jsonResponse(request, { error: 'content-type must be application/json' }, 415);"
+      },
+      {
+        "file": "../ffxiv-tw-tools-portal/worker/src/store-logic.js",
+        "line": 142,
+        "excerpt": "'/settings/:uuid': ['GET', 'PUT', 'DELETE'],"
+      }
+    ],
+    "round": 1
+  },
+  {
+    "key": "build-release:A1",
+    "kind": "refuted",
+    "reason": "2026-10-09 production cache-bust 原始碼404 text/html，JS control200。這是runtime證據而非可沿用source guard；anchors空，下輪必重驗。",
+    "anchors": [],
+    "round": 1
+  },
+  {
+    "key": "sec-backend:A2",
+    "kind": "refuted",
+    "reason": "2026-10-09 production cache-bust 原始碼404 text/html，JS control200。這是runtime證據而非可沿用source guard；anchors空，下輪必重驗。",
+    "anchors": [],
+    "round": 1
+  },
+  {
+    "key": "track-c:A6",
+    "kind": "refuted",
+    "reason": "2026-10-09 production cache-bust 原始碼404 text/html，JS control200。這是runtime證據而非可沿用source guard；anchors空，下輪必重驗。",
+    "anchors": [],
+    "round": 1
+  },
+  {
+    "key": "correctness-core:A3",
+    "kind": "harvested",
+    "reason": "ss-availability 真引擎指定now→到點可進行；scratch忠實移除now參數mutant 3PASS/1FAIL。",
+    "anchors": [
+      {
+        "file": "tests/ss-availability.test.mjs",
+        "line": 49,
+        "excerpt": "test('指定 now 的真實天氣預測與時間一致，抵达 predicted instant 真的可進行'"
+      }
+    ],
+    "round": 1
+  },
+  {
+    "key": "data-lifecycle:storage-corruption",
+    "kind": "harvested",
+    "reason": "corrupt blob不覆寫、寫拒絕丟回caller，ss-storage4PASS。",
+    "anchors": [
+      {
+        "file": "tests/ss-storage.test.mjs",
+        "line": 41,
+        "excerpt": "test('corrupt/unreadable saved blob 不得覆寫為空 array 或本頁新紀錄'"
+      }
+    ],
+    "round": 1
+  },
+  {
+    "key": "sec-backend:A3",
+    "kind": "harvested",
+    "reason": "proxy missing binding/no network fallback、generic502/no-store、412保留：3PASS。",
+    "anchors": [
+      {
+        "file": "tests/settings-proxy.test.mjs",
+        "line": 1,
+        "excerpt": "import"
+      }
+    ],
+    "round": 1
+  },
+  {
+    "key": "tests-ci:weather-canonical",
+    "kind": "harvested",
+    "reason": "seed+golden必驗及全量表/aliases/61zones×1549固定點canonical對照已納canonicalTest。",
+    "anchors": [],
+    "round": 1
+  },
+  {
+    "key": "correctness-data:A2",
+    "kind": "deferred",
+    "reason": "low不入庫；來源同版manifest為Owner政策取捨，本轮不改变local-first/vendored/upstream策略。",
+    "anchors": [],
+    "round": 1
+  },
+  {
+    "key": "sec-frontend:S2",
+    "kind": "deferred",
+    "reason": "low不入庫；CSP/upstream cutover需Owner安全邊界確認與正式pre/post。",
+    "anchors": [],
+    "round": 1
+  },
+  {
+    "key": "perf-data:thumbnail",
+    "kind": "deferred",
+    "reason": "縮圖未有WAN可感知延遲實測，降low、不因猜測更換資產契約。方案在計畫。",
+    "anchors": [],
+    "round": 1
+  },
+  {
+    "key": "data-lifecycle:atomic-concurrency",
+    "kind": "deferred",
+    "reason": "常見stale-tab已修；真正同時交易要儲存模型/遷移設計，待Owner決策，不冒稱原子。",
+    "anchors": [],
+    "round": 1
+  }
+]

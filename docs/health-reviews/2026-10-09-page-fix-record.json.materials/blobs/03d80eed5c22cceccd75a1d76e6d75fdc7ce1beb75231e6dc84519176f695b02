@@ -1,0 +1,34 @@
+# tools/ — 資料建置 pipeline（可重現、可稽核）
+
+`data/zones.js` 與 `data/sightseeing-data.js` 皆 **AUTO-GEN**，勿手改產物。改資料 → 改本目錄腳本／`sources/` 重跑。
+
+## 前置
+- **需 monorepo context**：`build_*.py` 的 monorepo root 為本 repo 的 `../..`。PlaceName 共用 `data/item_dict/tc_source.py` 的 local-first 規則（可用本機台服 dump 優先，否則 `datamining_tc/tc_PlaceName.csv`）；地圖 metadata 讀 `data/item_dict/lspl/maps.json`。座標仍讀上游 `data/item_dict/datamining_tc/tc_Level.csv` + `tc_Map.csv`，未改 source version 策略。standalone clone 無法重跑 build（已 commit 的 `data/*.js` 可直接部署）。
+- `tools/sources/`＝版控快照：`cycleapple-arr.js`（ARR 天氣/zone 與座標 fallback）、`babelin.html`（HW–DT zone/高度 z/座標 fallback）、`tc_Adventure.csv`＋`tc_Emote.csv`（繁中名/時間/表情主軸，實際讀 vendored 快照而非每次取本機 dump）、`cycleapple-{weather,eorzea-time}.js`（引擎移植對照）。
+
+## 建置順序
+```bash
+# 從 repo root 跑
+node tools/extract-sources.mjs          # → tools/sources/extracted.json（中間產物）
+python tools/build_zones.py             # → data/zones.js + tools/zone-mapping.md
+python tools/build_data.py              # → data/sightseeing-data.js（340 筆）
+node tools/validate-data.mjs            # 契約 + 繁中禁詞 + emoteCmd 守門
+node tools/validate-weather.mjs         # seed/golden + vendored canonical 全表與固定時間點
+```
+同一組來源重跑後，`data/zones.js` 與 `data/sightseeing-data.js` 應無 diff（不只註解）。`build_data.py` 只匯入 `build_zones.py` 的 `ZONES` 與 `_tc_csv`，不會觸發 zones 產物重寫；需依上列順序分別執行。
+
+## 權威與正名
+- 名稱/時間窗/表情＝**vendored Adventure + Emote sheet**（官方繁中，連 HW–DT 個別名都有）。X/Y 優先使用上游 Level/Map 換算；查無才退回社群座標並報警告。高度 z 保留 babelin。
+- 表情指令依 Emote 的 `TextCommand` relation 對官方英文 `TextCommand.Command`，不是用繁中名稱猜譯。[權威 sheet 查證](https://v2.xivapi.com/api/sheet/Emote?rows=23,34&fields=Name,TextCommand.Command)：23 展示 → TextCommand 424 → `/me`；34 鼓勵 → TextCommand 435 → `/rally`。`/showleft` 屬於 Emote 242，不能用於 23。`validate-data.mjs` 獨立固定這兩組對照，不從 generator source text 產生 expected 值。
+- 官方 Lodestone 指令說明：[ `/me` — Motion to yourself](https://na.finalfantasyxiv.com/lodestone/playguide/db/text_command/e6571131914/)；[ `/rally` — Give encouragement](https://na.finalfantasyxiv.com/lodestone/playguide/db/text_command/a338b32e140/)。
+- 繁中正名來自 PlaceName local-first 選源、`build_zones.py` 的 ZONES 表，以及 vendored Emote：拉札**漢**、克**扎**瑪烏卡、指向、坐下到地上。`validate-data.mjs` 有禁詞守門防回歸。
+
+## 檔案
+| 檔 | 職責 |
+|---|---|
+| `extract-sources.mjs` | cycleapple/babelin JS/HTML → `tools/sources/extracted.json` |
+| `build_zones.py` | 地區 → 地圖底圖/sizeFactor/天氣鍵；`main()` 執行建置，import 不讀寫產物 |
+| `build_data.py` | 合併 vendored Adventure/Emote + 上游 Level/Map → 340 筆，共用 `ZONES` / PlaceName 選源 helper |
+| `validate-data.mjs` | 資料契約 + 繁中禁詞 + authoritative emote 指令對照 |
+| `validate-weather.mjs` | 必驗 seed/golden，並對 vendored canonical 的全量天氣表/aliases + 固定時間點 |
+| `sources/` | reference 原始快照（版控）；`tools/sources/extracted.json` 與 `tools/zone-mapping.md` 為中間產物（gitignored） |

@@ -1,0 +1,16 @@
+{
+  "overall_correctness": "incorrect",
+  "confidence": 0.86,
+  "explanation": "Runtime code 與 candidate1 相同，結論仍是 incorrect：只有一個 low severity 缺陷 FR-1。其餘已核對路徑沒有新缺陷。\n\n版本邊界：Main 完成 canonical 與 UI 驗收後，runtime code 未再變。candidate1 manifest 為 ae8958f4f371161885925fc3f0683c91a0ac7616ada1a2d7f75de108ad542482，BASE 為 47b0186a915e51dee16c0278787c440ef4fae1f6。candidate2-docs 的 manifest 為 docs/health-reviews/2026-10-09-page-fix-record.json.materials/dac9dff50be786b44ba32a965096c9e578dfc9c8432b61820a5a5e8d3f409e46.json。依邊界聲明，原 22 檔的 delivery SHA 只有 plan／record 改變；source、tests、generator、deploy code 與 candidate1 相同。新增範圍只有 docs/icons/_headers，聲明為兩行註解更正，header 與 CSP 值保留，註解改為說明 settings 由 header 背景載入。本輪重讀 modules/app.js 與 modules/ss_storage.js，FR-1 仍在現行檔。本輪沒有逐字重讀該 manifest 與 _headers，這兩點依邊界聲明收斂，不另立 defect。\n\nFR-1：勾選時先改 state.done，updateCompleted 丟例外後畫面仍保留該勾選，文案也寫「變更僅在本頁生效」。之後同頁另一次勾選若成功，或他分頁寫入同一個 key 觸發 storage event，會用磁碟 snapshot 整份換掉 state.done，把尚未落盤的 ID 從 UI 清掉。磁碟上的 array 與 legacy object 不會被空陣列覆蓋。這不是 atomic multi-tab。\n\n已核對且未見新缺陷：Availability 用 Number.isFinite 擋 null，不把未知收成 0；nextBothOK 只接受 open < pEnd；時間窗半開沿用 getTimeUntilRange。DOM 以靜態 card 重排，tick 在 state.composing 時不重繪 card；搜尋框同時看 composition 事件與 event.isComposing；提示只在 membership 或順序改變時換 DOM，並把焦點放回 data-target；複製走 textContent／dataset。Storage key 仍是 ffxiv-sightseeing-completed；null 讀成 []；array 只接受字串；legacy object 以 truthy 為完成，寫回只改本次 ID。損毀 JSON、null、純量、[false] 會丟例外且不 setItem。資料合計 340 筆，ID 無重複；Emote 23「展示」TextCommand 424、34「鼓勵」435。build_zones.py 只在 __main__ 寫檔。Runner 加上 validate-data.mjs 與 validate-weather.mjs。deploy-prepare.sh 的 EXIT trap 在 Git usr/bin/dash 上，exit 1 與 set -e 的 false 都維持 exit 1。settings-api 缺 binding 仍是 503 binding_missing，沒有 fetch URL fallback。header.js 會自行 loadSettingsClient()。依邊界，_headers 不改變 header 或 CSP 值，不構成 CSP、CORS 或 cache policy regression。\n\n本輪未重跑 build、lint、tests，也未重跑 tools/validate-availability.mjs。候選 1 的 8 相位探針不能代替該檔的 120 相位與約 2.7 年掃描。未在瀏覽器操作 IME、focus、clipboard，或兩個分頁交錯的 getItem／setItem。沒有 Cloudflare 映像上的 dash。_site/ 不是候選。plan／record 內文本輪未重審。",
+  "findings": [
+    {
+      "title": "勾選寫入失敗後，後續成功寫入或 storage event 會清掉僅存在記憶體的完成狀態",
+      "body": "severity: low。觸發：某次勾選讓 setItem 或 readCompleted 丟出例外，畫面上的勾選留在 state.done。之後同頁另一次勾選成功寫入，或他分頁寫入同一個 key 而觸發 storage event。\n\nevidence：modules/app.js:474 在 try 之前就執行 state.done.add(id) 或 delete(id)。:475 成功時把 state.done 整份換成 updateCompleted 的回傳值；:476 的 catch 只呼叫 feedback，不回復該次勾選。文案為「完成紀錄無法儲存；原始資料未覆寫，變更僅在本頁生效」。modules/app.js:481-483 的 storage listener 在 key 為 STORE 或 null 時呼叫 loadDone()。loadDone（modules/app.js:70-72）成功時執行 state.done = readCompleted(...).done，同樣整份替代。\n\nupdateCompleted（modules/ss_storage.js:24-32）每次從 storage.getItem 重讀，只套用本次 ID，回傳新的 Set。第一次失敗時畫面上多出來的 ID 不在磁碟裡；下一次成功讀寫會讓那個勾選從 UI 消失。磁碟上的 array 與 legacy object 不會被空陣列覆蓋。happy path 會保留既有 ID 與格式。這不是 atomic multi-tab。tests/ss-storage.test.mjs 蓋到的是連續 read-modify-write，不是兩個交錯的 stale snapshot，也沒有蓋到這段 UI 失敗後被整份替代。\n\n最小建議：失敗時回復該次勾選，讓 UI 與未寫入的 storage 一致。若錯誤文案要維持「僅在本頁生效」，之後的成功 updateCompleted 與 storage event 必須把尚未落盤的 ID 併回，不能整份取代 state.done。\n\n此段 runtime code 在候選 2 的邊界下與候選 1 相同，FR-1 仍然成立。",
+      "priority": 3,
+      "confidence": 0.92,
+      "file_path": "modules/app.js",
+      "line_start": 474,
+      "line_end": 483
+    }
+  ]
+}

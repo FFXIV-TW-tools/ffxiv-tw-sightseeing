@@ -1,13 +1,13 @@
 # AGENTS.md — ffxiv-tw-sightseeing
 
-FFXIV 繁中服探索筆記（Sightseeing Log）收集工具。external 公開工具，CF Pages 部署，FFXIV-TW-tools portal 註冊。純前端（vanilla JS + 原生 ES module，無框架、無 build）。
+FFXIV 繁中服探索筆記（Sightseeing Log）收集工具。external 公開工具，CF Pages 部署，FFXIV-TW-tools portal 註冊。主頁為 vanilla JS + 原生 ES module（無框架、無前端 build）；附共用設定 API 的 Pages Function service-binding 代理。
 
 > **本檔＝規則層**（做什麼／禁什麼／權威在哪／怎麼驗證），每 session 常駐。
 > 由來、事故經過、實測數字、拍板日期、協作歷程＝`docs/rules-rationale.md`（**同標題對應**）；懷疑某條鐵則或要改它時才讀。新增鐵則時：規則進本檔，由來進 rationale 對應段。
 
 ## 規模級別：S（DEVLOOP §5，偏 M 邊界）
 
-- **判準**：單一 deployable 靜態站、單一職責＝「繁中服探索筆記收集＋可進行時間提示」；無後端／無 build 產物依賴（`tools/` build pipeline 為離線可重現）／無框架。
+- **判準**：單一 deployable、單一職責＝「繁中服探索筆記收集＋可進行時間提示」；主頁無 build 產物依賴（`tools/` pipeline 為離線產生資料），僅代理共用設定後端、無自有資料服務或帳號系統。
 - **S 級效果**：不需 ROADMAP 分解層、不設 Gate 0。日後加後端／帳號再升 M。（觸 M 下緣的邊界說明見 rationale）
 
 ## 架構鐵則（違反必阻擋）
@@ -29,30 +29,31 @@ FFXIV 繁中服探索筆記（Sightseeing Log）收集工具。external 公開�
 - **null ≠ 0**：找不到就傳 `null`（未知），**禁用 0 當 fallback**（0 的語義是「不用等」）。顯示判準一律 `Number.isFinite(ms) && ms > 0`。
 - **禁 `Number(ms)` 收斂**：`Number(null)===0`（不是 NaN），會讓「未知」被印成「現在」——最糟的假訊息。守門一律 `Number.isFinite(ms)` 直接判。
 - **掃描窗**＝`weather.js` 的 `SCAN_PERIODS`（單一事實源，前端與交集掃描共用）。**改小前先跑測試看餘裕**；放大不增成本（找到即 return）。
-- **時間窗是半開 `[start, end)`**：遊戲窗「05–08」＝05:00–07:59，**08:00 即關窗**。`getTimeUntilRange`／`isTimeInRange` 一律 `< endTime`，**禁 `<=`**。
+- **時間窗是半開 `[start, end)`**：遊戲窗「05–08」＝05:00–07:59，**08:00 即關窗**。`getTimeUntilRange` 一律 `< endTime`，**禁 `<=`**。
 - **跨午夜窗**（18–5）**不自行推算**，一律交 `ET.getTimeUntilRange`（已處理 wrap），勿平行實作。
 - **長等待顯示「N 天」**：交集等待動輒數天，`formatWaitTime` 禁回「> 24 小時」（分不出 25 小時與 7 天）。
 
 ## 資料流（build pipeline 在版控 `tools/`，可重現可稽核；詳 `tools/README.md`）
 
 ```
-tools/sources/（reference 快照，版控）＋ monorepo data/item_dict/（遊戲資料）
-  ──[tools/extract-sources.mjs → build_zones.py → build_data.py]──> data/{zones,sightseeing-data}.js
+tools/sources/（六張同版 native sheet＋manifest＋社群補充，版控）
+  ──[tools/build_data.py：完整驗證後一起發布]──> data/{zones,sightseeing-data}.js＋generation manifest
 data/zones.js + data/sightseeing-data.js  ──> modules/app.js 渲染
 ```
 
-- **兩份 `data/*.js` 皆 AUTO-GEN**：改地區／地圖 → 改 `tools/build_zones.py` 重跑；改條目資料 → 改 `tools/build_data.py` 重跑。**勿手改產物**。
-- **權威主軸＝遊戲原生 sheet**（`datamining_tc/tc_Adventure` ＋ `tc_Emote`，版控快照在 `tools/sources/`）：名稱／時間窗／表情全走官方繁中。
+- **兩份 `data/*.js` 皆 AUTO-GEN**：修改來源／生成器後統一跑 `python tools/build_data.py`，同時發布兩份 JS 與 generation manifest。`build_zones.py` 是純建置函式，非獨立發布入口。**勿手改產物**。
+- **權威主軸＝同版遊戲原生 sheet**（Adventure／Emote／TextCommand／PlaceName／Level／Map，版控快照在 `tools/sources/`，native manifest 綁定 version／bytes SHA）；缺必要 relation／圖片／sf 直接 fail-build，沒有外部 fallback。詳 `tools/README.md`。
 - **座標 X/Y 亦走遊戲原生**：`Adventure.Level` → `tc_Level`(X/Z) ＋ `tc_Map`(SizeFactor) 標準換算（1 位小數；`build_data.py` 的 `level_coords`）。僅高度 z 留 babelin（HW–DT），**ARR 無 z**（原因見 rationale）。
-- 繁中正名修正（來源錯字）：拉札**漢**（非罕）、克**扎**瑪烏卡（非札）、emote 指向（非指指點點）／坐下到地上（非坐下）。
+- 繁中正名修正（來源錯字）：拉札**漢**（非罕）、克**扎**瑪烏卡（非札）、emote 指向（非指指點點）；「坐下」(目前同版指令 lounge) 與「坐下到地上」(groundsit) 是不同表情，不互相替代。
 - `data/schema.md`＝資料契約單一來源（欄位／天氣鍵／emote 對照）。
 
 ## VERIFY（改動後必跑）
 
-- **canonicalTest（safe-push 實跑的那一條；`~/.claude/process/fleet.json` 逐字對照本行）**：`node tools/validate-availability.mjs && node tests/run-all.mjs`
-- `tests/run-all.mjs` 自動掃描 `tests/*.test.{js,mjs}`，新增測試檔不必再記得掛進來。
+- **canonicalTest（safe-push 實跑的那一條；`devloop.json` 逐字對照本行）**：`node tools/validate-availability.mjs && node tests/run-all.mjs`
+- `tests/run-all.mjs` 同時執行資料／天氣 validators，並自動掃描 `tests/*.test.{js,mjs}`。
+- **目前實測基線（2026-10-09）**：availability validator 通過；runner **9/9**（7 個測試檔＋2 個資料／天氣 validators）。
 
-> 基線：**4 支全 PASS**（3 validators ＋ CSP 圖片主機）（`validate-data` / `validate-weather` golden / `validate-availability` 四紅線）＋ 3 syntax check OK（2026-08-04 實測）。不得靜默下降。
+> 完整驗證紀錄見 `docs/health-reviews/2026-10-09-page-health-review.md` 的機械基線及後續追蹤；歷史 PASS 快照不能代表當前候選通過。
 
 - **CLS：`.ss-grid` 必須預留首屏高度**——`min-height: 72svh`（沿用 ranking 既有值，`svh` 不用裸 `vh`）。卡片由 `renderLogs` 非同步填入，拿掉即回歸。哨兵＝`<monorepo>/tools/check-cls.mjs`。
 - **`_headers` 的 `img-src` 是資料的下游**：換／新增圖片主機時同步 `_headers`；判準由 `data/` 與 `modules/` 反推（`tests/csp-image-hosts.test.mjs`），**不寫死清單**。
@@ -62,9 +63,12 @@ data/zones.js + data/sightseeing-data.js  ──> modules/app.js 渲染
 node tools/validate-data.mjs         # 資料契約（340 筆、zoneKey 有效、ARR 有天氣/時間、繁中禁詞、emoteCmd）
 node tools/validate-weather.mjs      # 天氣移植 bit-exact 對 golden
 node tools/validate-availability.mjs # 可進行時間四紅線（見上段）：wait 未知值／null≠0／掃描窗餘裕／往返驗算
-node --check modules/weather.js modules/eorzea-time.js
+node --check modules/weather.js
+node --check modules/eorzea-time.js
 node --input-type=module --check < modules/app.js   # app.js 是 ES module，不能用裸 --check
 node tests/csp-image-hosts.test.mjs   # 資料裡的圖片主機 ⊆ _headers 的 img-src（上游換網址時會響）
+node tools/validate-csp.mjs         # 可執行 inline script bytes 對 CSP hash；script-src-attr none
+node tools/validate-sources.mjs     # 同版 native manifest／補充來源／生成 bytes binding
 # UI smoke（interactive，人工）：需 portal :8774 起 + 本機 http.server，headless 截圖看卡片/地圖/分頁渲染
 ```
 

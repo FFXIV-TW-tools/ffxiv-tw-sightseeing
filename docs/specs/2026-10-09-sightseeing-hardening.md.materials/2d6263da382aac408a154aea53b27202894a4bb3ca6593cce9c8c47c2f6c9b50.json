@@ -1,0 +1,182 @@
+{
+  "v": 1,
+  "kind": "devloop-material-coverage",
+  "cycle": "2026-10-09-sightseeing-hardening",
+  "phase": "pre",
+  "controlsSha256": "498c72619dce111375e5a4d081f7c2af8222472b8c963d445b521c6da5a9e7dc",
+  "before": {
+    "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/d1536e2714efb5bbc4a5def7c091b0f76651ac682b85daf12d50e4beb9670f92.json",
+    "sha256": "d1536e2714efb5bbc4a5def7c091b0f76651ac682b85daf12d50e4beb9670f92"
+  },
+  "after": {
+    "path": "docs/specs/2026-10-09-sightseeing-hardening.md.materials/72a774c27f4f48a5aee7fd544d25edf6e305839e17db41609447b733972487e4.json",
+    "sha256": "72a774c27f4f48a5aee7fd544d25edf6e305839e17db41609447b733972487e4"
+  },
+  "initialIds": [
+    "hardening-pre-blind-1",
+    "hardening-pre-fact-1"
+  ],
+  "changes": [
+    {
+      "path": "docs/specs/2026-10-09-sightseeing-hardening.md",
+      "beforeSha256": "02e3ae4a2cf953788d019e60e74657efdeb7679f41dac196c5bdef8daea18151",
+      "afterSha256": "b5e8716f847945b43313d1efbcd51f6ab33320922e920c776e27b354b6804a09"
+    }
+  ],
+  "mapping": [
+    {
+      "source": "hardening-pre-blind-1",
+      "finding": "B2",
+      "paths": [
+        "docs/specs/2026-10-09-sightseeing-hardening.md"
+      ]
+    },
+    {
+      "source": "hardening-pre-blind-1",
+      "finding": "B3",
+      "paths": [
+        "docs/specs/2026-10-09-sightseeing-hardening.md"
+      ]
+    },
+    {
+      "source": "hardening-pre-blind-1",
+      "finding": "B4",
+      "paths": [
+        "docs/specs/2026-10-09-sightseeing-hardening.md"
+      ]
+    },
+    {
+      "source": "hardening-pre-blind-1",
+      "finding": "B5",
+      "paths": [
+        "docs/specs/2026-10-09-sightseeing-hardening.md"
+      ]
+    },
+    {
+      "source": "hardening-pre-blind-1",
+      "finding": "B6",
+      "paths": [
+        "docs/specs/2026-10-09-sightseeing-hardening.md"
+      ]
+    },
+    {
+      "source": "hardening-pre-fact-1",
+      "finding": "F1",
+      "paths": [
+        "docs/specs/2026-10-09-sightseeing-hardening.md"
+      ]
+    },
+    {
+      "source": "hardening-pre-fact-1",
+      "finding": "F10",
+      "paths": [
+        "docs/specs/2026-10-09-sightseeing-hardening.md"
+      ]
+    },
+    {
+      "source": "hardening-pre-fact-1",
+      "finding": "F11",
+      "paths": [
+        "docs/specs/2026-10-09-sightseeing-hardening.md"
+      ]
+    },
+    {
+      "source": "hardening-pre-fact-1",
+      "finding": "F12",
+      "paths": [
+        "docs/specs/2026-10-09-sightseeing-hardening.md"
+      ]
+    },
+    {
+      "source": "hardening-pre-fact-1",
+      "finding": "F13",
+      "paths": [
+        "docs/specs/2026-10-09-sightseeing-hardening.md"
+      ]
+    },
+    {
+      "source": "hardening-pre-fact-1",
+      "finding": "F14",
+      "paths": [
+        "docs/specs/2026-10-09-sightseeing-hardening.md"
+      ]
+    },
+    {
+      "source": "hardening-pre-fact-1",
+      "finding": "F15",
+      "paths": [
+        "docs/specs/2026-10-09-sightseeing-hardening.md"
+      ]
+    },
+    {
+      "source": "hardening-pre-fact-1",
+      "finding": "F16",
+      "paths": [
+        "docs/specs/2026-10-09-sightseeing-hardening.md"
+      ]
+    },
+    {
+      "source": "hardening-pre-fact-1",
+      "finding": "F17",
+      "paths": [
+        "docs/specs/2026-10-09-sightseeing-hardening.md"
+      ]
+    },
+    {
+      "source": "hardening-pre-fact-1",
+      "finding": "F2",
+      "paths": [
+        "docs/specs/2026-10-09-sightseeing-hardening.md"
+      ]
+    },
+    {
+      "source": "hardening-pre-fact-1",
+      "finding": "F3",
+      "paths": [
+        "docs/specs/2026-10-09-sightseeing-hardening.md"
+      ]
+    },
+    {
+      "source": "hardening-pre-fact-1",
+      "finding": "F4",
+      "paths": [
+        "docs/specs/2026-10-09-sightseeing-hardening.md"
+      ]
+    },
+    {
+      "source": "hardening-pre-fact-1",
+      "finding": "F5",
+      "paths": [
+        "docs/specs/2026-10-09-sightseeing-hardening.md"
+      ]
+    },
+    {
+      "source": "hardening-pre-fact-1",
+      "finding": "F6",
+      "paths": [
+        "docs/specs/2026-10-09-sightseeing-hardening.md"
+      ]
+    },
+    {
+      "source": "hardening-pre-fact-1",
+      "finding": "F7",
+      "paths": [
+        "docs/specs/2026-10-09-sightseeing-hardening.md"
+      ]
+    },
+    {
+      "source": "hardening-pre-fact-1",
+      "finding": "F8",
+      "paths": [
+        "docs/specs/2026-10-09-sightseeing-hardening.md"
+      ]
+    },
+    {
+      "source": "hardening-pre-fact-1",
+      "finding": "F9",
+      "paths": [
+        "docs/specs/2026-10-09-sightseeing-hardening.md"
+      ]
+    }
+  ]
+}

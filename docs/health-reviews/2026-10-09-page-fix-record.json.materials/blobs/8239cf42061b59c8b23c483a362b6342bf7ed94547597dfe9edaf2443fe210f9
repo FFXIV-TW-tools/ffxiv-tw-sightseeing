@@ -1,0 +1,89 @@
+# 資料契約（data schema）— 探索筆記工具
+
+> `tools/build_zones.py`／`tools/build_data.py` 產物與前端共同遵守的資料契約。兩份 AUTO-GEN 檔不得手改。
+
+## 1. `data/zones.js`（AUTO-GEN）
+
+```js
+window.SIGHTSEEING_ZONES = {
+  "<zoneKey>": {
+    tc: "利姆薩・羅敏薩上層甲板",  // 本機台服 PlaceName 正名；分隔號亦依原文
+    image: "https://v2.xivapi.com/api/asset/map/s1t1/01", // xivapi 地圖資產 URL
+    sf: 200,                     // sizeFactor（餵 map_view.gameCoordToPercent）
+    weatherZone: "Limsa Lominsa",// weather.js ZONE_WEATHER 的 key（DT 為 ""＝無天氣資料）
+    exp: "arr"                   // arr|hw|sb|shb|ew|dt
+  }, ...
+}
+```
+
+共 60 個 zoneKey。**zoneKey 是 data 與 zones 的連接鍵**，必須存在於 zones.js。
+
+## 2. `data/sightseeing-data.js`（AUTO-GEN）
+
+```js
+window.SIGHTSEEING_DATA = {
+  arr: [ <entry>, ... ],  // 80 筆
+  hw:  [ <entry>, ... ],  // 62 筆
+  sb:  [ <entry>, ... ],  // 62 筆
+  shb: [ <entry>, ... ],  // 45 筆
+  ew:  [ <entry>, ... ],  // 46 筆
+  dt:  [ <entry>, ... ],  // 45 筆
+};
+```
+
+### entry 欄位
+
+| 欄位 | 型別 | ARR | HW–DT | 說明 |
+|---|---|:--:|:--:|---|
+| `no` | int | ✓ | ✓ | 該版本內序號（1..N），來自來源 id |
+| `zoneKey` | string | ✓ | ✓ | **必對應 zones.js**；用 `tools/zone-mapping.md` 對照表 |
+| `name` | string | ✓ | ✓ | 遊戲 Adventure sheet 的探索點繁中名 |
+| `x` | number | ✓ | ✓ | 顯示座標（1~42，1 位小數）。**全 340 筆＝遊戲原生 Level sheet**（`Adventure.Level`→`tc_Level` X/Z ＋ `tc_Map` SizeFactor 換算；2026-07-18 起取代 cycleapple/babelin） |
+| `y` | number | ✓ | ✓ | 同上 |
+| `z` | number\|null | — | 選填 | HW–DT 高度（babelin 人工量測）；ARR 省略——遊戲 Level.Y 無穩定 world→顯示 Z 換算（同 z 對應迥異 Level.Y、全域擬合 129/181 差 >0.5），無社群 z 可校準 |
+| `weathers` | string[] | ✓ | `[]` | 天氣需求；**ARR 取 cycleapple `weather` 陣列原值**（帶空格英文，如 `"Clear Skies"`）。HW–DT 一律 `[]` |
+| `timeStart` | int\|null | ✓ | 多為 null | Adventure.MinTime 的整數時（0–23）；無時間門檻為 null |
+| `timeEnd` | int\|null | ✓ | 多為 null | Adventure.MaxTime 最後有效小時＋1，作半開窗尾（可為 24）；跨午夜依引擎處理 |
+| `emote` | string | ✓ | ✓ | Emote sheet 官方繁中表情名 |
+| `emoteCmd` | string | ✓ | ✓ | 對應 TextCommand 英文指令，不含斜線；本資料每筆皆需有效指令 |
+| `note` | string | 選填 | 選填 | 額外提示（如 `"⚠ 超短時間"`）；空則省略或 `""` |
+
+### 天氣鍵（weathers 值，帶空格；ARR 直接沿用 cycleapple）
+`Clear Skies` `Fair Skies` `Clouds` `Fog` `Wind` `Gales` `Rain` `Showers` `Thunder` `Thunderstorms` `Dust Storms` `Heat Waves` `Snow` `Blizzards` `Gloom`
+
+### 表情繁中→emoteCmd 對照
+| 繁中 | emoteCmd |
+|---|---|
+| 張望 | lookout |
+| 祈禱 | pray |
+| 坐下 | sit |
+| 敬禮 | salute |
+| 指向 | point |
+| 激勵 | psych |
+| 打盹 | doze |
+| 安慰 | comfort |
+| 坐下到地上 | groundsit |
+| 鼓勵 | rally |
+| 展示 | me |
+
+### note
+- 時間窗由 Adventure sheet 產生，不解析社群文字作時間權威。
+- 不超過 1 遊戲小時的窗附 `⚠ 時間窗極短（1 遊戲小時）`。
+
+## 2c. `data/guides.js`（引導說明，手動維護，非 AUTO-GEN）
+```js
+window.SIGHTSEEING_GUIDES = { "<exp>-<no三位>": "引導說明字串", ... };
+```
+- 有些探索點較難抵達，補一句怎麼過去。key＝卡片 `data-id`（如 `hw-012`）。
+- **不會被 build 覆寫**（獨立於 sightseeing-data.js）；卡片只在該 id 有說明時顯示「引導」欄。
+
+## 3. 來源檔
+- **名稱／時間／表情主軸**：`tools/sources/tc_Adventure.csv` 與 `tc_Emote.csv`，官方繁中快照；指令由 Emote.TextCommand 對應標準指令（展示 `/me`，鼓勵 `/rally`）。
+- **ARR 天氣與地區對照**：`tools/sources/cycleapple-arr.js`；region→zoneKey 見 `tools/zone-mapping.md`。
+- **HW–DT 地區對照與高度 z**：`tools/sources/babelin.html`；zone→zoneKey 見 `tools/zone-mapping.md`。
+- **X/Y 座標**：遊戲原生 `tc_Level`＋`tc_Map`（`build_data.py level_coords` 與 `_to_map`）；目前 Level／Map 讀 upstream、PlaceName 使用 `tc_source.py` 本機優先。缺 Level 座標時仍有社群 fallback／警告；來源版本與 fail-closed 政策見健檢改善計畫。
+
+## 4. 引擎契約（codex 讀，供對齊）
+- `weather.js`：`window.Weather.getWeatherForZone(weatherZone, unixSec)` → 天氣字串；`getWeatherNameTC(w)` → 繁中；`getWeatherIconUrl(w)`；`findNextWeather(weatherZone, targets, maxPeriods, nowMs)`，搜尋起點預設 Date.now()，等待毫秒相對該起點、掃不到回 null。上游快照 `tools/sources/cycleapple-weather.js`，種子 bit-exact 與 ARR–EW 天氣表由 validator 守。
+- `eorzea-time.js`：`window.EorzeaTime.getCurrentEorzeaTime(ms)` / `formatTime` / `getTimeUntilNextWeather` / `getTimeUntilRange(start,end,ms)` / `formatWaitTime`。上游快照 `tools/sources/cycleapple-eorzea-time.js`；時間窗半開、跨午夜由 getTimeUntilRange 唯一處理。
+- 地圖：`import { renderInlineMap, openMapModal } from './map_view.js'`（vendored，勿改）。marker.x/y＝顯示座標，sf 取 `zones[zoneKey].sf`，img 取 `zones[zoneKey].image`。
