@@ -6,6 +6,7 @@ import { iconSVG, fillStaticIcons } from './ss_visual.js';
 import { formatTimeWindow, formatUnfinishedList } from './ss_list.js';
 import { availability, hasTime, wait, formatMMSS } from './ss_availability.js';
 import { loadCompleted, saveCompleted, COMPLETED_KEY } from './ss_storage.js';
+const usageWindow = /** @type {Window & typeof globalThis & { XivUsage?: { track: (name: string) => void } }} */ (window);
 
 const DATA = window.SIGHTSEEING_DATA || {};
 const ZONES = window.SIGHTSEEING_ZONES || {};
@@ -85,7 +86,7 @@ function badges() {
 function nhItem(item, trailHTML) {
   const entry = item.entry, exp = expOf(entry);
   // mini-card：上排 版本/編號/等待（等待固定右上），下排 名稱/地區獨佔一行 → 各卡等高、不因名稱長短跳行
-  return '<button type="button" class="ss-nh-item" data-target="' + esc(item.id) + '">' +
+  return '<button type="button" class="ss-nh-item" data-track="jump-to-hint" data-track-label="查看可進行筆記" data-target="' + esc(item.id) + '">' +
     '<span class="ss-nh-top">' +
       '<span class="ss-nh-ver">' + esc(VER[exp] || '') + ' ' + esc(EXP_NAMES[exp] || '') + '</span>' +
       '<span class="ss-nh-ord">#' + esc(pad(entry.no)) + '</span>' +
@@ -106,7 +107,7 @@ const NH_LIMIT = 3;
 function nhMore(group, total, expanded) {
   const extra = total - NH_LIMIT;
   if (extra <= 0) return '';
-  return '<button type="button" class="codex-btn codex-btn--ghost" data-group="' + group + '">' + (expanded ? '收合' : '顯示其餘 ' + extra + ' 筆') + '</button>';
+  return '<button type="button" class="codex-btn codex-btn--ghost" data-track="toggle-hint-more" data-track-label="展開或收合可進行提示" data-group="' + group + '">' + (expanded ? '收合' : '顯示其餘 ' + extra + ' 筆') + '</button>';
 }
 function updateNextHint(ui) {
   const hint = $('#next-hint');
@@ -208,10 +209,10 @@ function row(key, valueHTML, options) {
 //    是已知會發生的狀態（同 marketboard `modules/clipboard.js` 的處置）；JS 這層降回 ⧉ 與改之前一樣。
 /** @param {string} attr @param {string} value @param {string} label */
 function copyBtn(attr, value, label) {
-  const attrs = { class: 'codex-icon-btn--sm', 'data-copy-label': label, [attr]: value };
+  const attrs = { class: 'codex-icon-btn--sm', 'data-copy-label': label, 'data-track': attr === 'data-copy-emote' ? 'copy-emote' : 'copy-coords', 'data-track-label': attr === 'data-copy-emote' ? '複製表情指令' : '複製座標', [attr]: value };
   if (window.FFXIVIcons) return window.FFXIVIcons.btnHTML('copy', label, attrs);
   return '<button type="button" class="codex-icon-btn codex-icon-btn--sm" '
-    + attr + '="' + esc(value) + '" data-copy-label="' + esc(label) + '" aria-label="' + esc(label) + '">⧉</button>';
+    + attr + '="' + esc(value) + '" data-track="' + attrs['data-track'] + '" data-track-label="' + attrs['data-track-label'] + '" data-copy-label="' + esc(label) + '" aria-label="' + esc(label) + '">⧉</button>';
 }
 function card(item) {
   const entry = item.entry;
@@ -230,7 +231,7 @@ function card(item) {
   const guide = String(GUIDES[item.id] || '').trim();
   const template = document.createElement('template');
   template.innerHTML = '<article tabindex="-1" class="codex-card ss-card' + (item.completed ? ' completed' : '') + '" data-id="' + esc(item.id) + '" data-available="' + String(a.available) + '">' +
-    '<header class="ss-head"><span class="ss-ord">' + esc(pad(entry.no)) + '</span><h2 class="ss-title"><span>' + esc(itemName(entry)) + '</span></h2><span class="ss-done-badge codex-badge codex-badge--success codex-badge--hollow">✓ 已完成</span><label class="ss-done"><input class="ss-complete-input" type="checkbox"' + (item.completed ? ' checked' : '') + ' aria-label="' + esc('標記完成：' + context) + '"><span class="ss-done-txt">標記完成</span></label></header>' +
+    '<header class="ss-head"><span class="ss-ord">' + esc(pad(entry.no)) + '</span><h2 class="ss-title"><span>' + esc(itemName(entry)) + '</span></h2><span class="ss-done-badge codex-badge codex-badge--success codex-badge--hollow">✓ 已完成</span><label class="ss-done"><input class="ss-complete-input" type="checkbox" data-track="toggle-complete" data-track-label="標記或取消完成"' + (item.completed ? ' checked' : '') + ' aria-label="' + esc('標記完成：' + context) + '"><span class="ss-done-txt">標記完成</span></label></header>' +
     '<div class="ss-body">' +
       '<div class="ss-map">' + (mapHTML(entry, z) || '<div class="ss-map-empty">地圖暫時無法顯示，仍可使用 X／Y 座標尋找。</div>') + '</div>' +
       '<dl class="ss-ledger">' + rows.join('') + '</dl>' +
@@ -240,7 +241,7 @@ function card(item) {
     '<footer class="ss-foot"><span class="ss-dot" aria-hidden="true"></span><span class="ss-state" data-live="status"></span><span class="ss-next" data-live="next"></span></footer>' +
     '</article>';
   const map = $('.map-inline--clickable', template.content);
-  if (map) map.setAttribute('aria-label', '放大地圖：' + context);
+  if (map) { map.setAttribute('aria-label', '放大地圖：' + context); map.setAttribute('data-track', 'open-map'); map.setAttribute('data-track-label', '放大探索地圖'); }
   return template.content.firstElementChild;
 }
 function updateCard(element, item) {
@@ -290,7 +291,7 @@ function emptyState(ui) {
   const completedOnly = allDone && pressed(ui.hide) && !ui.search.value.trim() && !ui.zone.value && !pressed(ui.only);
   const headline = noData ? '探索筆記資料載入失敗，請重新整理頁面。' : noVersion ? '此版本目前沒有點位，請切換其他版本。' : completedOnly ? '這個版本的筆記都完成了！' : '找不到符合條件的探索筆記。';
   const hint = noData || noVersion || completedOnly ? '' : '<p>試著清除搜尋與篩選。</p>';
-  const action = noVersion ? '' : '<button type="button" class="codex-btn codex-btn--ghost" data-ss-clear="' + (noData ? 'reload' : completedOnly ? 'completed' : 'filters') + '">' + (noData ? '重新整理' : completedOnly ? '顯示已完成筆記' : '清除搜尋與篩選') + '</button>';
+  const action = noVersion ? '' : '<button type="button" class="codex-btn codex-btn--ghost" data-track="' + (noData ? 'reload-data' : completedOnly ? 'show-completed' : 'clear-filters') + '" data-ss-clear="' + (noData ? 'reload' : completedOnly ? 'completed' : 'filters') + '">' + (noData ? '重新整理' : completedOnly ? '顯示已完成筆記' : '清除搜尋與篩選') + '</button>';
   const empty = document.createElement('div');
   empty.className = 'codex-empty ss-empty-state';
   empty.innerHTML = '<span class="codex-empty__icon" aria-hidden="true">' + iconSVG(noData ? 'warning' : 'binoculars') + '</span><strong>' + headline + '</strong>' + hint + action;
@@ -397,8 +398,9 @@ function init() {
     ui.search.addEventListener('compositionstart', () => { state.composing = true; });
     ui.search.addEventListener('compositionend', () => { state.composing = false; render(ui); });
     ui.search.addEventListener('input', event => { if (!state.composing && !event.isComposing) render(ui); });
+    ui.search.addEventListener('change', () => { if (ui.search.value.trim()) usageWindow.XivUsage && usageWindow.XivUsage.track('search'); });
   }
-  if (ui.zone) ui.zone.addEventListener('change', () => render(ui));
+  if (ui.zone) ui.zone.addEventListener('change', () => { usageWindow.XivUsage && usageWindow.XivUsage.track('filter-zone'); render(ui); });
   [ui.hide, ui.only, ui.sort].filter(Boolean).forEach(control => control.addEventListener('click', () => {
     setPressed(control, !pressed(control));
     savePrefs(ui);
@@ -462,6 +464,7 @@ function init() {
     const map = target && target.closest('.map-inline--clickable');
     if (!map || !['Enter', ' '].includes(event.key)) return;
     event.preventDefault();
+    usageWindow.XivUsage && usageWindow.XivUsage.track('open-map');
     try { openMapModal(JSON.parse(decodeURIComponent(map.dataset.map))); } catch {}
   });
   ui.grid.addEventListener('change', event => {

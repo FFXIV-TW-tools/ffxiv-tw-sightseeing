@@ -143,14 +143,14 @@
 
     <!-- === 版本分頁（2.0~7.0）=== -->
     <nav class="codex-tabs codex-tabs--boxed ss-exp-tabs" id="exp-tabs" role="group" aria-label="探索筆記版本">
-      <button type="button" class="codex-tab codex-tab--boxed" data-exp="all" aria-pressed="true">全部 <span class="codex-count" id="badge-all">—/340</span></button>
-      <button type="button" class="codex-tab codex-tab--boxed" data-exp="arr-front" aria-pressed="false">2.x 新生 前半 <span class="codex-count" id="badge-arr-front">—/20</span></button>
-      <button type="button" class="codex-tab codex-tab--boxed" data-exp="arr-back" aria-pressed="false" data-help="需先完成前半 20 個才會開放">2.x 新生 後半 <span class="codex-count" id="badge-arr-back">—/60</span></button>
-      <button type="button" class="codex-tab codex-tab--boxed" data-exp="hw" aria-pressed="false">3.x 蒼天 <span class="codex-count" id="badge-hw">—/62</span></button>
-      <button type="button" class="codex-tab codex-tab--boxed" data-exp="sb" aria-pressed="false">4.x 紅蓮 <span class="codex-count" id="badge-sb">—/62</span></button>
-      <button type="button" class="codex-tab codex-tab--boxed" data-exp="shb" aria-pressed="false">5.x 漆黑 <span class="codex-count" id="badge-shb">—/45</span></button>
-      <button type="button" class="codex-tab codex-tab--boxed" data-exp="ew" aria-pressed="false">6.x 曉月 <span class="codex-count" id="badge-ew">—/46</span></button>
-      <button type="button" class="codex-tab codex-tab--boxed" data-exp="dt" aria-pressed="false">7.x 黃金 <span class="codex-count" id="badge-dt">—/45</span></button>
+      <button type="button" class="codex-tab codex-tab--boxed" data-exp="all" aria-pressed="true" data-track="switch-version" data-track-label="切換版本分頁">全部 <span class="codex-count" id="badge-all">—/340</span></button>
+      <button type="button" class="codex-tab codex-tab--boxed" data-exp="arr-front" aria-pressed="false" data-track="switch-version" data-track-label="切換版本分頁">2.x 新生 前半 <span class="codex-count" id="badge-arr-front">—/20</span></button>
+      <button type="button" class="codex-tab codex-tab--boxed" data-exp="arr-back" aria-pressed="false" data-help="需先完成前半 20 個才會開放" data-track="switch-version" data-track-label="切換版本分頁">2.x 新生 後半 <span class="codex-count" id="badge-arr-back">—/60</span></button>
+      <button type="button" class="codex-tab codex-tab--boxed" data-exp="hw" aria-pressed="false" data-track="switch-version" data-track-label="切換版本分頁">3.x 蒼天 <span class="codex-count" id="badge-hw">—/62</span></button>
+      <button type="button" class="codex-tab codex-tab--boxed" data-exp="sb" aria-pressed="false" data-track="switch-version" data-track-label="切換版本分頁">4.x 紅蓮 <span class="codex-count" id="badge-sb">—/62</span></button>
+      <button type="button" class="codex-tab codex-tab--boxed" data-exp="shb" aria-pressed="false" data-track="switch-version" data-track-label="切換版本分頁">5.x 漆黑 <span class="codex-count" id="badge-shb">—/45</span></button>
+      <button type="button" class="codex-tab codex-tab--boxed" data-exp="ew" aria-pressed="false" data-track="switch-version" data-track-label="切換版本分頁">6.x 曉月 <span class="codex-count" id="badge-ew">—/46</span></button>
+      <button type="button" class="codex-tab codex-tab--boxed" data-exp="dt" aria-pressed="false" data-track="switch-version" data-track-label="切換版本分頁">7.x 黃金 <span class="codex-count" id="badge-dt">—/45</span></button>
     </nav>
     <p class="ss-exp-note" id="arr-back-note" hidden>新生後半需先完成前半 20 個才會開放；仍可先瀏覽點位。</p>
 
@@ -158,10 +158,10 @@
     <div class="codex-toolbar ss-filters" role="group" aria-label="探索筆記篩選">
       <span class="codex-search ss-filter-search"><svg class="codex-ico codex-search__icon" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true" focusable="false" data-ss-icon="magnifying-glass"></svg><input id="search-input" class="codex-input" type="search" aria-label="搜尋探索筆記名稱或地區" aria-keyshortcuts="/" placeholder="搜尋名稱或地區…" autocomplete="off"><kbd class="codex-kbd codex-search__kbd" aria-hidden="true">/</kbd></span>
       <span class="codex-toolbar__group ss-filter-zone"><label class="codex-toolbar__label" for="zone-filter">地區</label><select id="zone-filter" class="codex-select"><option value="">全部地區</option></select></span>
-      <button type="button" id="hide-completed" class="codex-chip" aria-pressed="false" data-help="僅隱藏已標記完成的筆記">隱藏已完成</button>
-      <button type="button" id="only-available" class="codex-chip" aria-pressed="false" data-help="僅顯示此刻符合時間與天氣條件的筆記">僅顯示可進行</button>
-      <button type="button" id="sort-by-time" class="codex-chip" aria-pressed="false" data-help="未知等待時間排在最後，同時間保持原有順序">依可進行時間排序</button>
-      <button type="button" id="copy-visible" class="codex-btn codex-btn--ghost" data-help="複製目前顯示、尚未完成的筆記" aria-disabled="true"><svg class="codex-ico" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true" focusable="false" data-ss-icon="copy"></svg> 複製待探索清單</button>
+      <button type="button" id="hide-completed" class="codex-chip" aria-pressed="false" data-help="僅隱藏已標記完成的筆記" data-track="toggle-hide-completed" data-track-label="隱藏已完成">隱藏已完成</button>
+      <button type="button" id="only-available" class="codex-chip" aria-pressed="false" data-help="僅顯示此刻符合時間與天氣條件的筆記" data-track="toggle-only-available" data-track-label="僅顯示可進行">僅顯示可進行</button>
+      <button type="button" id="sort-by-time" class="codex-chip" aria-pressed="false" data-help="未知等待時間排在最後，同時間保持原有順序" data-track="toggle-sort-by-time" data-track-label="依可進行時間排序">依可進行時間排序</button>
+      <button type="button" id="copy-visible" class="codex-btn codex-btn--ghost" data-help="複製目前顯示、尚未完成的筆記" aria-disabled="true" data-track="copy-todo-list" data-track-label="複製待探索清單"><svg class="codex-ico" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true" focusable="false" data-ss-icon="copy"></svg> 複製待探索清單</button>
     </div>
 
     <!-- === 摘要 === -->
@@ -172,7 +172,7 @@
     </div>
     <div class="codex-card codex-card--info ss-first-visit" id="first-visit" hidden>
       <p>先選版本，再查看可進行時間、天氣與地圖；抵達點位使用表情後勾選完成。</p>
-      <button type="button" class="codex-btn codex-btn--ghost" id="first-visit-action">查看現在可進行</button>
+      <button type="button" class="codex-btn codex-btn--ghost" id="first-visit-action" data-track="first-visit-action" data-track-label="首次造訪引導">查看現在可進行</button>
     </div>
 
     <!-- === 下一個可進行 提示（app.js updateNextHint 填入 top 3）=== -->
@@ -185,7 +185,7 @@
     <!-- === 資料來源標註 === -->
     <footer class="ss-page-foot codex-small">
       <p>名稱・時間・表情・座標：同版本繁中服遊戲資料 · 新生天氣／後續版本高度：社群補充 · 地圖底圖：xivapi</p>
-      <p>「引導說明」翻譯自日文攻略站 <a href="https://www.ff14memo.com/other/sightseeing/" target="_blank" rel="noopener">ff14memo 探検手帳</a>（感謝原作者整理；DT 7.x 該站尚未收錄）</p>
+      <p>「引導說明」翻譯自日文攻略站 <a href="https://www.ff14memo.com/other/sightseeing/" target="_blank" rel="noopener" data-track="open-ff14memo" data-track-label="ff14memo 探検手帳">ff14memo 探検手帳</a>（感謝原作者整理；DT 7.x 該站尚未收錄）</p>
       <a class="codex-xs" href="https://xivtc.com/" data-hub-link>← FF14 工具箱（全部工具）</a>
     </footer>
 
